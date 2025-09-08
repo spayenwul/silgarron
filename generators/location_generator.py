@@ -1,7 +1,8 @@
 # generators/location_generator.py
 import random
 from typing import List
-from models.location import Location # Импортируем наш класс Location
+from models.location import Location
+from services.llm_service import generate_location_description
 
 # Базы для генерации. В будущем их можно вынести в отдельные файлы.
 BIOMES = ["Пещера", "Лес", "Болото", "Руины", "Подземелье"]
@@ -19,4 +20,8 @@ def generate_random_location() -> Location:
 
     print(f"\n...Генерация новой локации с тегами: {tags}...")
 
-    return Location(name=name, tags=tags)
+    location = Location(name=name, tags=tags)
+    description_from_ai = generate_location_description(location.tags)
+    location.description = description_from_ai
+
+    return location
