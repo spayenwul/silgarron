@@ -4,6 +4,7 @@ from typing import List
 import google.generativeai as genai
 from dotenv import load_dotenv
 from typing import List, Optional
+import json
 
 # Загружаем переменные окружения (включая наш API ключ) из файла .env
 load_dotenv()
@@ -58,3 +59,43 @@ def generate_location_description(tags: List[str], context: Optional[List[str]] 
     except Exception as e:
         print(f"Произошла ошибка при обращении к API Gemini: {e}")
         return "Таинственный туман скрывает это место от ваших глаз..."
+
+def generate_action_result(context: dict, player_action: str) -> str:
+    """
+    Генерирует нарративный результат действия игрока.
+    """
+    model = genai.GenerativeModel(MODEL_NAME)
+
+    # Создаем максимально подробный промпт для ГМ
+    prompt = f"""
+    Ты — Мастер Подземелий и игровой движок для текстовой RPG. Твоя задача — отреагировать на действие игрока.
+    Твой ответ ДОЛЖЕН БЫТЬ строго в формате JSON.
+
+    JSON должен содержать два ключа:
+    1. "narrative": (string) Атмосферное описание результата действия игрока (2-3 предложения).
+    2. "state_changes": (object) Объект, описывающий механические изменения в игре. Возможные ключи: "add_item" (string, название предмета), "remove_item" (string), "damage_player" (integer), "new_event" (string, краткое описание события для записи в память). Если изменений нет, оставь объект пустым {{}}.
+
+    ПРИМЕР ОТВЕТА:
+    {{
+      "narrative": "Вы шарите рукой по холодному алтарю и нащупываете небольшой бронзовый ключ. Кажется, он может подойти к какому-нибудь замку поблизости.",
+      "state_changes": {{
+        "add_item": "Бронзовый ключ"
+      }}
+    }}
+
+    ТЕКУЩАЯ СИТУАЦИЯ:
+    {json.dumps(context, ensure_ascii=False, indent=2)}
+
+    ДЕЙСТВИЕ ИГРОКА:
+    > {player_action}
+
+    ТВОЙ JSON ОТВЕТ:
+    """
+
+    print("...Отправка действия игрока в Gemini...")
+    try:
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Произошла ошибка при обработке действия: {e}")
+        return "Мир на мгновение замер, не в силах отреагировать на ваше действие..."
