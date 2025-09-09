@@ -16,11 +16,14 @@ def run_console_version():
     # ID должны быть уникальными строками.
     memory.add_memory(
         text="Королевство страдает от паучьей чумы. Даже в самых неожиданных местах можно найти огромных пауков.",
-        memory_id="fact_001"
+        memory_id="fact_001",
+        metadata={"type": "lore"}
     )
+
     memory.add_memory(
         text="Древние руины в этих землях часто использовались некромантами для создания скелетов-стражей.",
-        memory_id="fact_002"
+        memory_id="fact_002",
+        metadata={"type": "lore"}
     )
     # -----------------------------
 
