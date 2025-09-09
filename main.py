@@ -1,28 +1,43 @@
 # main.py
-from models.character import Character
-from models.item import Item
-from generators.location_generator import generate_random_location
+from game import Game # Импортируем наш новый класс
+from services.memory_service import MemoryService 
 
-def main():
-    """Главная функция игры."""
-    print("Запуск текстовой RPG с AI...")
+def run_console_version():
+    """
+    Запускает игру в режиме консоли.
+    Отвечает только за ВВОД/ВЫВОД в консоль.
+    """
 
-    # 1. Создаем персонажа
-    player = Character(name="Авантюрист")
+    # -- ЭКСПЕРИМЕНТ С ПАМЯТЬЮ --
+    # 1. Получаем доступ к сервису памяти
+    memory = MemoryService()
+    
+    # 2. Добавляем в базу несколько "фактов" о мире.
+    # ID должны быть уникальными строками.
+    memory.add_memory(
+        text="Королевство страдает от паучьей чумы. Даже в самых неожиданных местах можно найти огромных пауков.",
+        memory_id="fact_001"
+    )
+    memory.add_memory(
+        text="Древние руины в этих землях часто использовались некромантами для создания скелетов-стражей.",
+        memory_id="fact_002"
+    )
+    # -----------------------------
 
-    # 2. Даем ему стартовые предметы
-    healing_potion = Item(name="Зелье лечения", description="Восстанавливает немного здоровья.")
-    old_sword = Item(name="Старый меч", description="Простой, но надежный меч.")
-    player.inventory.add_item(healing_potion)
-    player.inventory.add_item(old_sword)
+    # 1. Создаем экземпляр игры
+    game = Game()
 
-    # 3. Выводим информацию о персонаже
-    print(player)
+    # 2. Начинаем новую игру
+    # Вся логика создания персонажа и мира теперь внутри метода start_new_game()
+    game.start_new_game(player_name="Авантюрист")
 
-    # 4. Генерируем и выводим первую локацию
-    current_location = generate_random_location()
-    print(current_location)
-
+    # 3. Отображаем стартовое состояние
+    # Мы берем ГОТОВЫЕ данные из объекта game и просто их печатаем
+    print("\n" + "="*20)
+    print(game.player)
+    print("\n" + "="*20)
+    print(game.current_location)
+    print("="*20)
 
 if __name__ == "__main__":
-    main()
+    run_console_version()
