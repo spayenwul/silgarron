@@ -3,8 +3,10 @@ from typing import List
 from logic.game_states import GameState
 # Важно: используем 'import game' чтобы избежать циклических импортов
 # и используем type hint в кавычках: 'game.Game'
-import game 
+import game
 import services.llm_service as llm
+from logic.constants import META_TYPE, TYPE_LORE, TYPE_EVENT
+
 
 class Director:
     def decide_llm_action(self, game_instance: 'game.Game', player_command: str) -> str:
@@ -40,7 +42,7 @@ class Director:
         # 2. Ищем в Долгосрочной Памяти (LTM) только полезные факты (например, уязвимости)
         search_query = f"уязвимости или тактика против {' '.join(game_instance.current_location.tags)}"
         lore = game_instance.memory_service.retrieve_relevant_memories(
-            search_query, n_results=1, filter_metadata={"type": "lore"}
+            search_query, n_results=1, filter_metadata={META_TYPE: TYPE_EVENT}
         )
 
         # 3. Используем СПЕЦИАЛЬНЫЙ боевой промпт

@@ -1,6 +1,7 @@
 # services/memory_service.py
 import chromadb
 from typing import List, Dict, Any
+from logic.constants import META_TYPE, TYPE_EVENT, TYPE_LORE
 
 # Инициализируем клиент ChromaDB. 
 # Он создаст файлы для хранения данных в папке проекта.
@@ -23,7 +24,7 @@ class MemoryService:
                 ids=[memory_id],
                 metadatas=[metadata]
             )
-            print(f"✅ Добавлено воспоминание типа '{metadata.get('type')}' с ID: {memory_id}")
+            print(f"✅ Добавлено воспоминание типа '{metadata.get(META_TYPE)}' с ID: {memory_id}")
         except Exception as e:
             print(f"⚠️ Не удалось добавить воспоминание: {e}")
 

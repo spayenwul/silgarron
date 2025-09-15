@@ -1,6 +1,8 @@
 # main.py
 from game import Game
 from services.memory_service import MemoryService 
+from logic.constants import META_TYPE, TYPE_LORE
+
 
 def run_console_version():
     """
@@ -17,13 +19,13 @@ def run_console_version():
     memory.add_memory(
         text="Королевство страдает от паучьей чумы. Даже в самых неожиданных местах можно найти огромных пауков.",
         memory_id="fact_001",
-        metadata={"type": "lore"}
+        metadata={META_TYPE: TYPE_LORE}
     )
 
     memory.add_memory(
         text="Древние руины в этих землях часто использовались некромантами для создания скелетов-стражей.",
         memory_id="fact_002",
-        metadata={"type": "lore"}
+        metadata={META_TYPE: TYPE_LORE}
     )
     # -----------------------------
 

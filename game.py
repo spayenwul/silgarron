@@ -11,6 +11,7 @@ from services.llm_service import generate_action_result          # обрабо�
 from services.memory_service import MemoryService
 from logic.director import Director
 from logic.game_states import GameState
+from logic.constants import *
 
 class Game:
     def __init__(self):
@@ -87,75 +88,88 @@ class Game:
         
         return unique_context
 
+    def _apply_state_changes(self, changes: dict, narrative: str, command: str) -> str:
+        """
+        Применяет все механические изменения из объекта state_changes
+        и формирует финальный ответ для игрока.
+        """
+        feedback_lines = [] # Собираем сюда сообщения о механических изменениях для игрока
+
+        # --- Применение изменений ---
+
+        # 1. Обновление Краткосрочной Памяти (если мы в бою)
+        if self.state == GameState.COMBAT:
+            self.short_term_memory.append(f"Игрок: '{command}'")
+            self.short_term_memory.append(f"Результат: {narrative}")
+
+        # 2. Обработка добавления предметов
+        if ADD_ITEM in changes:
+            new_item_name = changes[ADD_ITEM]
+            self.player.inventory.add_item(Item(name=new_item_name, description="Неизвестный предмет"))
+            feedback_lines.append(f"(В инвентарь добавлен: {new_item_name})")
+
+        # 3. Обработка урона игроку
+        if DAMAGE_PLAYER in changes:
+            damage = int(changes[DAMAGE_PLAYER])
+            if damage > 0:
+                self.player.take_damage(damage)
+                feedback_lines.append(f"(Вы получили {damage} ед. урона!)")
+
+        # 4. Обновление Долгосрочной Памяти (создание событий)
+        if NEW_EVENT in changes:
+            event_text = changes[NEW_EVENT]
+            event_id = f"event_{random.randint(1000, 9999)}"
+            event_metadata = {META_TYPE: TYPE_EVENT, META_LOCATION: self.current_location.name}
+            self.memory_service.add_memory(event_text, event_id, event_metadata)
+        
+        # 5. Проверка на смену состояния игры (триггер от LLM)
+        if NEW_GAME_STATE in changes:
+            new_state_str = changes[NEW_GAME_STATE]
+            # Этот блок можно будет улучшить, используя Enum, но пока оставим так
+            if new_state_str == "COMBAT" and self.state != GameState.COMBAT:
+                self.change_state(GameState.COMBAT)
+            elif new_state_str == "EXPLORATION" and self.state != GameState.COMBAT:
+                self.change_state(GameState.EXPLORATION)
+
+        # --- Формирование финального ответа ---
+        full_response = narrative
+        if feedback_lines:
+            full_response += "\n" + "\n".join(feedback_lines)
+
+        return full_response
+
     def process_player_command(self, command: str) -> str:
         """
-        Делегирует обработку команды Режиссёру, а затем парсит
-        и применяет механические изменения, полученные от LLM.
+        Делегирует команду Режиссёру, парсит ответ и передает
+        изменения в _apply_state_changes для применения.
         """
-        # --- Шаг 1: Делегирование ---
-        # Вместо того чтобы самим собирать контекст и вызывать LLM,
-        # мы просим Режиссёра сделать это за нас. Он сам выберет
-        # нужный промпт и нужную память в зависимости от состояния игры.
+        # 1. Получаем сырой ответ от LLM через Режиссёра
         raw_response = self.director.decide_llm_action(self, command)
+        
+        # 2. Парсим ответ
+        try:          
+            # 1. Находим индекс первой открывающей скобки
+            start_index = raw_response.find('{')
+            # 2. Находим индекс ПОСЛЕДНЕЙ закрывающей скобки (поиск с конца)
+            end_index = raw_response.rfind('}')
 
-        # --- Шаг 2: Парсинг ответа ---
-        # Эта часть остается такой же надежной, как и была.
-        try:
-            match = re.search(r'\{.*\}', raw_response, re.DOTALL)
-            if not match:
-                print(f"⚠️ Не удалось найти JSON в ответе LLM.")
+            # 3. Проверяем, что обе скобки найдены
+            if start_index == -1 or end_index == -1:
+                print(f"⚠️ Не удалось найти JSON-объект в ответе LLM.")
                 return raw_response
 
-            json_string = match.group(0)
+            # 4. Вырезаем строку между этими индексами
+            json_string = raw_response[start_index : end_index + 1]
+
+            # 5. Парсим чистый JSON
             response_data = json.loads(json_string)
+            narrative = response_data.get(NARRATIVE, "Мир погрузился в тишину...")
+            changes = response_data.get(STATE_CHANGES, {})
             
-            # --- Шаг 3: Применение изменений ---
-            # Это - главная ответственность этой функции сейчас.
-            narrative = response_data.get("narrative", "Мир погрузился в тишину...")
-            changes = response_data.get("state_changes", {})
-            feedback_lines = []
-
-            # 3.1 Обновление Краткосрочной Памяти (если мы в бою)
-            if self.state == GameState.COMBAT:
-                self.short_term_memory.append(f"Игрок: '{command}'")
-                self.short_term_memory.append(f"Результат: {narrative}")
-
-            # 3.2 Применение механических изменений
-            if "add_item" in changes:
-                new_item_name = changes["add_item"]
-                self.player.inventory.add_item(Item(name=new_item_name, description="Неизвестный предмет"))
-                feedback_lines.append(f"(В инвентарь добавлен: {new_item_name})")
-
-            if "damage_player" in changes:
-                damage = int(changes["damage_player"])
-                if damage > 0:
-                    self.player.take_damage(damage)
-                    feedback_lines.append(f"(Вы получили {damage} ед. урона!)")
-
-            # 3.3 Обновление Долгосрочной Памяти (создание событий)
-            if "new_event" in changes:
-                event_text = changes["new_event"]
-                event_id = f"event_{random.randint(1000, 9999)}"
-                event_metadata = { "type": "event", "location": self.current_location.name }
-                self.memory_service.add_memory(event_text, event_id, event_metadata)
-            
-            # 3.4 Проверка на смену состояния игры (триггер от LLM)
-            if "new_game_state" in changes:
-                new_state_str = changes["new_game_state"]
-                if new_state_str == "COMBAT" and self.state != GameState.COMBAT:
-                    self.change_state(GameState.COMBAT)
-                elif new_state_str == "EXPLORATION" and self.state != GameState.COMBAT:
-                    self.change_state(GameState.EXPLORATION)
-
-            # --- Шаг 4: Формирование финального ответа для игрока ---
-            full_response = narrative
-            if feedback_lines:
-                full_response += "\n" + "\n".join(feedback_lines)
-
-            return full_response
+            return self._apply_state_changes(changes, narrative, command)
             
         except json.JSONDecodeError:
-            print(f"⚠️ Найденный текст похож на JSON, но содержит ошибку: {json_string}")
+            print(f"⚠️ Извлеченный текст похож на JSON, но содержит ошибку: {json_string}")
             return raw_response
         except Exception as e:
             print(f"⚠️ Произошла непредвиденная ошибка при обработке ответа: {e}")
@@ -177,7 +191,7 @@ class Game:
             }
         }
         return state
-    
+       
     def save_to_file(self, filename: str):
         """Сохраняет текущее состояние игры в JSON файл."""
         with open(filename, 'w', encoding='utf-8') as f:
