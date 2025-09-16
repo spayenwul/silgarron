@@ -7,6 +7,8 @@ from typing import List, Optional
 import json
 from utils.logger import log_llm_interaction 
 from logic.constants import *
+from utils.prompt_manager import load_and_format_prompt
+from logic.constants import *
 
 # Загружаем переменные окружения (включая наш API ключ) из файла .env
 load_dotenv()
@@ -28,111 +30,83 @@ except Exception as e:
 
 def generate_location_description(tags: List[str], context: Optional[List[str]] = None) -> str:
     """
-    Генерирует описание локации, используя опциональный контекст из памяти.
+    Генерирует описание локации, используя шаблон из файла и динамически
+    формируя блок контекста.
     """
-    model = genai.GenerativeModel(MODEL_NAME)
+    # --- Шаг 1: Подготовка переменных для шаблона ---
+
+    # 1.1. Обязательная переменная: строка с тегами
     tags_str = ", ".join(tags)
 
-    # Динамически создаем промпт
-    prompt_parts = [
-        "Ты — мастер подземелий для текстовой ролевой игры в жанре тёмного фэнтези.",
-        "Твоя задача — сгенерировать короткое, атмосферное и яркое описание локации (3-4 предложения).",
-        "Не используй приветствия или лишние фразы, только сам текст описания.",
-        f"Ключевые теги для генерации: [{tags_str}]"
-    ]
-    # Если нам передали контекст, добавляем его в промпт
+    # 1.2. Динамическая переменная: блок контекста
+    context_block = "" # По умолчанию - пустая строка
     if context:
-        context_str = "\n".join(f"- {item}" for item in context)
-        prompt_parts.append(
+        # Если контекст есть, формируем целый абзац текста
+        context_items_str = "\n".join(f"- {item}" for item in context)
+        context_block = (
             "\nУчти следующую информацию из истории мира (это может быть слух, факт или прошлое событие):"
-            f"\n{context_str}"
+            f"\n{context_items_str}"
         )
 
-    prompt = "\n".join(prompt_parts)
+    # --- Шаг 2: Вызов менеджера промптов ---
+    # Передаем ему все подготовленные переменные
+    prompt = load_and_format_prompt(
+        'location_description',
+        tags_str=tags_str,
+        context_block=context_block
+    )
 
-    response_text = _send_prompt_to_gemini(prompt)
-    # Проверяем, не является ли ответ JSON-ошибкой
-    # Так как _send_prompt_to_gemini может вернуть JSON, а нам нужен простой текст,
-    # мы делаем простую проверку.
-    if response_text.strip().startswith('{'):
-        # Это, скорее всего, аварийный JSON. Возвращаем запасной текст.
-        return "Таинственный туман скрывает это место от ваших глаз..."
-    else:
-        return response_text
-        
-def generate_action_result(context: dict, memories: List[str], player_action: str) -> str:
-    """Генерирует JSON-ответ для режима ИССЛЕДОВАНИЯ."""
-    prompt = f"""
-    Ты — Мастер Подземелий в режиме исследования. Твоя задача — отреагировать на действие игрока.
-    Твой ответ ДОЛЖЕН БЫТЬ строго в формате JSON с ключами "narrative" и "state_changes".
-
-    # V-- ЭТА ИНСТРУКЦИЯ КРИТИЧЕСКИ ВАЖНА --V
-    КЛЮЧЕВОЕ ПРАВИЛО: Если действие игрока является явной атакой, агрессией или провокацией, которая НЕИЗБЕЖНО ведет к началу боя, ты ОБЯЗАН добавить в "state_changes" ключ "new_game_state" со значением "COMBAT". В остальных случаях этот ключ добавлять не нужно.
-
-    Пример начала боя:
-    - Игрок: "Я атакую слизь мечом"
-    - Твой JSON: {{
-        "{NARRATIVE}": "Вы бросаетесь на слизь, которая враждебно раздувается в ответ. Бой начался!",
-        "{STATE_CHANGES}": {{
-            "{NEW_GAME_STATE}": "COMBAT",
-            "{NEW_EVENT}": "Игрок спровоцировал бой со слизью"
-        }}
-    }}
-    # ------------------------------------
-    
-    КОНТЕКСТ ИЗ ИСТОРИИ МИРА:
-    {json.dumps(memories, ensure_ascii=False, indent=2) if memories else "Нет релевантных воспоминаний."}
-
-    ТЕКУЩАЯ СИТУАЦИЯ:
-    {json.dumps(context, ensure_ascii=False, indent=2)}
-
-    ДЕЙСТВИЕ ИГРОКА:
-    > {player_action}
-
-    ТВОЙ JSON ОТВЕТ:
-    """
+    # --- Шаг 3: Отправка готового промпта в API ---
     return _send_prompt_to_gemini(prompt)
 
+def generate_action_result(context: dict, memories: List[str], player_action: str) -> str:
+    """
+    Генерирует JSON-ответ для режима ИССЛЕДОВАНИЯ, используя шаблон из файла.
+    """
+    # --- Шаг 1: Подготовка переменных для шаблона ---
+
+    # 1.1. Контекст, отформатированный как JSON-строка для красивого вывода в промпте
+    context_json = json.dumps(context, ensure_ascii=False, indent=2)
+
+    # 1.2. Динамический блок для воспоминаний
+    memories_block = "" # По умолчанию - пустая строка
+    if memories:
+        # Если воспоминания найдены, формируем целый блок текста
+        memories_items_str = "\n".join(f"- {item}" for item in memories)
+        memories_block = (
+            "КОНТЕКСТ ИЗ ИСТОРИИ МИРА (учитывай эту информацию при генерации ответа):\n"
+            f"{memories_items_str}\n"
+        )
+    
+    # --- Шаг 2: Вызов менеджера промптов ---
+    # Передаем все подготовленные переменные, включая константы для ключей JSON
+    prompt = load_and_format_prompt(
+        'exploration_action',
+        narrative_key=NARRATIVE,
+        state_changes_key=STATE_CHANGES,
+        new_game_state_key=NEW_GAME_STATE,
+        memories_block=memories_block,
+        context_json=context_json,
+        player_action=player_action
+    )
+    
+    # --- Шаг 3: Отправка готового промпта в API ---
+    return _send_prompt_to_gemini(prompt)
 
 def generate_combat_action_result(combat_log: List[str], lore: List[str], player_action: str) -> str:
-    """
-    Генерирует результат боевого хода, используя лог боя.
-    """
-    model = genai.GenerativeModel(MODEL_NAME)
-    
     log_str = "\n".join(combat_log)
     lore_str = "\n".join(lore) if lore else "Нет особых данных."
-
-    prompt = f"""
-    Ты — Мастер Подземелий, ведущий напряженную боевую сцену в текстовой RPG.
-    Твой ответ ДОЛЖЕН БЫТЬ строго в формате JSON с ключами "narrative" и "state_changes".
-
-    КЛЮЧЕВОЕ ПРАВИЛО: Если бой окончился делаем "state_changes" ключ "new_game_state" со значением "EXPLORATION".
-
-    ПРИМЕР ОТВЕТА ДЛЯ БОЕВОГО ХОДА:
-    {{
-      "{NARRATIVE}": "Вы уворачиваетесь от замаха гоблина и наносите ответный удар мечом ему в бок. Враг отшатывается, но его союзник бьет вас дубинкой по спине.",
-      "{STATE_CHANGES}": {{
-        "{DAMAGE_PLAYER}": 3,
-        "{NEW_EVENT}": "Игрок ранил гоблина, но получил ответный удар"
-      }}
-    }}
-
-    Опирайся на ПОЛНЫЙ лог боя, чтобы сохранить преемственность. Опиши не только действие игрока, но и ответный ход противника. Бой должен ощущаться динамичным.
-
-    ПОЛЕЗНАЯ ИНФОРМАЦИЯ ИЗ ИСТОРИИ МИРА (уязвимости, тактика):
-    {lore_str}
-
-    ПОЛНЫЙ ЛОГ ТЕКУЩЕГО БОЯ:
-    ---
-    {log_str}
-    ---
-
-    ДЕЙСТВИЕ ИГРОКА В ЭТОМ ХОДЕ:
-    > {player_action}
-
-    ТВОЙ JSON ОТВЕТ (опиши яркий результат и ответный ход врага):
-    """
+    
+    prompt = load_and_format_prompt(
+        'combat_action',
+        narrative_key=NARRATIVE,
+        state_changes_key=STATE_CHANGES,
+        damage_player_key=DAMAGE_PLAYER,
+        combat_log=log_str,
+        lore=lore_str,
+        player_action=player_action
+    )
+    
     return _send_prompt_to_gemini(prompt)
 
 def _send_prompt_to_gemini(prompt: str) -> str:
