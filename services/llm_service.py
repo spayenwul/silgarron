@@ -59,40 +59,6 @@ def generate_location_description(tags: List[str], context: Optional[List[str]] 
     # --- Шаг 3: Отправка готового промпта в API ---
     return _send_prompt_to_gemini(prompt)
 
-def generate_action_result(context: dict, memories: List[str], player_action: str) -> str:
-    """
-    Генерирует JSON-ответ для режима ИССЛЕДОВАНИЯ, используя шаблон из файла.
-    """
-    # --- Шаг 1: Подготовка переменных для шаблона ---
-
-    # 1.1. Контекст, отформатированный как JSON-строка для красивого вывода в промпте
-    context_json = json.dumps(context, ensure_ascii=False, indent=2)
-
-    # 1.2. Динамический блок для воспоминаний
-    memories_block = "" # По умолчанию - пустая строка
-    if memories:
-        # Если воспоминания найдены, формируем целый блок текста
-        memories_items_str = "\n".join(f"- {item}" for item in memories)
-        memories_block = (
-            "КОНТЕКСТ ИЗ ИСТОРИИ МИРА (учитывай эту информацию при генерации ответа):\n"
-            f"{memories_items_str}\n"
-        )
-    
-    # --- Шаг 2: Вызов менеджера промптов ---
-    # Передаем все подготовленные переменные, включая константы для ключей JSON
-    prompt = load_and_format_prompt(
-        'exploration_action',
-        narrative_key=NARRATIVE,
-        state_changes_key=STATE_CHANGES,
-        new_game_state_key=NEW_GAME_STATE,
-        memories_block=memories_block,
-        context_json=context_json,
-        player_action=player_action
-    )
-    
-    # --- Шаг 3: Отправка готового промпта в API ---
-    return _send_prompt_to_gemini(prompt)
-
 def generate_combat_action_result(combat_log: List[str], lore: List[str], player_action: str) -> str:
     log_str = "\n".join(combat_log)
     lore_str = "\n".join(lore) if lore else "Нет особых данных."

@@ -29,3 +29,26 @@ class Character:
         stats_str = ", ".join(f"{key}: {value}" for key, value in self.stats.items())
         status_line = f"Здоровье: {self.hp}/{self.max_hp}"
         return f"=== Персонаж: {self.name} ===\n{status_line}\nСтаты: {stats_str}\n{self.inventory}"
+        
+    def to_dict(self) -> dict:
+        # 1. Берем все "простые" атрибуты (имя, hp, статы) автоматически
+        state = self.__dict__.copy() 
+        
+        # 2. Сложные, вложенные объекты обрабатываем вручную
+        # Мы не можем просто сохранить объект Inventory, нам нужно его тоже превратить в словарь
+        state['inventory'] = self.inventory.to_dict()
+        
+        return state
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        # Создаем пустой объект, не вызывая __init__
+        obj = cls.__new__(cls)
+        
+        # 1. Загружаем все "простые" атрибуты
+        obj.__dict__.update(data)
+        
+        # 2. Сложные объекты воссоздаем из их словарей
+        obj.inventory = Inventory.from_dict(data['inventory'])
+        
+        return obj

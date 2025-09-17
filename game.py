@@ -1,23 +1,28 @@
 # game.py
 import re
 import json
+from pathlib import Path 
 import random 
-from typing import List 
+from typing import List
+from logic.constants import *
 from models.character import Character
 from models.item import Item
 from models.location import Location
 from generators.location_generator import generate_random_location  # Отсюда берем ТОЛЬКО генератор локаций
-from services.llm_service import generate_action_result          # обработчик действий берем из СЕРВИСА
+from services.llm_service import _send_prompt_to_gemini
 from services.memory_service import MemoryService
 from logic.director import Director
 from logic.game_states import GameState
-from logic.constants import *
+from utils.prompt_manager import load_and_format_prompt
+
+
+SAVE_DIR = Path(__file__).parent / "saves"
 
 class Game:
     def __init__(self):
         self.player: Character | None = None
         self.current_location: Location | None = None
-        # Проверяем какое состояние выбрал Режиссёр
+        # Проверяем какое состояние выбрал Директор
         self.state = GameState.EXPLORATION
         self.short_term_memory: List[str] = []
         self.director = Director()
@@ -191,9 +196,68 @@ class Game:
             }
         }
         return state
-       
+
+    # --- СИСТЕМА SAVE/LOAD ---
+
+    def to_dict(self) -> dict:
+        """Собирает полное состояние игры в один словарь."""
+        print("DEBUG: Собираем состояние игры для сохранения...")
+        return {
+            "player": self.player.to_dict() if self.player else None,
+            "current_location": self.current_location.to_dict() if self.current_location else None,
+            "game_state": self.state.name, # Сохраняем имя Enum, например 'EXPLORATION'
+            "short_term_memory": self.short_term_memory,
+            # Долгосрочную память (ChromaDB) мы не сохраняем, она живет отдельно в своей папке.
+            # Мы доверяем, что она будет на месте при следующей загрузке.
+        }
+
+    def load_from_dict(self, data: dict):
+        """Восстанавливает состояние игры из словаря. Этот метод вызывается на уже существующем объекте."""
+        print("DEBUG: Восстанавливаем состояние игры из словаря...")
+        # Воссоздаем объекты, делегируя это их классам
+        self.player = Character.from_dict(data["player"]) if data.get("player") else None
+        self.current_location = Location.from_dict(data["current_location"]) if data.get("current_location") else None
+        
+        # Восстанавливаем Enum по его имени
+        self.state = GameState[data.get("game_state", "EXPLORATION")]
+        
+        # Восстанавливаем простые данные
+        self.short_term_memory = data.get("short_term_memory", [])
+        
+        print("--- Игра успешно загружена ---")
+
     def save_to_file(self, filename: str):
-        """Сохраняет текущее состояние игры в JSON файл."""
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(self.get_state(), f, ensure_ascii=False, indent=4)
-        print(f"Игра сохранена в {filename}")
+        """Сохраняет игру в JSON файл."""
+        # Создаем папку 'saves', если ее еще нет. `exist_ok=True` предотвращает ошибку, если папка уже есть.
+        SAVE_DIR.mkdir(exist_ok=True) 
+        filepath = SAVE_DIR / f"{filename}.json"
+        
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                # json.dump элегантно записывает наш словарь в файл
+                json.dump(self.to_dict(), f, ensure_ascii=False, indent=4)
+            print(f"✅ Игра сохранена в файл: {filepath.name}")
+        except Exception as e:
+            print(f"🔴 Не удалось сохранить игру: {e}")
+
+    @classmethod
+    def load_from_file(cls, filename: str):
+        """Создает НОВЫЙ объект Game и загружает в него данные из файла."""
+        filepath = SAVE_DIR / f"{filename}.json"
+        
+        if not filepath.exists():
+            print(f"🔴 Файл сохранения не найден: {filepath}")
+            return None
+
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            
+            # Создаем новый "чистый" экземпляр игры
+            game_instance = cls() 
+            # Наполняем его данными из файла
+            game_instance.load_from_dict(data)
+            return game_instance
+        except Exception as e:
+            print(f"🔴 Не удалось загрузить игру из файла: {e}")
+            return None

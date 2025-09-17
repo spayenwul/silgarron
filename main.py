@@ -42,26 +42,53 @@ def run_console_version():
 
     # ИГРОВОЙ ЦИКЛ
     while True:
-        # 1. Проверяем, не умер ли игрок
-        if game.player.is_dead():
+        if game.player and game.player.is_dead():
             print("\nВаше приключение подошло к концу.")
             print("GAME OVER")
             break
 
-        # 2. Спрашиваем игрока о его действии
         player_input = input("\n> ")
+        
+        command_parts = player_input.lower().strip().split()
+        if not command_parts:
+            continue
 
-        if player_input.lower() in ["выход", "exit", "quit"]:
+        command_verb = command_parts[0]
+        
+        # --- СИСТЕМНЫЕ КОМАНДЫ ---
+
+        if command_verb in ["выход", "exit", "quit", "выйти"]:
             print("До новых встреч, авантюрист!")
             break
         
-        # 3. Передаем команду в игровой движок
+        if command_verb == "save":
+            if len(command_parts) > 1:
+                save_name = command_parts[1]
+                game.save_to_file(save_name)
+            else:
+                print("ИСПОЛЬЗОВАНИЕ: save <имя_файла>")
+            continue # Пропускаем остаток цикла, чтобы не отправлять 'save' как игровое действие
+
+        if command_verb == "load":
+            if len(command_parts) > 1:
+                save_name = command_parts[1]
+                loaded_game = Game.load_from_file(save_name)
+                if loaded_game:
+                    game = loaded_game # Заменяем текущий объект игры на загруженный
+                    # Сразу показываем игроку, где он оказался, для погружения
+                    print("\n" + "="*20 + " ЗАГРУЗКА ЗАВЕРШЕНА " + "="*20)
+                    print(game.player)
+                    print(game.current_location)
+                    print("="*58)
+            else:
+                print("ИСПОЛЬЗОВАНИЕ: load <имя_файла>")
+            continue
+
+        # --- ИГРОВОЕ ДЕЙСТВИЕ ---
         result_text = game.process_player_command(player_input)
-
-        # 4. Печатаем нарративный результат
         print("\n" + result_text)
-
-        # После каждого хода перепечатываем блок персонажа, чтобы видеть изменения HP, инвентаря и т.д.
+        
+        # Обновляем отображение состояния персонажа
         print("\n" + "-"*20)
         print(game.player)
         print("-"*20)

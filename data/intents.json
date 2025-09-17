@@ -1,0 +1,54 @@
+[
+    {
+      "text": "Атаковать врага мечом",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Ударить монстра",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Выстрелить из лука в чудовище",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Осмотреться вокруг",
+      "metadata": { "intent": "EXPLORATION" }
+    },
+    {
+      "text": "Посмотреть что в сундуке",
+      "metadata": { "intent": "EXPLORATION" }
+    },
+    {
+      "text": "Изучить надписи на стене",
+      "metadata": { "intent": "EXPLORATION" }
+    },
+    {
+      "text": "Поговорить с торговцем",
+      "metadata": { "intent": "DIALOGUE" }
+    },
+    {
+      "text": "Спросить стражника о слухах",
+      "metadata": { "intent": "DIALOGUE" }
+    },
+    {
+        "text": "Атаковать врага мечом",
+        "metadata": { "intent": "COMBAT" }
+    },
+    {
+        "text": "Ударить монстра",
+        "metadata": { "intent": "COMBAT" }
+    },
+    {
+        "text": "Бью паука со всей силы",
+        "metadata": { "intent": "COMBAT" }
+    },
+    {
+        "text": "Напасть на скелета",
+        "metadata": { "intent": "COMBAT" }
+    },
+    {
+        "text": "Пытаюсь убить гоблина",
+        "metadata": { "intent": "COMBAT" }
+    }
+  ]
