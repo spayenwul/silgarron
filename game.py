@@ -14,6 +14,7 @@ from services.memory_service import MemoryService
 from logic.director import Director
 from logic.game_states import GameState
 from utils.prompt_manager import load_and_format_prompt
+from utils.logger import log_player_input
 
 
 SAVE_DIR = Path(__file__).parent / "saves"
@@ -143,6 +144,7 @@ class Game:
 
         return full_response
 
+    @log_player_input
     def process_player_command(self, command: str) -> str:
         """
         Делегирует команду Режиссёру, парсит ответ и передает
