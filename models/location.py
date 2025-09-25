@@ -1,20 +1,12 @@
-from typing import List
-# В будущем здесь могут понадобиться импорты NPC, Enemy и т.д.
-# from .enemy import Enemy 
+from typing import List, Dict, Any
 
 class Location:
-    def __init__(self, name: str, tags: List[str]):
-        self.name = name
-        self.tags = tags
-        # Это поле заполняется нейросетью. Его важно сохранять.
-        self.description = "Место выглядит неопределенно..."
-
-        # --- Задел на будущее ---
-        # Здесь мы будем хранить "паспорт" локации: кто и что в ней находится.
-        # Пока эти списки будут пустыми.
-        # self.enemies: List[Enemy] = [] 
-        # self.npcs: List[NPC] = []
-        # self.objects: List[InteractiveObject] = []
+    def __init__(self, passport: Dict[str, Any]):
+        self.name: str = passport.get("name", "Неизвестное место")
+        self.tags: List[str] = passport.get("tags", [])
+        # Описание тоже может быть в паспорте, либо генерироваться позже
+        self.description: str = passport.get("description", "Место выглядит неопределенно...")
+        self.passport = passport # Сохраняем весь паспорт на всякий случай
 
     def __str__(self):
         # Метод для отображения не меняется
@@ -22,39 +14,27 @@ class Location:
         # В будущем можно будет добавить вывод врагов и NPC
         return f"--- Локация: {self.name} ---\nТеги: [{tags_str}]\nОписание: {self.description}"
 
-    # --- Новая логика Save/Load ---
+    # --- Save/Load ---
+    def __str__(self):
+        tags_str = ", ".join(self.tags)
+        return f"--- Локация: {self.name} ---\nТеги: [{tags_str}]\nОписание: {self.description}"
 
     def to_dict(self) -> dict:
-        """
-        Превращает объект Location в словарь для сохранения.
-        """
         return {
             "name": self.name,
             "tags": self.tags,
-            "description": self.description
-            # Когда мы добавим врагов, здесь появится строка:
-            # "enemies": [enemy.to_dict() for enemy in self.enemies]
+            "description": self.description,
+            "passport": self.passport # Сохраняем и паспорт
         }
 
     @classmethod
     def from_dict(cls, data: dict):
-        """
-        Воссоздает объект Location из словаря.
-        """
-        # 1. Создаем базовый объект Location, используя конструктор
-        location = cls(
-            name=data.get("name", "Неизвестная локация"),
-            tags=data.get("tags", [])
-        )
-        
-        # 2. Восстанавливаем сгенерированное описание. Это важно,
-        #    чтобы при загрузке не пришлось заново его генерировать,
-        #    что экономит время и деньги, а также сохраняет консистентность.
-        location.description = data.get("description", "Таинственный туман скрывает это место...")
-
-        # Когда мы добавим врагов, здесь появится блок для их воссоздания:
-        # enemy_data_list = data.get("enemies", [])
-        # location.enemies = [Enemy.from_dict(enemy_data) for enemy_data in enemy_data_list]
-
-        # 3. Возвращаем полностью готовый объект
-        return location
+        # Если в сохранении есть паспорт, используем его для воссоздания
+        if "passport" in data:
+            return cls(passport=data["passport"])
+        else: # Обратная совместимость со старыми сохранениями
+            location = cls(passport={}) # Создаем с пустым паспортом
+            location.name = data.get("name", "Неизвестная локация")
+            location.tags = data.get("tags", [])
+            location.description = data.get("description", "Таинственный туман...")
+            return location

@@ -1,11 +1,13 @@
 # services/memory_service.py
 import chromadb
+from pathlib import Path
 from typing import List, Dict, Any
 from logic.constants import META_TYPE, TYPE_EVENT, TYPE_LORE
 
 # Инициализируем клиент ChromaDB. 
 # Он создаст файлы для хранения данных в папке проекта.
 client = chromadb.Client()
+DB_PATH = str(Path(__file__).parent.parent / "db") 
 
 # Создаем "коллекцию" (аналог таблицы в SQL). 
 # Если она уже есть, просто подключаемся к ней.
@@ -14,6 +16,10 @@ client = chromadb.Client()
 collection = client.get_or_create_collection(name="game_world_lore")
 
 class MemoryService:
+    def __init__(self):
+    # PersistentClient гарантирует, что данные будут сохраняться на диск по указанному пути.
+        client = chromadb.PersistentClient(path=DB_PATH)
+
     def add_memory(self, text: str, memory_id: str, metadata: Dict[str, Any]):
         """
         Добавляет фрагмент текста с метаданными.

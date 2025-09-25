@@ -8,14 +8,16 @@ from logic.constants import *
 from models.character import Character
 from models.item import Item
 from models.location import Location
-from generators.location_generator import generate_random_location  # Отсюда берем ТОЛЬКО генератор локаций
 from services.llm_service import _send_prompt_to_gemini
 from services.memory_service import MemoryService
 from logic.director import Director
 from logic.game_states import GameState
 from utils.prompt_manager import load_and_format_prompt
 from utils.logger import log_player_input
-
+from services.world_data_service import WorldDataService
+from services.tag_registry_service import TagRegistry
+import generators.region_generator as region_gen
+import generators.location_generator as loc_gen
 
 SAVE_DIR = Path(__file__).parent / "saves"
 
@@ -23,15 +25,19 @@ class Game:
     def __init__(self):
         self.player: Character | None = None
         self.current_location: Location | None = None
-        # Проверяем какое состояние выбрал Директор
         self.state = GameState.EXPLORATION
         self.short_term_memory: List[str] = []
         self.director = Director()
-        # Game создает и хранит сервисы
+
+        # Game создает и хранит сервисы как единый источник правды.
+        print("--- Инициализация систем игры ---")
         self.memory_service = MemoryService()
+        self.tag_registry = TagRegistry() # Загружает data/tags_registry.yaml
+        self.world_data = WorldDataService() # Загружает data/world_anatomy.yaml
+        print("--- Все системы готовы ---")
 
     def start_new_game(self, player_name: str):
-        """Инициализирует новую игру."""
+        """Инициализирует новую игру с использованием иерархической генерации."""
         self.player = Character(name=player_name)
 
         # Даем стартовые предметы
@@ -39,9 +45,41 @@ class Game:
         old_sword = Item(name="Старый меч", description="Простой, но надежный меч.")
         self.player.inventory.add_item(healing_potion)
         self.player.inventory.add_item(old_sword)
+        print("\n--- Запуск иерархической генерации мира ---")
+        
+        # 1. Выбираем "континент" для старта. Пока что можно захардкодить.
+        # В будущем здесь может быть выбор игрока или случайный выбор.
+        start_continent_id = "torax" 
+        
+        # 2. Генерируем паспорт РЕГИОНА в контексте этого континента.
+        # Передаем сервисы как зависимости, чтобы генератор имел доступ к данным.
+        region_passport = region_gen.generate_region_passport_in_context(
+            world_data_service=self.world_data,
+            tag_registry=self.tag_registry, # Передаем, чтобы генератор мог использовать теги
+            continent_id=start_continent_id
+        )
 
-        # Передаем сервис как зависимость
-        self.current_location = generate_random_location(self)
+        # 3. На основе региона генерируем паспорт стартовой ЛОКАЦИИ.
+        location_passport = loc_gen.generate_location_passport(
+            region_passport=region_passport,
+            tag_registry=self.tag_registry,
+            world_data_service=self.world_data
+
+        )
+
+        # 4. Создаем объект Location, передавая ему паспорт.
+        # Класс Location должен быть обновлен, чтобы принимать 'passport' в __init__.
+        self.current_location = Location(passport=location_passport)
+
+        # 5. Просим LLM сгенерировать художественное описание
+        # на основе ПОЛНОГО и богатого паспорта локации.
+        # Это потребует создания нового, специализированного промпта.
+        # description = llm.generate_artistic_description(self.current_location.passport)
+        # self.current_location.description = description
+        # ПОКА ЧТО для теста можно использовать заглушку:
+        self.current_location.description = f"Вы находитесь в локации '{self.current_location.name}'.\n" \
+                                            f"Сгенерированные теги: {self.current_location.tags}"
+        
         print("--- Новая игра началась! ---")
 
     def get_context_for_llm(self) -> dict:
@@ -181,23 +219,6 @@ class Game:
         except Exception as e:
             print(f"⚠️ Произошла непредвиденная ошибка при обработке ответа: {e}")
             return raw_response
-
-    # Сохранение состояния
-    def get_state(self) -> dict:
-        """Собирает все данные игры в словарь, готовый для сериализации."""
-        state = {
-            "player": {
-                "name": self.player.name,
-                "stats": self.player.stats,
-                "inventory": [item.name for item in self.player.inventory._items]
-            },
-            "location": {
-                "name": self.current_location.name,
-                "tags": self.current_location.tags,
-                "description": self.current_location.description
-            }
-        }
-        return state
 
     # --- СИСТЕМА SAVE/LOAD ---
 

@@ -1,0 +1,103 @@
+# ===============================================================
+# V. Экономика и Ресурсы
+# ===============================================================
+
+# 34. Био-ресурсы
+# Справочник всех добываемых и производимых ресурсов в мире.
+# type: тип ресурса (минерал, флора, продукт фауны, ремесленный товар).
+# rarity: условная редкость (common, uncommon, rare, legendary).
+# source_biome_ids: в каких биомах можно добыть этот ресурс (для сырья).
+RESOURCES:
+  # --- Сырьевые ресурсы ---
+  - id: bone_chitin_raw
+    name: "Костехитин-сырец"
+    type: "Органический минерал"
+    rarity: "common"
+    description: "Прочный и легкий материал, основа скелета мира. Используется для строительства и создания примитивного оружия."
+    source_biome_ids: [bone_needles, boneyard, spine_ridge]
+  - id: lymph_pure
+    name: "Чистая лимфа"
+    type: "Жидкость"
+    rarity: "common"
+    description: "Основной источник питательных веществ и 'воды' в Сильгарроне. Ценность сильно зависит от степени очистки."
+    source_biome_ids: [springheads, subterranean_lymph_lake, lymph_valley]
+  - id: resonance_crystal_raw
+    name: "Резонирующий кристалл-сырец"
+    type: "Кристалл"
+    rarity: "rare"
+    description: "Кристалл, способный накапливать и усиливать Проявления Мира. Необработанный кристалл нестабилен."
+    source_biome_ids: [crystal_geode, crystal_synapse_forest]
+  - id: dream_spore
+    name: "Споры Сна"
+    type: "Алхимический ингредиент"
+    rarity: "rare"
+    description: "Пыльца гигантских грибов, при правильной обработке вызывающая яркие видения. Ценный товар для мистиков."
+    source_biome_ids: [spore_savanna, dream_fog_basin]
+
+  # --- Ремесленные товары ---
+  - id: bone_chitin_polished_plate
+    name: "Полированная костехитиновая пластина"
+    type: "Ремесленный товар"
+    rarity: "uncommon"
+    description: "Обработанный костехитин, используемый для создания качественных доспехов и ритуальных предметов."
+    source_biome_ids: [] # Не добывается, а производится
+  - id: stabilized_lymph_potion
+    name: "Стабилизированная лечебная лимфа"
+    type: "Алхимический продукт"
+    rarity: "uncommon"
+    description: "Очищенная и обогащенная травами лимфа, ускоряющая заживление ран."
+    source_biome_ids: [] # Производится
+  - id: woven_silt_fabric
+    name: "Тканое илистое полотно"
+    type: "Ткань"
+    rarity: "common"
+    description: "Удивительно прочная и легкая ткань, создаваемая Иловыми Ткачами из речного ила и специальных секреций."
+    source_biome_ids: [] # Производится
+
+# 35. Ключевые отрасли экономики
+# Описание основных видов экономической деятельности.
+# required_resource_ids: какие ресурсы потребляет отрасль.
+# produced_resource_ids: какие ресурсы производит отрасль.
+# specialist_race_ids: какие расы являются признанными мастерами в этом деле.
+ECONOMY_BRANCHES:
+  - id: bone_carving
+    name: "Косторезное дело"
+    description: "Искусство обработки костехитина. Основа экономики Китов и других оседлых народов."
+    required_resource_ids: [bone_chitin_raw]
+    produced_resource_ids: [bone_chitin_polished_plate]
+    specialist_race_ids: [whales_clan_fist] # Пример ID расы
+  - id: bio_alchemy
+    name: "Био-алхимия"
+    description: "Сбор, обработка и применение активных био-компонентов, таких как споры и яды. Практикуется Топяниками и Сапрофитами."
+    required_resource_ids: [dream_spore, lymph_pure]
+    produced_resource_ids: [stabilized_lymph_potion]
+    specialist_race_ids: [swampers, saprophytes]
+  - id: silt_weaving
+    name: "Иловое ткачество"
+    description: "Уникальная технология создания прочных тканей из речного ила, секрет которой известен лишь Иловым Ткачам."
+    required_resource_ids: [] # Предполагается, что ил - повсеместный ресурс для них
+    produced_resource_ids: [woven_silt_fabric]
+    specialist_race_ids: [silt_weavers]
+  - id: nomadic_herding
+    name: "Кочевое скотоводство"
+    description: "Разведение и миграция вместе со стадами Мегатериев. Основа культуры и экономики Дорсалов."
+    required_resource_ids: []
+    produced_resource_ids: [] # Производят еду, шкуры, которые можно добавить в ресурсы
+    specialist_race_ids: [dorsals]
+
+# 38. Валюта
+# Основные формы денег или бартерных эквивалентов.
+# issuer_race_ids: кто "эмитирует" или преимущественно использует эту валюту.
+CURRENCIES:
+  - id: chitin_sliver
+    name: "Хитиновый осколок"
+    description: "Стандартизированный, отполированный осколок черного хитина с вырезанной руной клана. Используется Китами для крупной торговли."
+    issuer_race_ids: [whales_clan_fist]
+  - id: salt_crystal_pure
+    name: "Очищенный кристалл соли"
+    description: "Жизненно важный ресурс для многих обитателей Сильгаррона. Служит универсальной мерой обмена в диких землях."
+    issuer_race_ids: [] # Универсальный бартерный товар
+  - id: preserved_memory_drop
+    name: "Капля застывшей памяти"
+    description: "Редкая и ценная валюта мистиков и Реликтов. Капля лимфы из Озер Памяти, заключенная в кристалл. Используется для обмена знаниями и артефактами."
+    issuer_race_ids: [relicts]
