@@ -17,8 +17,8 @@ collection = client.get_or_create_collection(name="game_world_lore")
 
 class MemoryService:
     def __init__(self):
-    # PersistentClient гарантирует, что данные будут сохраняться на диск по указанному пути.
-        client = chromadb.PersistentClient(path=DB_PATH)
+        self.client = chromadb.PersistentClient(path=DB_PATH)
+        self.collection = self.client.get_or_create_collection(name="game_world_lore")
 
     def add_memory(self, text: str, memory_id: str, metadata: Dict[str, Any]):
         """

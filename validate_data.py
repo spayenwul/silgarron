@@ -2,7 +2,7 @@ import yaml
 from pathlib import Path
 from services.tag_registry_service import TagRegistry
 
-DATA_DIR = Path(__file__).parent / "generators"
+DATA_DIR = Path(__file__).parent / "data"
 TAG_REGISTRY_FILE = DATA_DIR / "tags_registry.yaml"
 WORLD_ANATOMY_FILE = DATA_DIR / "world_anatomy.yaml"
 # RACE_DATA_FILE = DATA_DIR / "races.yaml" 

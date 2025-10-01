@@ -182,39 +182,69 @@ class Game:
 
         return full_response
 
+    def _extract_json_from_text(self, text: str) -> str:
+        """
+        Ищет и извлекает первую корректную JSON-строку из текста с помощью regex.
+        Поддерживает вложенные структуры.
+        """
+        # Ищем JSON с помощью regex (поддерживает вложенность)
+        pattern = r'\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}'
+        match = re.search(pattern, text)
+        
+        if match:
+            return match.group(0) # Возвращаем найденную строку
+        
+        raise ValueError("JSON-объект не найден в тексте ответа LLM.")
+
+    def _validate_llm_response(self, data: dict):
+        """
+        Проверяет, что распарсенный JSON от LLM имеет правильную структуру и типы данных.
+        Выбрасывает ValueError, если проверка не пройдена.
+        """
+        if not isinstance(data, dict):
+            raise ValueError(f"Ответ LLM должен быть словарем (dict), а не {type(data).__name__}.")
+        
+        if NARRATIVE not in data:
+            raise ValueError(f"В ответе LLM отсутствует обязательное поле '{NARRATIVE}'.")
+        
+        if not isinstance(data[NARRATIVE], str):
+             raise ValueError(f"Поле '{NARRATIVE}' должно быть строкой, а не {type(data[NARRATIVE]).__name__}.")
+
+        if STATE_CHANGES not in data:
+            raise ValueError(f"В ответе LLM отсутствует обязательное поле '{STATE_CHANGES}'.")
+
+        if not isinstance(data[STATE_CHANGES], dict):
+            raise ValueError(f"Поле '{STATE_CHANGES}' должно быть словарем, а не {type(data[STATE_CHANGES]).__name__}.")
+        
     @log_player_input
     def process_player_command(self, command: str) -> str:
         """
-        Делегирует команду Режиссёру, парсит ответ и передает
-        изменения в _apply_state_changes для применения.
+        Делегирует команду Режиссёру, парсит ответ с помощью regex,
+        валидирует его структуру и передает изменения в _apply_state_changes.
         """
         # 1. Получаем сырой ответ от LLM через Режиссёра
         raw_response = self.director.decide_llm_action(self, command)
         
-        # 2. Парсим ответ
         try:          
-            # 1. Находим индекс первой открывающей скобки
-            start_index = raw_response.find('{')
-            # 2. Находим индекс ПОСЛЕДНЕЙ закрывающей скобки (поиск с конца)
-            end_index = raw_response.rfind('}')
-
-            # 3. Проверяем, что обе скобки найдены
-            if start_index == -1 or end_index == -1:
-                print(f"⚠️ Не удалось найти JSON-объект в ответе LLM.")
-                return raw_response
-
-            # 4. Вырезаем строку между этими индексами
-            json_string = raw_response[start_index : end_index + 1]
-
-            # 5. Парсим чистый JSON
+            # Шаг 1: Используем надежный парсер для извлечения JSON
+            json_string = self._extract_json_from_text(raw_response)
+            
+            # Шаг 2: Декодируем JSON
             response_data = json.loads(json_string)
-            narrative = response_data.get(NARRATIVE, "Мир погрузился в тишину...")
-            changes = response_data.get(STATE_CHANGES, {})
+            
+            # Шаг 3: Валидируем структуру и типы данных
+            self._validate_llm_response(response_data)
+            
+            # Если все проверки пройдены, мы можем безопасно извлекать данные
+            narrative = response_data[NARRATIVE]
+            changes = response_data[STATE_CHANGES]
             
             return self._apply_state_changes(changes, narrative, command)
             
-        except json.JSONDecodeError:
-            print(f"⚠️ Извлеченный текст похож на JSON, но содержит ошибку: {json_string}")
+        except (json.JSONDecodeError, ValueError) as e:
+            # Ловим ошибки парсинга (JSONDecodeError) и валидации (ValueError)
+            print(f"⚠️ Ошибка обработки ответа LLM: {e}")
+            print(f"⚠️ Возвращаем сырой ответ как есть.")
             return raw_response
         except Exception as e:
             print(f"⚠️ Произошла непредвиденная ошибка при обработке ответа: {e}")
