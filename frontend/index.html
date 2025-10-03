@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG World Explorer</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Левая панель: карта -->
+        <div class="map-panel">
+            <div class="map-header">
+                <h2>Карта Мира</h2>
+                <button id="explore-btn" class="btn-explore">🔍 Исследовать окрестности</button>
+            </div>
+            <svg id="world-map" width="800" height="600"></svg>
+        </div>
+        
+        <!-- Правая панель: информация и действия -->
+        <div class="info-panel">
+            <!-- Текущая локация -->
+            <div class="location-card">
+                <h2 id="location-name">Загрузка...</h2>
+                <div id="location-description" class="description"></div>
+                <div id="location-tags" class="tags"></div>
+            </div>
+            
+            <!-- Персонаж -->
+            <div class="player-card">
+                <h3 id="player-name">Авантюрист</h3>
+                <div class="health-bar">
+                    <div id="health-fill" class="health-fill"></div>
+                    <span id="health-text">20/20</span>
+                </div>
+                <div id="inventory" class="inventory"></div>
+            </div>
+            
+            <!-- Доступные направления -->
+            <div class="directions-card">
+                <h3>Доступные направления</h3>
+                <div id="directions-list"></div>
+            </div>
+            
+            <!-- Консоль действий -->
+            <div class="console-card">
+                <div id="narrative-log" class="narrative-log"></div>
+                <input 
+                    type="text" 
+                    id="command-input" 
+                    placeholder="Введите команду..."
+                    autocomplete="off"
+                >
+            </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно старта игры -->
+    <div id="start-modal" class="modal">
+        <div class="modal-content">
+            <h1>🎮 Добро пожаловать!</h1>
+            <input 
+                type="text" 
+                id="player-name-input" 
+                placeholder="Имя персонажа"
+                value="Авантюрист"
+            >
+            <button id="start-game-btn" class="btn-primary">Начать приключение</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

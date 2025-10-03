@@ -22,19 +22,23 @@ import generators.location_generator as loc_gen
 SAVE_DIR = Path(__file__).parent / "saves"
 
 class Game:
-    def __init__(self):
+    def __init__(self, world_data_service, tag_registry_service, memory_service):
+        """
+        Конструктор теперь ТОЛЬКО ПРИНИМАЕТ и СОХРАНЯЕТ глобальные сервисы.
+        Он больше не создает их сам и не выводит ничего в консоль.
+        """
         self.player: Character | None = None
         self.current_location: Location | None = None
         self.state = GameState.EXPLORATION
         self.short_term_memory: List[str] = []
+        
+        # Сохраняем ссылки на УЖЕ СУЩЕСТВУЮЩИЕ, переданные нам сервисы
+        self.world_data = world_data_service
+        self.tag_registry = tag_registry_service
+        self.memory_service = memory_service
+        
+        # Director легковесный, его можно создавать здесь
         self.director = Director()
-
-        # Game создает и хранит сервисы как единый источник правды.
-        print("--- Инициализация систем игры ---")
-        self.memory_service = MemoryService()
-        self.tag_registry = TagRegistry() # Загружает data/tags_registry.yaml
-        self.world_data = WorldDataService() # Загружает data/world_anatomy.yaml
-        print("--- Все системы готовы ---")
 
     def start_new_game(self, player_name: str):
         """Инициализирует новую игру с использованием иерархической генерации."""

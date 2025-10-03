@@ -1,0 +1,116 @@
+# data/location_compatibility.yaml
+# Полностью заполненный файл, основанный на вашем anatomy.yaml
+
+location_types:
+  # === Дополнительные типы, которых нет в anatomy.yaml ===
+  kith_settlement:
+    name: "Поселение Китов"
+    base_tags: [settlement, safe, kith_culture, inhabited]
+    can_border: [pulsating_plains, spore_savanna, biolume_forest, rolling_hills, springheads, litho-lichen_slopes, silt_flats]
+    cannot_border: [geyser_fields, blood_clot_thicket, bone_needles, toxic_swamp, broken_lands, crystal_scar, unity_expanse, wind_tunnels]
+    spawn_weight: 15 # Очень высокий шанс, чтобы был стартовой точкой
+
+  # === Описание ваших БИОМОВ как типов локаций ===
+  # Здесь мы добавляем вес и правила для каждого биома из anatomy.yaml
+  
+  # Регион: dermal_plateau
+  pulsating_plains: { name: "Пульсирующие равнины", base_tags: [plains, pulsating, rhythmic], spawn_weight: 10 }
+  spore_savanna: { name: "Споровая саванна", base_tags: [savanna, spores, fungus, dry], spawn_weight: 8 }
+  geyser_fields: { name: "Гейзерные поля", base_tags: [geysers, unstable, steam, dangerous], spawn_weight: 5 }
+  crystal_scar: { name: "Кристаллический шрам", base_tags: [crystal, dead_zone, ulcer, flat], spawn_weight: 2 }
+  megatherium_pastures: { name: "Пастбища Мегатериев", base_tags: [plains, megafauna, migration], spawn_weight: 7 }
+
+  # Регион: lymph_valley
+  biolume_forest: { name: "Биолюмный лес", base_tags: [forest, bioluminescence, fertile, lush], spawn_weight: 10 }
+  neuroflower_meadows: { name: "Луга Нейроцветов", base_tags: [meadow, neuro-reactive, flowers, psychic], spawn_weight: 8 }
+  fungal_mangroves: { name: "Грибные мангры", base_tags: [swamp, fungus, roots, mangrove], spawn_weight: 6 }
+  silt_flats: { name: "Илистые отмели", base_tags: [shore, silt, ephemeral, flat], spawn_weight: 5 }
+  blood_clot_thicket: { name: "Тромбовый бурелом", base_tags: [thicket, dangerous, sticky, biomass], spawn_weight: 3 }
+
+  # Регион: spine_ridge
+  bone_needles: { name: "Костяные иглы", base_tags: [mountains, sharp, bone_chitin, windy], spawn_weight: 8 }
+  litho-lichen_slopes: { name: "Лито-лишайниковые склоны", base_tags: [slopes, lichen, colorful, rocky], spawn_weight: 9 }
+  cloud_forest: { name: "Облачный лес", base_tags: [forest, clouds, high_altitude, mist], spawn_weight: 4 }
+  ruined_spires: { name: "Разрушенные шпили", base_tags: [ruins, high_altitude, sky_civ, ancient], spawn_weight: 3 }
+  wind_caves: { name: "Ветряные пещеры", base_tags: [cave, wind, sound, music], spawn_weight: 6 }
+
+  # Регион: foothills
+  rolling_hills: { name: "Холмистая гряда", base_tags: [hills, grass, transitional], spawn_weight: 10 }
+  broken_lands: { name: "Разломы", base_tags: [canyon, labyrinth, ambush, cracked], spawn_weight: 6 }
+  boneyard: { name: "Костяное кладбище", base_tags: [graveyard, bones, megafauna, ancient], spawn_weight: 5 }
+  fortress_hills: { name: "Холмы-крепости", base_tags: [hills, fortress, kith_culture, defensive], spawn_weight: 4 }
+  springheads: { name: "Истоки", base_tags: [wetland, spring, lymph, fertile], spawn_weight: 7 }
+
+  # Регион: alveoli_caves
+  luminous_fungi_caves: { name: "Пещеры светящихся грибов", base_tags: [cave, underground, fungus, light], spawn_weight: 9 }
+  wind_tunnels: { name: "Ветровые туннели", base_tags: [cave, underground, wind, smooth], spawn_weight: 7 }
+  subterranean_lymph_lake: { name: "Подземное лимфатическое озеро", base_tags: [cave, underground, lake, pristine], spawn_weight: 4 }
+  crystal_geode: { name: "Кристаллическая жеода", base_tags: [cave, underground, crystal, resonance], spawn_weight: 5 }
+  geode_ruins: { name: "Руины Геодов", base_tags: [cave, underground, ruins, ancient], spawn_weight: 3 }
+
+  # Регион: sclerite_delta
+  toxic_swamp: { name: "Токсичные топи", base_tags: [swamp, toxic, dangerous, labyrinth], spawn_weight: 8 }
+  rot_forest: { name: "Гнилой лес", base_tags: [forest, swamp, fungus, decay], spawn_weight: 6 }
+  mutation_pits: { name: "Мутационные ямы", base_tags: [swamp, toxic, mutation, chaotic], spawn_weight: 3 }
+  unity_expanse: { name: "Пространство Единства", base_tags: [swamp, ulcer, biomass, psychic], spawn_weight: 2 }
+  filter_beds: { name: "Фильтрующие отмели", base_tags: [shore, porous, filter], spawn_weight: 5 }
+
+  # Регион: tendon_strait
+  whirlpool_alley: { name: "Аллея водоворотов", base_tags: [ocean, dangerous, whirlpool], spawn_weight: 7 }
+  graveyard_of_ships: { name: "Кладбище кораблей", base_tags: [ocean, shipwreck, shallow], spawn_weight: 5 }
+  kelp_forests: { name: "Леса 'водорослей'", base_tags: [ocean, underwater, flora], spawn_weight: 6 }
+  rogue_currents: { name: "Блуждающие течения", base_tags: [ocean, unpredictable, currents], spawn_weight: 4 }
+  abyssal_trench: { name: "Бездонная впадина", base_tags: [ocean, deep, abyss], spawn_weight: 2 }
+
+  # Регион: scar_tissue
+  barren_wastes: { name: "Бесплодные пустоши", base_tags: [wasteland, barren, cracked], spawn_weight: 9 }
+  glass_desert: { name: "Стеклянная пустыня", base_tags: [desert, sharp, glass, ancient_cataclysm], spawn_weight: 4 }
+  necrotic_follicle_zone: { name: "Зона Некротического Фолликула", base_tags: [wasteland, decay, time_distortion, ulcer], spawn_weight: 2 }
+  petrified_forest: { name: "Окаменевший лес", base_tags: [forest, petrified, ancient, silent], spawn_weight: 5 }
+  echoing_crater: { name: "Звенящий кратер", base_tags: [crater, sound, echo, acoustic], spawn_weight: 3 }
+
+  # Регион: chitinous_coast
+  black_wall: { name: "Черная Стена", base_tags: [coast, vertical, chitin, defensive], spawn_weight: 8 }
+  barnacle_settlements: { name: "Поселения-наросты", base_tags: [coast, vertical, settlement, inhabited], spawn_weight: 5 }
+  sea_caves: { name: "Морские пещеры", base_tags: [coast, cave, ocean, flooded], spawn_weight: 6 }
+  shadow_watch: { name: "Дозор Теней", base_tags: [coast, vertical, high_altitude, isolated], spawn_weight: 3 }
+
+  # Регион: ganglion_nexus
+  crystal_synapse_forest: { name: "Лес кристальных синапсов", base_tags: [cave, crystal, psychic, pulsating], spawn_weight: 7 }
+  memory_pools: { name: "Озера Памяти", base_tags: [water, psychic, visions, calm], spawn_weight: 5 }
+  resonant_gardens: { name: "Резонирующие сады", base_tags: [flora, psychic, sentient, communication], spawn_weight: 4 }
+  silent_zone: { name: "Зона Тишины", base_tags: [calm, psychic_dampening, meditation], spawn_weight: 3 }
+
+  # Регион: sensory_organ
+  rainbow_caldera: { name: "Радужная Кальдера", base_tags: [lake, caldera, crystal, colorful], spawn_weight: 8 }
+  singing_cliffs: { name: "Поющие утесы", base_tags: [coast, cliffs, wind, sound, music], spawn_weight: 7 }
+  dream_fog_basin: { name: "Лощина тумана снов", base_tags: [basin, mist, visions, dream], spawn_weight: 5 }
+
+
+# =================================================================================
+# ПРАВИЛА ГЕНЕРАЦИИ: КАКИЕ БИОМЫ МОГУТ ПОЯВЛЯТЬСЯ В КАКИХ РЕГИОНАХ
+# Сгенерировано на основе parent_region_ids из вашего anatomy.yaml
+# =================================================================================
+biome_rules:
+  dermal_plateau:
+    allowed_types: [kith_settlement, pulsating_plains, spore_savanna, geyser_fields, crystal_scar, megatherium_pastures, broken_lands]
+  lymph_valley:
+    allowed_types: [kith_settlement, biolume_forest, neuroflower_meadows, fungal_mangroves, silt_flats, blood_clot_thicket, springheads]
+  spine_ridge:
+    allowed_types: [bone_needles, litho-lichen_slopes, cloud_forest, ruined_spires, wind_caves, crystal_geode]
+  foothills:
+    allowed_types: [kith_settlement, spore_savanna, biolume_forest, bone_needles, litho-lichen_slopes, rolling_hills, broken_lands, boneyard, fortress_hills, springheads]
+  alveoli_caves:
+    allowed_types: [luminous_fungi_caves, wind_tunnels, subterranean_lymph_lake, crystal_geode, geode_ruins]
+  sclerite_delta:
+    allowed_types: [biolume_forest, fungal_mangroves, silt_flats, toxic_swamp, rot_forest, mutation_pits, unity_expanse, filter_beds]
+  tendon_strait:
+    allowed_types: [whirlpool_alley, graveyard_of_ships, kelp_forests, rogue_currents, abyssal_trench]
+  scar_tissue:
+    allowed_types: [geyser_fields, litho-lichen_slopes, broken_lands, boneyard, barren_wastes, glass_desert, necrotic_follicle_zone, petrified_forest, echoing_crater]
+  chitinous_coast:
+    allowed_types: [wind_caves, black_wall, barnacle_settlements, sea_caves, shadow_watch]
+  ganglion_nexus:
+    allowed_types: [petrified_forest, crystal_synapse_forest, memory_pools, resonant_gardens, silent_zone]
+  sensory_organ:
+    allowed_types: [memory_pools, rainbow_caldera, singing_cliffs, dream_fog_basin]
