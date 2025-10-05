@@ -15,12 +15,12 @@ export class APIClient {
         
         const data = await response.json();
         this.sessionId = data.session_id;
-        
         return data;
     }
     
-    async getWorldGraph() {
-        const response = await fetch(`${API_BASE}/game/world/${this.sessionId}`);
+    // ИЗМЕНЕНО: Метод для получения глобальной карты
+    async getWorldMap() {
+        const response = await fetch(`${API_BASE}/game/world_map/${this.sessionId}`);
         return response.json();
     }
     
@@ -30,7 +30,6 @@ export class APIClient {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ target_location_id: targetLocationId })
         });
-        
         return response.json();
     }
     
@@ -40,29 +39,11 @@ export class APIClient {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ command })
         });
-        
         return response.json();
     }
     
     async exploreBoundaries() {
         const response = await fetch(`${API_BASE}/game/explore/${this.sessionId}`);
         return response.json();
-    }
-    
-    connectWebSocket(onMessage) {
-        this.ws = new WebSocket(`ws://localhost:8000/ws/${this.sessionId}`);
-        
-        this.ws.onopen = () => console.log('WebSocket connected');
-        this.ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            onMessage(data);
-        };
-        this.ws.onerror = (error) => console.error('WebSocket error:', error);
-    }
-    
-    sendWSMessage(type, payload) {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({ type, ...payload }));
-        }
     }
 }

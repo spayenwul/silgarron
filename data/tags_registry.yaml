@@ -1,57 +1,493 @@
-# Единый реестр всех тегов, существующих в мире Сильгаррон.
-# Это "закон", которому подчиняется вся система генерации.
+# =============================================================================
+# ЕДИНЫЙ РЕЕСТР ТЕГОВ МИРА СИЛЬГАРРОН (ВЕРСИЯ 2.1 - РАСШИРЕННАЯ)
+# =============================================================================
+# Это ЗАКОН. Если тега нет здесь, он не существует в системе.
+# Версия схемы: 2.1.0
+# Дата: 2025-10-05
 
-# --- TIER 1: СТОЛПОВЫЕ ТЕГИ ---
+meta:
+  schema_version: "2.1.0"
+  description: "Иерархический реестр всех тегов с правилами наследования"
 
-geography_pillars:
-  name: "Столпы Географии"
-  description: "Фундаментальные физические свойства регионов."
+# =============================================================================
+# TIER 1: СТОЛПОВЫЕ ТЕГИ (Foundational Tags)
+# =============================================================================
+# Фундаментальные, часто взаимоисключающие свойства.
+
+pillars:
+  
+  # --- ФИЗИЧЕСКАЯ ГЕОГРАФИЯ ---
+  geography:
+    category: physical
+    terrain_type:
+      mutually_exclusive: true
+      tags:
+        terrain:flat:
+          name: "Плоский рельеф"
+          aliases: ["рельеф:горизонтальный"]
+        terrain:elevated:
+          name: "Возвышенный рельеф"
+          aliases: ["рельеф:вертикальный"]
+          children:
+            - terrain:mountain
+            - terrain:hill
+            - terrain:cliff
+        terrain:subterranean:
+          name: "Подземный"
+        terrain:aquatic:
+          name: "Водный"
+        terrain:rough:
+          name: "Пересеченная местность"
+          description: "Сложный, труднопроходимый рельеф, каньоны, разломы."
+          
+    surface_stability:
+      mutually_exclusive: true
+      tags:
+        surface:stable:
+          name: "Стабильная поверхность"
+        surface:dynamic:
+          name: "Динамичная поверхность"
+        surface:unstable:
+          name: "Нестабильная поверхность"
+
+  # --- ЭКОЛОГИЯ ---
+  ecology:
+    category: physical
+    fertility:
+      mutually_exclusive: true
+      tags:
+        ecology:fertile:
+          name: "Плодородная"
+        ecology:moderate:
+          name: "Умеренная"
+        ecology:barren:
+          name: "Бесплодная"
+        ecology:toxic:
+          name: "Токсичная"
+        ecology:unique:
+          name: "Уникальная экосистема"
+        ecology:corrupted:
+          name: "Искажённая экосистема"
+        ecology:corrupted_affinity:
+            name: "Склонность к искажению"
+            description: "Организмы, которые процветают в искаженных средах."
+
+  # --- КУЛЬТУРА И ОБЩЕСТВО ---
+  lifestyle:
+    category: cultural
+    settlement_type:
+      mutually_exclusive: true
+      tags:
+        lifestyle:sedentary:
+          name: "Оседлый образ жизни"
+        lifestyle:nomadic:
+          name: "Кочевой образ жизни"
+        lifestyle:semi_nomadic:
+          name: "Полукочевой"
+        lifestyle:isolated:
+          name: "Изолированный"
+          
+  social:
+    category: cultural
+    power_structure:
+      mutually_exclusive: false
+      tags:
+        social:hierarchical:
+          name: "Иерархическое общество"
+        social:egalitarian:
+          name: "Эгалитарное общество"
+        social:tribal:
+          name: "Племенное общество"
+        social:theocratic:
+          name: "Теократическое общество"
+        social:matriarchal:
+          name: "Матриархат"
+        social:hive_mind:
+          name: "Коллективный разум"
+        social:anarchic:
+          name: "Анархическое общество"
+        social:female_supremacy:
+          name: "Женское доминирование"
+
+  # --- ТЕХНОЛОГИИ ---
+  technology:
+    category: cultural
+    technology_level:
+      mutually_exclusive: true
+      tags:
+        tech:primitive:
+          name: "Примитивный"
+        tech:stone_age:
+          name: "Каменный век"
+        tech:bronze_age:
+          name: "Бронзовый век"
+        tech:iron_age:
+          name: "Железный век"
+        tech:medieval:
+          name: "Средневековый"
+        tech:scavenged:
+          name: "Трофейный"
+        tech:organic:
+          name: "Органические технологии"
+        tech:bio_alchemy:
+          name: "Био-алхимия"
+        tech:bone_crafting:
+          name: "Костоправство"
+        tech:silt_weaving:
+          name: "Иловое ткачество"
+        tech:crystal_tech:
+          name: "Кристальные технологии"
+        tech:crystal_working:
+          name: "Обработка кристаллов"
+        tech:mystical:
+          name: "Мистические технологии"
+
+  # --- СВЕРХЪЕСТЕСТВЕННЫЕ ПРОЯВЛЕНИЯ ---
+  manifestations:
+    category: supernatural
+    conductivity:
+      mutually_exclusive: true
+      tags:
+        manifestation:numb:
+          name: "Немота"
+        manifestation:stable:
+          name: "Стабильная проводность"
+        manifestation:high:
+          name: "Высокая проводность"
+        manifestation:chaotic:
+          name: "Хаотичная проводность"
+        manifestation:attuned:
+          name: "Настроенный"
+          description: "Существа, чувствительные к Проводности."
+        manifestation:high_attuned:
+          name: "Высоко-настроенный"
+        manifestation:network_mind:
+          name: "Сетевой разум"
+        manifestation:sensory:
+          name: "Сенсорное проявление"
+          description: "Локация действует как орган чувств мира."
+
+# =============================================================================
+# TIER 2: ОПРЕДЕЛЯЮЩИЕ ТЕГИ (Defining Tags)
+# =============================================================================
+# Конкретные, не взаимоисключающие свойства.
+
+defining_tags:
+  
+  # --- РЕСУРСЫ ---
+  resources:
+    category: physical
+    tags:
+      resource:bone_chitin:
+        name: "Костехитин"
+      resource:pure_lymph:
+        name: "Чистая лимфа"
+      resource:resonance_crystal:
+        name: "Резонирующие кристаллы"
+      resource:dream_spores:
+        name: "Споры Сна"
+      resource:toxins:
+        name: "Токсины"
+      resource:decay:
+        name: "Продукты распада"
+      resource:bioluminescent_sap:
+        name: "Биолюмный сок"
+      resource:corrupted_crystal:
+        name: "Искаженный кристалл"
+      resource:bioactive_gases:
+        name: "Биоактивные газы"
+      resource:petrified_wood:
+        name: "Окаменевшее дерево"
+      resource:obsidian:
+        name: "Обсидиан"
+      resource:salvage:
+        name: "Материалы для сбора"
+      resource:minerals:
+        name: "Минералы"
+      resource:ancient_tech:
+        name: "Древние технологии"
+        description: "Осколки технологий Эпохи Воздушных Княжеств или более древних цивилизаций."
+      resource:crystals:
+        name: "Кристаллы (Общее)"
+        description: "Наличие залежей кристаллов с различными свойствами."
+
+  # --- ОПАСНОСТИ ---
+  dangers:
+    category: mechanical
+    tags:
+      danger:predators:
+        name: "Хищники"
+      danger:environmental:
+        name: "Природные опасности"
+      danger:supernatural:
+        name: "Сверхъестественные угрозы"
+      danger:disease:
+        name: "Болезни"
+
+  # --- АТРИБУТЫ ЛОКАЦИЙ ---
+  location_attributes:
+    category: mechanical
+    tags:
+      location:inhabited:
+        name: "Обитаемая"
+      location:ruins:
+        name: "Руины"
+      location:sacred:
+        name: "Священное место"
+      location:trade_route:
+        name: "Торговый путь"
+      location:isolated:
+        name: "Изолированная"
+      location:accessible:
+        name: "Доступная"
+      location:fortified:
+        name: "Укрепленная"
+      location:coastal:
+        name: "Прибрежная"
+      location:aquatic:
+        name: "Водная"
+      location:underground:
+        name: "Подземная"
+      location:transitional_zone:
+        name: "Переходная зона"
+
+  # --- АНОМАЛИИ ---
+  anomalies:
+    category: supernatural
+    tags:
+      anomaly:gravity:
+        name: "Гравитационная аномалия"
+      anomaly:time:
+        name: "Темпоральная аномалия"
+      anomaly:memory:
+        name: "Просачивание памяти"
+      anomaly:psychic:
+        name: "Психическая аномалия"
+      anomaly:psychic_affinity:
+        name: "Психическое родство"
+      anomaly:mutation:
+        name: "Мутагенная аномалия"
+      anomaly:sound:
+        name: "Акустическая аномалия"
+      anomaly:dream:
+        name: "Аномалия Сна"
+      anomaly:frozen_time:
+        name: "Застывшее время"
+      anomaly:breathing:
+        name: "Аномалия Дыхания"
+        description: "Место, сильно связанное с Дыханием мира, где потоки воздуха аномально сильны или предсказуемы."
+
+  # --- КУЛЬТУРНЫЕ ОСОБЕННОСТИ ---
+  culture_attributes:
+    category: cultural
+    tags:
+      culture:militaristic:
+        name: "Милитаризм"
+      culture:building:
+        name: "Строительство"
+      culture:nomadic:
+        name: "Кочевничество"
+      culture:spiritual:
+        name: "Духовность"
+      culture:survivalist:
+        name: "Выживание"
+      culture:secretive:
+        name: "Скрытность"
+      culture:mystical:
+        name: "Мистицизм"
+      culture:xenophobic:
+        name: "Ксенофобия"
+      culture:mining:
+        name: "Шахтерство"
+      culture:symbiotic:
+        name: "Симбиоз"
+      culture:artisan:
+        name: "Ремесленничество"
+      culture:collective:
+        name: "Коллективизм"
+      culture:outcast:
+        name: "Изгои"
+      culture:aggressive:
+        name: "Агрессивность"
+
+  # --- МЕЖРАСОВЫЕ ОТНОШЕНИЯ ---
+  relation_attributes:
+    category: cultural
+    tags:
+      relation:pragmatic:
+        name: "Прагматичные отношения"
+      relation:harmonious:
+        name: "Гармоничные отношения"
+      relation:domination:
+        name: "Доминирование"
+      relation:peaceful:
+        name: "Миролюбие"
+      relation:decomposer:
+        name: "Разрушители"
+      relation:unpredictable:
+        name: "Непредсказуемость"
+
+  # --- БИОЛОГИЧЕСКИЕ АДАПТАЦИИ ---
+  adaptations:
+    category: physical
+    tags:
+      adaptation:toxic_resistance:
+        name: "Сопротивление токсинам"
+      adaptation:darkness_vision:
+        name: "Темное зрение"
+      adaptation:small_size:
+        name: "Малый размер"
+      adaptation:amphibious:
+        name: "Амфибия"
+      adaptation:fungal_symbiosis:
+        name: "Грибной симбиоз"
+      adaptation:mutation:
+        name: "Мутации"
+        
+  # --- ОБЩИЕ ЧЕРТЫ И ПРИЗНАКИ ---
+  traits:
+    category: mechanical
+    tags:
+      trait:damaged:
+        name: "Поврежденный"
+      trait:unique:
+        name: "Уникальный"
+      trait:defensive:
+        name: "Защитный"
+  
+  # --- ТИПЫ СУЩЕСТВ (для совместимости) ---
+  being_types:
+    category: cultural
+    tags:
+        barophiles:
+          name: "Барофилы"
+        lithophages:
+          name: "Литофаги"
+        relicts:
+          name: "Реликты"
+        bone_scribes:
+          name: "Костяные Книжники"
+        stillborn:
+          name: "Мертворожденные"
+        heat_resistant:
+          name: "Термоустойчивые"
+          
+  # --- ОСОБЫЕ ТЕГИ БИОМОВ ---
+  biome_specific:
+      category: physical
+      tags:
+          biome:swamp:
+              name: "Болото"
+              description: "Характеристики болотистой местности"
+
+# =============================================================================
+# TIER 3: ТЕГИ ВКУСА (Flavor Tags)
+# =============================================================================
+# Нарративные, уникальные метки.
+
+flavor_tags:
+  category: narrative
   tags:
-    земля:стабильная:
-      name: "Стабильная Земля"
-      description: "Регион с неподвижной, предсказуемой поверхностью. Идеален для строительства."
-    земля:подвижная:
-      name: "Подвижная Земля"
-      description: "Регион с нестабильной, пульсирующей поверхностью. Подходит для кочевников и адаптирующихся видов."
-    рельеф:горизонтальный:
-      name: "Горизонтальный Рельеф"
-      description: "Открытые пространства, равнины, плато. Способствует свободному передвижению."
-    рельеф:вертикальный:
-      name: "Вертикальный Рельеф"
-      description: "Горы, каньоны, разломы. Способствует обороне и изоляции."
-    # ... и так далее для всех столпов
-
-culture_pillars:
-  name: "Столпы Культуры"
-  description: "Фундаментальные свойства обществ и рас."
-  tags:
-    быт:оседлый:
-      name: "Оседлый Быт"
-      description: "Культура, привязанная к одному месту. Развивает строительство, ремесла, накопление."
-    быт:кочевой:
-      name: "Кочевой Быт"
-      description: "Культура, находящаяся в постоянном движении. Ценит мобильность, адаптивность, выживание."
-    # ... и так далее
-
-# --- TIER 2: ОПРЕДЕЛЯЮЩИЕ ТЕГИ ---
-
-resource_tags:
-  name: "Теги Ресурсов"
-  description: "Описывают наличие конкретных ценных ресурсов."
-  tags:
-    есть_костехитин:
-      name: "Есть Костехитин"
-      description: "В регионе имеются залежи костехитина, пригодного для добычи."
-    чистая_лимфа:
-      name: "Чистая Лимфа"
-      description: "Лимфотоки в регионе не загрязнены и являются источником питья и жизни."
-
-# --- TIER 3: ТЕГИ ВКУСА (НАРРАТИВНЫЕ) ---
-
-narrative_tags:
-  name: "Теги Повествования"
-  description: "Уникальные метки для квестов и особых мест."
-  tags:
-    руины_воздушных_княжеств:
+    narrative:old_gods_legacy:
+      name: "Наследие Старых Богов"
+    narrative:sky_city_ruins:
       name: "Руины Воздушных Княжеств"
-      description: "В этом месте находятся останки древней цивилизации, владевшей секретами воздухоплавания."
+    narrative:new_god_ulcer:
+      name: "Язва Нового Бога"
+    narrative:megafauna_migration:
+      name: "Путь Великой Миграции"
+    narrative:geode_ruins:
+      name: "Руины Геодов"
+    narrative:ancient_wound:
+      name: "Древняя рана"
+    narrative:ancient_catastrophe:
+      name: "Древняя катастрофа"
+    narrative:shipwrecks:
+      name: "Кораблекрушения"
+    narrative:deep_ones:
+      name: "Глубинные"
+    narrative:world_mystery:
+      name: "Тайна мира"
+    narrative:ocean_gateway:
+      name: "Врата в океан"
+    narrative:ocean_watchers:
+      name: "Наблюдатели за океаном"
+    narrative:ancient_mystery:
+      name: "Древняя тайна"
+    narrative:relict_heritage:
+      name: "Наследие Реликтов"
+    narrative:ancient_ruins:
+        name: "Древние руины (Общее)"
+        description: "Место содержит руины неопределенной древней цивилизации."
+    # Логические псевдо-теги
+    location:without_megatherium:
+      name: "Без Мегатериев"
+      description: "Логический тег для мест, где Мегатерии не могут существовать."
+
+
+# =============================================================================
+# ГЛОБАЛЬНЫЕ ПРАВИЛА СОВМЕСТИМОСТИ
+# =============================================================================
+# Универсальные синергии и конфликты между тегами
+
+global_compatibility_rules:
+  
+  # Синергии (эти теги усиливают друг друга)
+  synergies:
+    - tags: ["surface:stable", "lifestyle:sedentary"]
+      bonus: 2.0
+      reason: "Стабильная земля идеальна для оседлой жизни"
+      
+    - tags: ["terrain:elevated", "lifestyle:isolated"]
+      bonus: 1.5
+      reason: "Горы естественно изолируют"
+      
+    - tags: ["ecology:fertile", "resource:pure_lymph"]
+      bonus: 1.8
+      reason: "Чистая лимфа питает богатую экосистему"
+      
+    - tags: ["manifestation:high", "anomaly:psychic"]
+      bonus: 2.5
+      reason: "Высокая проводность усиливает психические эффекты"
+      
+    - tags: ["surface:dynamic", "lifestyle:nomadic"]
+      bonus: 1.7
+      reason: "Кочевники адаптированы к подвижной земле"
+
+  # Антагонизмы (эти теги конфликтуют)
+  conflicts:
+    - tags: ["surface:unstable", "lifestyle:sedentary"]
+      penalty: 0.2
+      reason: "Невозможно строить на нестабильной земле"
+      
+    - tags: ["ecology:barren", "location:inhabited"]
+      penalty: 0.4
+      reason: "Трудно жить в бесплодной местности"
+      
+    - tags: ["manifestation:numb", "narrative:old_gods_legacy"]
+      penalty: 0.1
+      reason: "Наследие Богов должно быть активным"
+      
+    - tags: ["terrain:aquatic", "resource:bone_chitin"]
+      penalty: 0.3
+      reason: "Костехитин не добывается под водой"
+
+
+# =============================================================================
+# СЛУЖЕБНАЯ ИНФОРМАЦИЯ
+# =============================================================================
+
+validation_rules:
+  required_pillars_per_location:
+    - terrain_type
+    - surface_stability
+    - fertility
+    
+  max_flavor_tags_per_location: 3
+  max_danger_level: 10
+  
+  # Запрещённые комбинации (жёсткие ограничения)
+  forbidden_combinations:
+    - ["terrain:aquatic", "terrain:subterranean"]  # Невозможно одновременно
+    - ["manifestation:numb", "manifestation:chaotic"]  # Взаимоисключающие
+    - ["ecology:barren", "ecology:fertile"]  # Противоположности

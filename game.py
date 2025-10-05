@@ -16,8 +16,6 @@ from utils.prompt_manager import load_and_format_prompt
 from utils.logger import log_player_input
 from services.world_data_service import WorldDataService
 from services.tag_registry_service import TagRegistry
-import generators.region_generator as region_gen
-import generators.location_generator as loc_gen
 
 SAVE_DIR = Path(__file__).parent / "saves"
 
@@ -39,52 +37,6 @@ class Game:
         
         # Director легковесный, его можно создавать здесь
         self.director = Director()
-
-    def start_new_game(self, player_name: str):
-        """Инициализирует новую игру с использованием иерархической генерации."""
-        self.player = Character(name=player_name)
-
-        # Даем стартовые предметы
-        healing_potion = Item(name="Зелье лечения", description="Восстанавливает немного здоровья.")
-        old_sword = Item(name="Старый меч", description="Простой, но надежный меч.")
-        self.player.inventory.add_item(healing_potion)
-        self.player.inventory.add_item(old_sword)
-        print("\n--- Запуск иерархической генерации мира ---")
-        
-        # 1. Выбираем "континент" для старта. Пока что можно захардкодить.
-        # В будущем здесь может быть выбор игрока или случайный выбор.
-        start_continent_id = "torax" 
-        
-        # 2. Генерируем паспорт РЕГИОНА в контексте этого континента.
-        # Передаем сервисы как зависимости, чтобы генератор имел доступ к данным.
-        region_passport = region_gen.generate_region_passport_in_context(
-            world_data_service=self.world_data,
-            tag_registry=self.tag_registry, # Передаем, чтобы генератор мог использовать теги
-            continent_id=start_continent_id
-        )
-
-        # 3. На основе региона генерируем паспорт стартовой ЛОКАЦИИ.
-        location_passport = loc_gen.generate_location_passport(
-            region_passport=region_passport,
-            tag_registry=self.tag_registry,
-            world_data_service=self.world_data
-
-        )
-
-        # 4. Создаем объект Location, передавая ему паспорт.
-        # Класс Location должен быть обновлен, чтобы принимать 'passport' в __init__.
-        self.current_location = Location(passport=location_passport)
-
-        # 5. Просим LLM сгенерировать художественное описание
-        # на основе ПОЛНОГО и богатого паспорта локации.
-        # Это потребует создания нового, специализированного промпта.
-        # description = llm.generate_artistic_description(self.current_location.passport)
-        # self.current_location.description = description
-        # ПОКА ЧТО для теста можно использовать заглушку:
-        self.current_location.description = f"Вы находитесь в локации '{self.current_location.name}'.\n" \
-                                            f"Сгенерированные теги: {self.current_location.tags}"
-        
-        print("--- Новая игра началась! ---")
 
     def get_context_for_llm(self) -> dict:
         """Собирает словарь с текущей ситуацией для передачи в LLM."""
@@ -282,39 +234,3 @@ class Game:
         self.short_term_memory = data.get("short_term_memory", [])
         
         print("--- Игра успешно загружена ---")
-
-    def save_to_file(self, filename: str):
-        """Сохраняет игру в JSON файл."""
-        # Создаем папку 'saves', если ее еще нет. `exist_ok=True` предотвращает ошибку, если папка уже есть.
-        SAVE_DIR.mkdir(exist_ok=True) 
-        filepath = SAVE_DIR / f"{filename}.json"
-        
-        try:
-            with open(filepath, "w", encoding="utf-8") as f:
-                # json.dump элегантно записывает наш словарь в файл
-                json.dump(self.to_dict(), f, ensure_ascii=False, indent=4)
-            print(f"✅ Игра сохранена в файл: {filepath.name}")
-        except Exception as e:
-            print(f"🔴 Не удалось сохранить игру: {e}")
-
-    @classmethod
-    def load_from_file(cls, filename: str):
-        """Создает НОВЫЙ объект Game и загружает в него данные из файла."""
-        filepath = SAVE_DIR / f"{filename}.json"
-        
-        if not filepath.exists():
-            print(f"🔴 Файл сохранения не найден: {filepath}")
-            return None
-
-        try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            
-            # Создаем новый "чистый" экземпляр игры
-            game_instance = cls() 
-            # Наполняем его данными из файла
-            game_instance.load_from_dict(data)
-            return game_instance
-        except Exception as e:
-            print(f"🔴 Не удалось загрузить игру из файла: {e}")
-            return None

@@ -1,3 +1,6 @@
+uvicorn api.main:app --reload
+python -m http.server 8080
+
 ### Логика Тегов для Мира Сильгаррон
 
 ### I. Анатомия Мира (Физическая основа)

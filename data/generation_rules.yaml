@@ -1,0 +1,661 @@
+# =============================================================================
+# ПРАВИЛА ПРОЦЕДУРНОЙ ГЕНЕРАЦИИ
+# =============================================================================
+# Версия схемы: 2.0.0
+# Описание: Весовые коэффициенты и правила для генератора мира
+
+meta:
+  schema_version: "2.0.0"
+  last_updated: "2025-10-05"
+  description: "Центральная система весов и правил для процедурной генерации"
+
+
+# =============================================================================
+# 1. ГЛОБАЛЬНЫЕ МОДИФИКАТОРЫ СОВМЕСТИМОСТИ
+# =============================================================================
+# Эти правила применяются поверх локальных правил из data_tables
+
+global_modifiers:
+  
+  # === РАСОВЫЕ ПРЕДПОЧТЕНИЯ ===
+  race_terrain_affinity:
+    description: "Базовые модификаторы для рас в зависимости от типа местности"
+    
+    kith:  # Киты - строители
+      terrain:flat: 2.5
+      terrain:elevated: 1.5
+      surface:stable: 3.0
+      surface:dynamic: 0.3
+      ecology:fertile: 1.8
+      ecology:barren: 0.7
+      
+    pulsars:  # Пульсары - кочевники равнин
+      terrain:flat: 3.0
+      surface:dynamic: 2.5
+      surface:stable: 0.8
+      lifestyle:nomadic: 3.0
+      
+    fen-kin:  # Топяники
+      terrain:flat: 2.0
+      ecology:toxic: 3.0
+      ecology:fertile: 0.5
+      surface:unstable: 2.0
+      danger:environmental: 1.5
+      
+    barophiles:  # Барофилы - горцы
+      terrain:elevated: 3.5
+      terrain:mountain: 4.0
+      terrain:flat: 0.2
+      surface:stable: 2.0
+      
+    geodes:  # Геоды - подземные
+      terrain:subterranean: 4.0
+      terrain:elevated: 0.1
+      ecology:unique: 2.0
+      
+    silt_weavers:  # Иловые Ткачи
+      terrain:flat: 2.0
+      terrain:aquatic: 2.5
+      surface:unstable: 2.0  # Любят приливы/отливы
+      ecology:fertile: 1.8
+      
+    dorsals:  # Дорсалы - симбиоты Мегатериев
+      terrain:flat: 3.0
+      surface:dynamic: 2.0
+      lifestyle:nomadic: 3.5
+      narrative:megafauna_migration: 5.0
+      
+    synaptics:  # Синаптики
+      manifestation:high: 3.0
+      manifestation:chaotic: 2.0
+      anomaly:psychic: 2.5
+      narrative:old_gods_legacy: 2.0
+      
+    ursines:  # Урсины - воительницы
+      danger:predators: 2.0
+      danger:environmental: 1.5
+      lifestyle:nomadic: 2.0
+      terrain:elevated: 1.5
+      
+    saprophytes:  # Сапрофиты - грибные
+      ecology:toxic: 2.0
+      ecology:fertile: 2.5
+      surface:unstable: 1.5
+      resource:decay: 3.0
+      
+    chimerics:  # Химерные - мутанты
+      ecology:corrupted: 4.0
+      ecology:toxic: 3.0
+      anomaly:mutation: 5.0
+      
+  # === ЭКОНОМИЧЕСКИЕ ФАКТОРЫ ===
+  resource_settlement_bonus:
+    description: "Бонус к появлению поселений рядом с ресурсами"
+    
+    resource:bone_chitin: 2.0    # Ценный строительный материал
+    resource:pure_lymph: 2.5     # Жизненно необходима
+    resource:resonance_crystal: 1.5
+    resource:dream_spores: 1.3
+    resource:toxins: 0.5         # Обычно избегают
+    
+  # === ОПАСНОСТЬ И НАСЕЛЕННОСТЬ ===
+  danger_inhabitation_penalty:
+    description: "Штраф к населенности в зависимости от опасности"
+    
+    danger_level_0-2: 1.0
+    danger_level_3-4: 0.7
+    danger_level_5-6: 0.4
+    danger_level_7-8: 0.2
+    danger_level_9-10: 0.05
+
+
+# =============================================================================
+# 2. ПРАВИЛА ГРАНИЦ БИОМОВ
+# =============================================================================
+
+biome_border_rules:
+  description: "Специальные правила для соседства биомов"
+  
+  # Естественные переходы (плавные границы)
+  smooth_transitions:
+    - from: pulsating_plains
+      to: spore_savanna
+      transition_zone: grass_fungus_mix
+      width: 3  # гекса
+      
+    - from: biolume_forest
+      to: neuroflower_meadows
+      transition_zone: forest_edge
+      width: 2
+      
+    - from: bone_needles
+      to: litho-lichen_slopes
+      transition_zone: weathered_peaks
+      width: 4
+      
+    - from: toxic_swamp
+      to: fungal_mangroves
+      transition_zone: murky_waters
+      width: 2
+  
+  # Резкие границы (контрастные биомы)
+  sharp_transitions:
+    - from: crystal_scar
+      to: any_organic
+      reason: "Язва не переходит плавно в органику"
+      
+    - from: geyser_fields
+      to: biolume_forest
+      reason: "Жар и влажность несовместимы"
+  
+  # Обязательные буферные зоны
+  mandatory_buffers:
+    - between: [crystal_scar, biolume_forest]
+      buffer_biomes: [barren_wastes, geyser_fields]
+      min_distance: 10  # гексов
+      
+    - between: [toxic_swamp, neuroflower_meadows]
+      buffer_biomes: [fungal_mangroves, silt_flats]
+      min_distance: 5
+
+
+# =============================================================================
+# 3. ПРАВИЛА РАЗМЕЩЕНИЯ ТОЧЕК ИНТЕРЕСА (POI)
+# =============================================================================
+
+poi_placement_rules:
+  
+  # Базовая плотность по типу биома
+  density_by_fertility:
+    ecology:fertile: 1.5
+    ecology:moderate: 1.0
+    ecology:barren: 0.5
+    ecology:toxic: 0.7
+    ecology:unique: 2.0
+  
+  # Типы POI и их требования
+  poi_types:
+    
+    village:
+      required_tags:
+        - surface:stable
+        - ecology:fertile OR ecology:moderate
+      forbidden_tags:
+        - danger_level > 6
+        - narrative:new_god_ulcer
+      min_distance_from_other_villages: 20
+      resource_proximity_bonus:
+        resource:pure_lymph: 2.0
+        resource:bone_chitin: 1.5
+      
+    mining_camp:
+      required_tags:
+        - resource:bone_chitin OR resource:resonance_crystal
+      preferred_tags:
+        - terrain:elevated
+        - terrain:subterranean
+      min_distance_from_villages: 10
+      
+    sacred_site:
+      required_tags:
+        - manifestation:high OR manifestation:chaotic
+        - location:isolated OR location:sacred
+      forbidden_tags:
+        - narrative:new_god_ulcer
+      max_per_region: 3
+      
+    ruin:
+      required_tags:
+        - narrative:old_gods_legacy OR narrative:sky_city_ruins
+      preferred_tags:
+        - terrain:elevated
+        - location:isolated
+      spawn_weight_by_era:
+        era_of_sky_principalities: 2.0
+        era_of_old_gods: 1.5
+      
+    cult_shrine:
+      required_tags:
+        - narrative:new_god_ulcer
+      forbidden_tags:
+        - location:inhabited  # Не в населенных местах
+      min_distance_from_villages: 15
+      
+    natural_wonder:
+      required_any_of:
+        - ecology:unique
+        - anomaly:gravity
+        - anomaly:time
+        - anomaly:memory
+        - anomaly:psychic
+        - anomaly:sound
+        - anomaly:dream
+      max_per_region: 2
+      
+    trading_post:
+      required_tags:
+        - location:trade_route
+        - surface:stable
+      preferred_biomes:
+        - rolling_hills
+        - pulsating_plains
+        - silt_flats
+      min_distance_from_other_posts: 25
+
+
+# =============================================================================
+# 4. ДИНАМИЧЕСКИЕ ПРАВИЛА (Сезоны, События)
+# =============================================================================
+
+dynamic_rules:
+  
+  # Модификаторы по сезонам Сильгаррона
+  seasonal_modifiers:
+    
+    breath_tide:  # Сезон Прилива
+      duration: 40  # дней
+      effects:
+        - biome: all_lymph_related
+          fertility: +0.3
+          conductivity: +0.4
+          danger: +1
+        - biome: pulsating_plains
+          surface_activity: +0.5
+          
+    bone_stupor:  # Сезон Костного Ступора
+      duration: 60
+      effects:
+        - global:
+          conductivity: -0.4
+          temperature: -0.3
+        - biome: spine_ridge
+          accessibility: -0.5  # Снега и холод
+          
+    great_ebb:  # Сезон Отлива
+      duration: 50
+      effects:
+        - biome: silt_flats
+          accessibility: +0.8  # Обнажаются отмели
+          fertility: +0.2
+        - biome: all_lymph_related
+          resource_availability: -0.3
+        - race: silt_weavers
+          settlement_activity: +1.0  # Строят города
+          
+    spore_bloom:  # Сезон Спорового Цветения
+      duration: 30
+      effects:
+        - biome: [spore_savanna, fungal_mangroves, luminous_fungi_caves]
+          fertility: +0.5
+          resource:dream_spores: +1.0
+          danger:disease: +2
+        - global:
+          visibility: -0.3  # Споровые туманы
+  
+  # Случайные события
+  random_events:
+    
+    lymph_fever_outbreak:
+      frequency: rare
+      affected_biomes: [lymph_valley, biolume_forest, toxic_swamp]
+      duration: 20  # дней
+      effects:
+        danger:disease: +3
+        population: -0.2
+        trade: -0.5
+        
+    ganglion_awakening:
+      frequency: very_rare
+      affected_regions: [ganglion_nexus]
+      duration: 10
+      effects:
+        manifestation:chaotic: +1.0
+        anomaly:psychic: +2
+        visions: true
+        quest_trigger: commune_with_old_gods
+        
+    ulcer_expansion:
+      frequency: uncommon
+      affected_biomes: [crystal_scar, unity_expanse, necrotic_follicle_zone]
+      duration: permanent
+      effects:
+        spreading: +1  # Увеличивает радиус на 1 гекс
+        nearby_corruption: +0.5
+        
+    megatherium_migration:
+      frequency: seasonal  # Каждый breath_tide
+      affected_biomes: [pulsating_plains, megatherium_pastures]
+      duration: 15
+      effects:
+        danger:megafauna: +2
+        resource:megatherium_products: +1.0
+        dorsals_activity: +0.8
+
+
+# =============================================================================
+# 5. ФОРМУЛЫ РАСЧЕТА СОВМЕСТИМОСТИ
+# =============================================================================
+
+compatibility_formulas:
+  description: "Математические формулы для CompatibilityService"
+  
+  # Базовая формула для расчета совместимости расы и биома
+  race_biome_score:
+    formula: |
+      score = base_compatibility * tag_synergy_product * global_modifier
+      
+      где:
+        base_compatibility = среднее из локальных весов расы
+        tag_synergy_product = произведение синергий из tags_registry.yaml
+        global_modifier = из race_terrain_affinity
+    min_threshold: 0.1
+    optimal_range: [0.8, 1.5]
+    
+  # Формула для расчета вероятности появления биома
+  biome_spawn_probability:
+    formula: |
+      probability = base_weight * noise_match * compatibility_with_neighbors
+      
+      где:
+        base_weight = из spawn_weight биома
+        noise_match = насколько параметры шума попадают в диапазон биома
+        compatibility_with_neighbors = средняя совместимость с уже размещенными соседями
+        
+  # Формула для расчета плотности POI
+  poi_density_calculation:
+    formula: |
+      density = base_density * fertility_modifier * danger_penalty * uniqueness_bonus
+      
+      где:
+        base_density = из biome.content_generation.poi_density
+        fertility_modifier = из density_by_fertility
+        danger_penalty = из danger_inhabitation_penalty
+        uniqueness_bonus = 1.5 если ecology:unique
+
+
+# =============================================================================
+# 6. БАЛАНСИРОВОЧНЫЕ КОЭФФИЦИЕНТЫ
+# =============================================================================
+
+balance_params:
+  description: "Настройки для тонкой балансировки генерации"
+  
+  # Частота появления редких элементов
+  rarity_weights:
+    common: 1.0
+    uncommon: 0.5
+    rare: 0.2
+    very_rare: 0.05
+    legendary: 0.01
+    
+  # Распределение населенности региона
+  settlement_distribution:
+    villages: 0.6        # 60% поселений - деревни
+    towns: 0.25          # 25% - города
+    fortresses: 0.1      # 10% - крепости
+    isolated_outposts: 0.05
+    
+  # Соотношение безопасных и опасных зон
+  danger_distribution:
+    safe_zones: 0.3      # 30% карты безопасны
+    moderate_zones: 0.5  # 50% умеренно опасны
+    dangerous_zones: 0.15 # 15% опасны
+    deadly_zones: 0.05   # 5% смертельно опасны
+    
+  # Разнообразие рас на регионе
+  race_diversity:
+    single_dominant_race: 0.4      # 40% регионов - одна раса
+    two_races_mixed: 0.35          # 35% - две расы
+    multicultural: 0.2             # 20% - три+ расы
+    no_sentient_life: 0.05         # 5% - нет разумной жизни
+    
+  # Влияние Новых Богов
+  divine_corruption_spread:
+    crystal_scar:
+      base_expansion_rate: 0.01    # гексов за сезон
+      max_radius: 50               # максимальный размер
+      resistance_by_fertility:
+        ecology:fertile: 0.5       # Органика сопротивляется
+        ecology:barren: 1.5        # Мертвое легко превращается
+        
+    unity_expanse:
+      base_expansion_rate: 0.02    # Быстрее кристалла
+      max_radius: 40
+      assimilation_speed: 0.3      # % биомассы в день
+      
+    necrotic_follicle:
+      time_acceleration: 100       # Во сколько раз быстрее
+      decay_radius: 20
+      does_not_spread: true        # Стационарная язва
+
+
+# =============================================================================
+# 7. ПРЕСЕТЫ РЕГИОНОВ
+# =============================================================================
+
+region_presets:
+  description: "Готовые наборы правил для типичных регионов"
+  
+  classic_plateau:
+    name: "Классическое Дермальное плато"
+    region_type: dermal_plateau
+    biome_distribution:
+      pulsating_plains: 0.45
+      spore_savanna: 0.25
+      megatherium_pastures: 0.20
+      geyser_fields: 0.08
+      crystal_scar: 0.02
+    dominant_races: [pulsars, dorsals]
+    settlement_density: moderate
+    danger_level: low
+    
+  fertile_valley:
+    name: "Плодородная долина Лимфотока"
+    region_type: lymph_valley
+    biome_distribution:
+      biolume_forest: 0.50
+      neuroflower_meadows: 0.30
+      springheads: 0.15
+      fungal_mangroves: 0.05
+    dominant_races: [kith, saprophytes]
+    settlement_density: high
+    danger_level: low
+    
+  hostile_delta:
+    name: "Враждебная Сточная дельта"
+    region_type: sclerite_delta
+    biome_distribution:
+      toxic_swamp: 0.60
+      rot_forest: 0.25
+      mutation_pits: 0.10
+      unity_expanse: 0.05
+    dominant_races: [fen-kin, chimerics]
+    settlement_density: low
+    danger_level: high
+    
+  sacred_mountains:
+    name: "Священный Хребет-Остов"
+    region_type: spine_ridge
+    biome_distribution:
+      bone_needles: 0.40
+      litho-lichen_slopes: 0.35
+      wind_caves: 0.15
+      cloud_forest: 0.07
+      ruined_spires: 0.03
+    dominant_races: [barophiles, acoustics]
+    settlement_density: very_low
+    danger_level: high
+    special_feature: narrative:sky_city_ruins
+    
+  mystery_nexus:
+    name: "Таинственный Ганглионный узел"
+    region_type: ganglion_nexus
+    biome_distribution:
+      crystal_synapse_forest: 0.50
+      memory_pools: 0.20
+      resonant_gardens: 0.15
+      silent_zone: 0.10
+      petrified_forest: 0.05
+    dominant_races: [synaptics, relicts]
+    settlement_density: very_low
+    danger_level: extreme
+    special_feature: narrative:old_gods_legacy
+
+
+# =============================================================================
+# 8. ВАЛИДАЦИОННЫЕ ПРАВИЛА
+# =============================================================================
+
+validation_rules:
+  
+  # Проверка при генерации региона
+  region_generation_checks:
+    - rule: "Регион должен иметь хотя бы один биом"
+      severity: critical
+      
+    - rule: "Сумма biome_weights должна быть > 0"
+      severity: critical
+      
+    - rule: "Не может быть crystal_scar и biolume_forest рядом без буфера"
+      severity: error
+      
+    - rule: "В регионе с ecology:barren не должно быть > 30% населенности"
+      severity: warning
+      
+    - rule: "Язвы (ulcers) не должны занимать > 20% региона"
+      severity: warning
+      
+  # Проверка баланса
+  balance_checks:
+    - rule: "Средний danger_level региона < 7"
+      reason: "Игрок должен иметь возможность выжить"
+      severity: warning
+      
+    - rule: "Есть хотя бы одна раса с lifestyle:sedentary для торговли"
+      reason: "Нужны постоянные поселения"
+      severity: warning
+      
+    - rule: "Доступен хотя бы один источник resource:pure_lymph"
+      reason: "Игрок должен иметь доступ к воде"
+      severity: error
+      
+  # Проверка лора
+  lore_consistency_checks:
+    - rule: "narrative:old_gods_legacy несовместим с manifestation:numb"
+      reason: "Наследие Богов должно быть активным"
+      severity: error
+      
+    - rule: "narrative:sky_city_ruins только на terrain:elevated"
+      reason: "Города не могли упасть на равнину"
+      severity: warning
+      
+    - rule: "dorsals появляются только где есть megatherium_pastures"
+      reason: "Они живут на спинах Мегатериев"
+      severity: error
+
+
+# =============================================================================
+# 9. ОТЛАДОЧНЫЕ ПАРАМЕТРЫ
+# =============================================================================
+
+debug_params:
+  
+  # Режимы генерации для тестирования
+  generation_modes:
+    
+    procedural:
+      description: "Полная процедурная генерация"
+      use_noise: true
+      use_presets: false
+      randomness: 1.0
+      
+    preset_based:
+      description: "Генерация на основе пресетов"
+      use_noise: false
+      use_presets: true
+      randomness: 0.3
+      
+    hybrid:
+      description: "Смесь пресетов и процедурной генерации"
+      use_noise: true
+      use_presets: true
+      randomness: 0.6
+      preset_influence: 0.5
+      
+    deterministic:
+      description: "Детерминированная генерация для тестов"
+      use_noise: true
+      use_presets: false
+      randomness: 0.0
+      fixed_seed: 42
+      
+  # Визуализация для отладки
+  visualization:
+    render_noise_maps: true
+    render_biome_borders: true
+    render_compatibility_heatmap: true
+    render_poi_density: true
+    
+  # Логирование
+  logging:
+    log_generation_steps: true
+    log_compatibility_scores: true
+    log_rejected_placements: true
+    export_statistics: true
+
+# =============================================================================
+# 10. ЭВОЛЮЦИОННЫЕ ПРАВИЛА (для долгоиграющей кампании)
+# =============================================================================
+
+evolution_rules:
+  description: "Как мир меняется со временем (опционально)"
+  
+  # Изменения по игровому времени
+  long_term_changes:
+    
+    ulcer_growth:
+      enabled: true
+      check_every_n_days: 30
+      expansion_chance: 0.2
+      
+    settlement_growth:
+      enabled: true
+      village_to_town_time: 365  # дней
+      requires:
+        - population_growth: true
+        - resource_access: true
+        - danger_level: "< 5"  # <-- ИСПРАВЛЕНО
+        
+    biome_succession:
+      enabled: false  # Пока отключено
+      description: "Биомы медленно меняются (лес -> луг -> пустошь)"
+      
+    race_migration:
+      enabled: true
+      trigger_conditions:
+        - resource_depletion: true
+        - danger_level: "> 7"
+        - ulcer_proximity: "< 10"
+      
+  # Влияние действий игрока
+  player_impact:
+    
+    overexploitation:
+      resources_depleted_threshold: 0.7
+      effects:
+        fertility: -0.3
+        settlement_satisfaction: -0.5
+        spawn_new_threats: true
+        
+    successful_defense:
+      danger_cleared_threshold: 3  # убито врагов
+      effects:
+        danger_level: -1
+        settlement_growth: +0.2
+        
+    ulcer_containment:
+      stopped_expansion_for_days: 90
+      effects:
+        region_stability: +0.5
+        manifestation:stable: +0.2
+        hero_reputation: +10
