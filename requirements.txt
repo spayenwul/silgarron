@@ -1,0 +1,84 @@
+# Python version requirement
+# python>=3.10
+
+# ===================================
+# CORE DEPENDENCIES
+# ===================================
+
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+websockets==12.0
+
+# Data Validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Configuration
+python-dotenv==1.0.0
+
+# ===================================
+# AI & MACHINE LEARNING
+# ===================================
+
+# Google Gemini API
+google-generativeai==0.3.1
+
+# Vector Database
+chromadb==0.4.18
+
+# Local Embeddings (for intent classification)
+sentence-transformers==2.2.2
+
+# Optional: Torch (required by sentence-transformers)
+# Will be installed automatically by sentence-transformers
+# torch==2.1.1
+
+# ===================================
+# DATA & GRAPH
+# ===================================
+
+# Graph operations (world navigation)
+networkx==3.2.1
+
+# Data manipulation
+pandas==2.1.3
+numpy==1.26.2
+
+# YAML support
+pyyaml==6.0.1
+
+# ===================================
+# DEVELOPMENT & TESTING
+# ===================================
+
+# Testing framework
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# HTTP client for testing API
+httpx==0.25.2
+
+# Code quality
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+
+# ===================================
+# VISUALIZATION (Optional)
+# ===================================
+
+# For debugging and analysis
+matplotlib==3.8.2
+seaborn==0.13.0
+
+# ===================================
+# UTILITIES
+# ===================================
+
+# Better REPL
+ipython==8.18.1
+
+# Progress bars
+tqdm==4.66.1
