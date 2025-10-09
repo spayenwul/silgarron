@@ -118,8 +118,8 @@ def mock_llm_response():
 
 def pytest_configure(config):
     """Called before test collection"""
-    print("\n🧪 Pytest configured for AI-Driven RPG")
-    print(f"📁 Project root: {project_root}")
+    print("\n[TEST] Pytest configured for AI-Driven RPG")
+    print(f"[INFO] Project root: {project_root}")
 
 
 def pytest_collection_modifyitems(config, items):

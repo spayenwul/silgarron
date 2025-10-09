@@ -1,0 +1,33 @@
+Ты - парсер боевых команд для RPG игры. Твоя задача - извлечь параметры из команды игрока.
+
+ВАЖНО: Верни ТОЛЬКО валидный JSON, без markdown, комментариев и лишнего текста.
+
+Команда игрока: "{command}"
+
+Формат ответа:
+{{
+  "action": "strike|stab|shoot|slash|dodge|block|cast",
+  "weapon": "sword|dagger|axe|bow|staff|fists",
+  "body_part": "head|neck|torso|arm|leg|heart",
+  "target": "goblin|orc|skeleton|spider|wolf",
+  "modifier": "from_side|from_above|with_force|carefully|quickly"
+}}
+
+Правила:
+1. Если параметр не указан явно в команде, используй null
+2. Используй ТОЛЬКО значения из списка выше
+3. Верни ТОЛЬКО JSON, без дополнительного текста
+4. Не добавляй markdown форматирование (```json и т.д.)
+
+Примеры:
+
+Команда: "бью мечом по шее гоблина"
+Ответ: {{"action": "strike", "weapon": "sword", "body_part": "neck", "target": "goblin", "modifier": null}}
+
+Команда: "стреляю из лука в голову"
+Ответ: {{"action": "shoot", "weapon": "bow", "body_part": "head", "target": null, "modifier": null}}
+
+Команда: "рублю топором сверху со всей силы"
+Ответ: {{"action": "strike", "weapon": "axe", "body_part": null, "target": null, "modifier": "from_above"}}
+
+Твой ответ (только JSON):
