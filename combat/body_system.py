@@ -236,17 +236,17 @@ class BodySystem:
     def is_unconscious(self) -> bool:
         """
         Check if character is unconscious.
-        
+
         Causes:
-        - Low blood volume (< 30%)
+        - Low blood volume (<= 30%)
         - UNCONSCIOUS status effect
         - Head trauma (TODO)
-        
+
         Returns:
             bool: True if unconscious
         """
         return (
-            self.consciousness < 0.3 or
+            self.consciousness <= 0.3 or  # Исправлено: <= вместо < (граничное значение)
             any(e.type == EffectType.UNCONSCIOUS for e in self.status_effects)
         )
     

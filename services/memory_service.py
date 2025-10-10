@@ -2,10 +2,11 @@
 import chromadb
 from pathlib import Path
 from typing import List, Dict, Any
+from config import settings
 from logic.constants import META_TYPE, TYPE_EVENT, TYPE_LORE
 
-# Путь к базе данных
-DB_PATH = str(Path(__file__).parent.parent / "db")
+# Путь к базе данных из конфигурации или дефолтный
+DB_PATH = settings.chromadb_persist_directory or str(Path(__file__).parent.parent / "db")
 
 class MemoryService:
     def __init__(self):

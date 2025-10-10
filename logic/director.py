@@ -6,14 +6,20 @@ import game
 import services.llm_service as llm
 from logic.constants import *
 from services.intent_service import IntentService
+from combat.physical_simulator import PhysicalSimulator, PhysicalResult
+from combat.context_builder import PhysicalContextBuilder
 import json
-from utils.prompt_manager import load_and_format_prompt 
+from utils.prompt_manager import load_and_format_prompt
 
 class Director:
     # Первым идёт анализ от all-MiniLM-L6-v2 по data\intents.json
     """Инициализирует Director и его подсистемы, такие как сервис распознавания намерений."""
     def __init__(self):
         self.intent_service = IntentService()
+
+        # НОВОЕ: Заглушки боевой системы
+        self.physics_simulator = PhysicalSimulator()
+        self.context_builder = PhysicalContextBuilder()
 
     def decide_llm_action(self, game_instance: 'game.Game', player_command: str) -> str:
         """
@@ -132,6 +138,15 @@ class Director:
 
         if recognized_intent == "UNKNOWN":
             print("⚠️ Намерение не распознано, используется EXPLORATION по умолчанию.")
+
+        # TODO: Извлечь action_details из IntentService
+        # action_details = self.intent_service.extract_action_details(command)
+        #
+        # TODO: Использовать физический симулятор (когда будет реализован):
+        # context = self.context_builder.build(attacker, target, weapon, action_details, location)
+        # result = self.physics_simulator.simulate_attack(attacker, target, weapon, action_details)
+        #
+        # Пока используем базовую LLM-генерацию
 
         # 1. Сборка контекста
         log_str = "\n".join(game_instance.short_term_memory)

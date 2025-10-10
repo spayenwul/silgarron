@@ -11,6 +11,8 @@ from services.persistence_service import create_persistence_service
 from services.world_data_service import WorldDataService
 from services.tag_registry_service import TagRegistry
 from services.memory_service import MemoryService
+from services.event_store import EventStore
+from game import Game
 
 # --- 1. СНАЧАЛА создаем экземпляр приложения FastAPI ---
 app = FastAPI(title="RPG World API (Refactored)", version="3.2")
@@ -99,3 +101,54 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     except Exception as e:
         print(f"Ошибка в WebSocket: {e}")
         await websocket.close(code=1011)
+
+# --- 7. Event Sourcing эндпоинты ---
+@app.post("/game/load_from_events", summary="Загрузить игру из событий (Event Sourcing)")
+async def load_game_from_events(session_id: str):
+    """
+    Загрузить игру через Event Sourcing - восстановление состояния из событий.
+    """
+    try:
+        game_instance = Game.load_from_events(
+            session_id=session_id,
+            world_data_service=world_data,
+            tag_registry_service=tag_registry,
+            memory_service=memory
+        )
+
+        return {
+            "session_id": session_id,
+            "player_name": game_instance.player.name if game_instance.player else "Unknown",
+            "current_location": game_instance.current_location.name if game_instance.current_location else "Unknown",
+            "state": game_instance.state.name,
+            "message": "Игра успешно загружена из событий"
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка загрузки: {str(e)}")
+
+@app.get("/game/{session_id}/events", summary="Получить историю событий сессии")
+async def get_session_events(session_id: str):
+    """
+    Получить все события для конкретной сессии (для отладки и анализа).
+    """
+    event_store = EventStore()
+    events = event_store.get_events(session_id)
+
+    if not events:
+        raise HTTPException(status_code=404, detail="Session not found or has no events")
+
+    return {
+        "session_id": session_id,
+        "total_events": len(events),
+        "events": [
+            {
+                "type": e.__class__.__name__,
+                "timestamp": e.timestamp.isoformat(),
+                "event_id": e.event_id,
+                "data": {k: v for k, v in e.__dict__.items() if k not in ['event_id', 'timestamp', 'session_id']}
+            }
+            for e in events
+        ]
+    }

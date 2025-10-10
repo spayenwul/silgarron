@@ -63,11 +63,14 @@ class Character:
     def is_dead(self) -> bool:
         """
         Check if character is dead.
-        
+
         Uses new body system if available, falls back to HP.
+        Checks BOTH systems to ensure backward compatibility.
         """
         if BODY_SYSTEM_AVAILABLE and self.body:
-            return self.body.is_dead()
+            # Проверяем обе системы: новую body system И legacy HP
+            # Персонаж мёртв если любая из систем показывает смерть
+            return self.body.is_dead() or self.hp <= 0
         else:
             # LEGACY: HP-based death
             return self.hp <= 0
