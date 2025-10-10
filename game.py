@@ -1,9 +1,11 @@
 # game.py
 import re
 import json
-from pathlib import Path 
-import random 
-from typing import List
+import uuid
+from pathlib import Path
+from datetime import datetime
+import random
+from typing import List, Optional
 from logic.constants import *
 from models.character import Character
 from models.item import Item
@@ -16,13 +18,15 @@ from utils.prompt_manager import load_and_format_prompt
 from utils.logger import log_player_input
 from services.world_data_service import WorldDataService
 from services.tag_registry_service import TagRegistry
-import generators.region_generator as region_gen
-import generators.location_generator as loc_gen
+from services.event_store import EventStore
+from models.events import *
 
-SAVE_DIR = Path(__file__).parent / "saves"
+from config import settings
+
+SAVE_DIR = Path(settings.saves_dir)
 
 class Game:
-    def __init__(self, world_data_service, tag_registry_service, memory_service):
+    def __init__(self, world_data_service, tag_registry_service, memory_service, session_id: Optional[str] = None):
         """
         Конструктор теперь ТОЛЬКО ПРИНИМАЕТ и СОХРАНЯЕТ глобальные сервисы.
         Он больше не создает их сам и не выводит ничего в консоль.
@@ -31,60 +35,20 @@ class Game:
         self.current_location: Location | None = None
         self.state = GameState.EXPLORATION
         self.short_term_memory: List[str] = []
-        
+        self.max_short_memory = settings.max_short_term_memory
+
         # Сохраняем ссылки на УЖЕ СУЩЕСТВУЮЩИЕ, переданные нам сервисы
         self.world_data = world_data_service
         self.tag_registry = tag_registry_service
         self.memory_service = memory_service
-        
+
         # Director легковесный, его можно создавать здесь
         self.director = Director()
 
-    def start_new_game(self, player_name: str):
-        """Инициализирует новую игру с использованием иерархической генерации."""
-        self.player = Character(name=player_name)
-
-        # Даем стартовые предметы
-        healing_potion = Item(name="Зелье лечения", description="Восстанавливает немного здоровья.")
-        old_sword = Item(name="Старый меч", description="Простой, но надежный меч.")
-        self.player.inventory.add_item(healing_potion)
-        self.player.inventory.add_item(old_sword)
-        print("\n--- Запуск иерархической генерации мира ---")
-        
-        # 1. Выбираем "континент" для старта. Пока что можно захардкодить.
-        # В будущем здесь может быть выбор игрока или случайный выбор.
-        start_continent_id = "torax" 
-        
-        # 2. Генерируем паспорт РЕГИОНА в контексте этого континента.
-        # Передаем сервисы как зависимости, чтобы генератор имел доступ к данным.
-        region_passport = region_gen.generate_region_passport_in_context(
-            world_data_service=self.world_data,
-            tag_registry=self.tag_registry, # Передаем, чтобы генератор мог использовать теги
-            continent_id=start_continent_id
-        )
-
-        # 3. На основе региона генерируем паспорт стартовой ЛОКАЦИИ.
-        location_passport = loc_gen.generate_location_passport(
-            region_passport=region_passport,
-            tag_registry=self.tag_registry,
-            world_data_service=self.world_data
-
-        )
-
-        # 4. Создаем объект Location, передавая ему паспорт.
-        # Класс Location должен быть обновлен, чтобы принимать 'passport' в __init__.
-        self.current_location = Location(passport=location_passport)
-
-        # 5. Просим LLM сгенерировать художественное описание
-        # на основе ПОЛНОГО и богатого паспорта локации.
-        # Это потребует создания нового, специализированного промпта.
-        # description = llm.generate_artistic_description(self.current_location.passport)
-        # self.current_location.description = description
-        # ПОКА ЧТО для теста можно использовать заглушку:
-        self.current_location.description = f"Вы находитесь в локации '{self.current_location.name}'.\n" \
-                                            f"Сгенерированные теги: {self.current_location.tags}"
-        
-        print("--- Новая игра началась! ---")
+        # Event Sourcing
+        self.event_store = EventStore()
+        self.session_id = session_id or str(uuid.uuid4())
+        print(f"[Game] Session ID: {self.session_id}")
 
     def get_context_for_llm(self) -> dict:
         """Собирает словарь с текущей ситуацией для передачи в LLM."""
@@ -96,14 +60,38 @@ class Game:
             "player_inventory": [item.name for item in self.player.inventory._items]
         }
 
+    def _emit_event(self, event: GameEvent) -> None:
+        """Записать событие в Event Store."""
+        self.event_store.append(self.session_id, event)
+        print(f"[Event] {event.__class__.__name__}")
+
     def change_state(self, new_state: GameState):
         """Меняет состояние игры и обрабатывает логику перехода."""
         print(f"--- Смена состояния: {self.state.name} -> {new_state.name} ---")
+        old_state = self.state.name
         self.state = new_state
+
+        # Записываем событие смены состояния
+        self._emit_event(GameStateChanged(
+            event_id=str(uuid.uuid4()),
+            timestamp=datetime.now(),
+            session_id=self.session_id,
+            from_state=old_state,
+            to_state=new_state.name
+        ))
+
         if new_state == GameState.COMBAT:
             # Начиная бой, очищаем лог и добавляем первую запись
             self.short_term_memory.clear()
             self.short_term_memory.append(f"Начало боя в локации: {self.current_location.name}.")
+
+            # Записываем событие начала боя
+            self._emit_event(CombatStarted(
+                event_id=str(uuid.uuid4()),
+                timestamp=datetime.now(),
+                session_id=self.session_id,
+                location_id=self.current_location.id if self.current_location else "unknown"
+            ))
         elif new_state == GameState.EXPLORATION:
             # Заканчивая бой, очищаем лог
             self.short_term_memory.clear()
@@ -226,25 +214,35 @@ class Game:
         Делегирует команду Режиссёру, парсит ответ с помощью regex,
         валидирует его структуру и передает изменения в _apply_state_changes.
         """
+        # Записываем событие о выполнении команды
+        self._emit_event(PlayerActionExecuted(
+            event_id=str(uuid.uuid4()),
+            timestamp=datetime.now(),
+            session_id=self.session_id,
+            command=command,
+            intent="UNKNOWN",  # Будет обновлено Director'ом
+            action_details={}
+        ))
+
         # 1. Получаем сырой ответ от LLM через Режиссёра
         raw_response = self.director.decide_llm_action(self, command)
-        
-        try:          
+
+        try:
             # Шаг 1: Используем надежный парсер для извлечения JSON
             json_string = self._extract_json_from_text(raw_response)
-            
+
             # Шаг 2: Декодируем JSON
             response_data = json.loads(json_string)
-            
+
             # Шаг 3: Валидируем структуру и типы данных
             self._validate_llm_response(response_data)
-            
+
             # Если все проверки пройдены, мы можем безопасно извлекать данные
             narrative = response_data[NARRATIVE]
             changes = response_data[STATE_CHANGES]
-            
+
             return self._apply_state_changes(changes, narrative, command)
-            
+
         except (json.JSONDecodeError, ValueError) as e:
             # Ловим ошибки парсинга (JSONDecodeError) и валидации (ValueError)
             print(f"⚠️ Ошибка обработки ответа LLM: {e}")
@@ -274,47 +272,88 @@ class Game:
         # Воссоздаем объекты, делегируя это их классам
         self.player = Character.from_dict(data["player"]) if data.get("player") else None
         self.current_location = Location.from_dict(data["current_location"]) if data.get("current_location") else None
-        
+
         # Восстанавливаем Enum по его имени
         self.state = GameState[data.get("game_state", "EXPLORATION")]
-        
+
         # Восстанавливаем простые данные
         self.short_term_memory = data.get("short_term_memory", [])
-        
+
         print("--- Игра успешно загружена ---")
 
-    def save_to_file(self, filename: str):
-        """Сохраняет игру в JSON файл."""
-        # Создаем папку 'saves', если ее еще нет. `exist_ok=True` предотвращает ошибку, если папка уже есть.
-        SAVE_DIR.mkdir(exist_ok=True) 
-        filepath = SAVE_DIR / f"{filename}.json"
-        
-        try:
-            with open(filepath, "w", encoding="utf-8") as f:
-                # json.dump элегантно записывает наш словарь в файл
-                json.dump(self.to_dict(), f, ensure_ascii=False, indent=4)
-            print(f"✅ Игра сохранена в файл: {filepath.name}")
-        except Exception as e:
-            print(f"🔴 Не удалось сохранить игру: {e}")
+    # --- EVENT SOURCING: ЗАГРУЗКА ИЗ СОБЫТИЙ ---
 
     @classmethod
-    def load_from_file(cls, filename: str):
-        """Создает НОВЫЙ объект Game и загружает в него данные из файла."""
-        filepath = SAVE_DIR / f"{filename}.json"
-        
-        if not filepath.exists():
-            print(f"🔴 Файл сохранения не найден: {filepath}")
-            return None
+    def load_from_events(cls, session_id: str, world_data_service, tag_registry_service, memory_service) -> 'Game':
+        """
+        Восстановить состояние игры из событий (Event Sourcing).
 
-        try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            
-            # Создаем новый "чистый" экземпляр игры
-            game_instance = cls() 
-            # Наполняем его данными из файла
-            game_instance.load_from_dict(data)
-            return game_instance
-        except Exception as e:
-            print(f"🔴 Не удалось загрузить игру из файла: {e}")
-            return None
+        Args:
+            session_id: ID сессии для загрузки
+            world_data_service: Сервис данных мира
+            tag_registry_service: Сервис реестра тегов
+            memory_service: Сервис памяти
+
+        Returns:
+            Восстановленный экземпляр игры
+        """
+        event_store = EventStore()
+        events = event_store.get_events(session_id)
+
+        if not events:
+            raise ValueError(f"Session {session_id} not found")
+
+        # Найти событие GameStarted
+        game_started = None
+        for e in events:
+            if isinstance(e, GameStarted):
+                game_started = e
+                break
+
+        if not game_started:
+            raise ValueError(f"GameStarted event not found for session {session_id}")
+
+        # Создать игру с существующим session_id
+        game = cls(
+            world_data_service=world_data_service,
+            tag_registry_service=tag_registry_service,
+            memory_service=memory_service,
+            session_id=session_id
+        )
+
+        # Применить все события
+        for event in events:
+            game._apply_event(event)
+
+        print(f"[Game] Loaded {len(events)} events for session {session_id}")
+        return game
+
+    def _apply_event(self, event: GameEvent) -> None:
+        """
+        Применить событие к состоянию игры (для восстановления из Event Store).
+
+        Примечание: Этот метод НЕ записывает события обратно в Store,
+        он только восстанавливает состояние.
+        """
+        if isinstance(event, GameStarted):
+            # При загрузке из событий, игрок и локация будут восстановлены из других событий
+            print(f"[Apply] GameStarted: player={event.player_name}")
+
+        elif isinstance(event, GameStateChanged):
+            self.state = GameState[event.to_state]
+            print(f"[Apply] GameStateChanged: {event.from_state} -> {event.to_state}")
+
+        elif isinstance(event, CombatStarted):
+            if self.state != GameState.COMBAT:
+                self.state = GameState.COMBAT
+            print(f"[Apply] CombatStarted at {event.location_id}")
+
+        elif isinstance(event, CombatEnded):
+            if self.state != GameState.EXPLORATION:
+                self.state = GameState.EXPLORATION
+            print(f"[Apply] CombatEnded: victory={event.victory}")
+
+        elif isinstance(event, PlayerActionExecuted):
+            print(f"[Apply] PlayerActionExecuted: {event.command}")
+
+        # Другие события можно добавить по мере необходимости

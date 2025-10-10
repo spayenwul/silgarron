@@ -12,6 +12,158 @@
       "metadata": { "intent": "COMBAT" }
     },
     {
+      "text": "Бью мечом по шее гоблина",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Колю кинжалом в сердце",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Стреляю из лука в голову",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Рублю топором сверху",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Бью рукой в живот",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Атакую мечом сбоку",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Уклоняюсь от удара",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Блокирую атаку щитом",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Парирую удар мечом",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Использую заклинание огня",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Кастую молнию на орка",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Бью паука со всей силы",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Напасть на скелета",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Пытаюсь убить гоблина",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Протыкаю копьем в грудь",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Рублю клинком по ноге",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Режу ножом по руке",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Бью посохом по голове",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Стреляю в колено",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Удар мечом в шею",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Полоснуть кинжалом по горлу",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Ударить топором со всей силы",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Быстро атакую кинжалом",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Осторожно бью по руке",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Резко уклоняюсь вправо",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Мощный удар топором сверху",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Прицельный выстрел в голову",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Режу мечом сбоку",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Атакую рукой в лицо",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Бью кулаком в челюсть",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Пронзаю мечом торс",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Колю в бок кинжалом",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Стреляю стрелой в плечо",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Рубану топором по корпусу",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Блокирую удар по ноге",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Отбиваю атаку в голову",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Увернуться от стрелы",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
+      "text": "Прикрываюсь щитом",
+      "metadata": { "intent": "COMBAT" }
+    },
+    {
       "text": "Осмотреться вокруг",
       "metadata": { "intent": "EXPLORATION" }
     },
@@ -24,6 +176,26 @@
       "metadata": { "intent": "EXPLORATION" }
     },
     {
+      "text": "Обыскать комнату",
+      "metadata": { "intent": "EXPLORATION" }
+    },
+    {
+      "text": "Проверить дверь",
+      "metadata": { "intent": "EXPLORATION" }
+    },
+    {
+      "text": "Исследовать алтарь",
+      "metadata": { "intent": "EXPLORATION" }
+    },
+    {
+      "text": "Взять предмет со стола",
+      "metadata": { "intent": "EXPLORATION" }
+    },
+    {
+      "text": "Открыть сундук",
+      "metadata": { "intent": "EXPLORATION" }
+    },
+    {
       "text": "Поговорить с торговцем",
       "metadata": { "intent": "DIALOGUE" }
     },
@@ -32,23 +204,15 @@
       "metadata": { "intent": "DIALOGUE" }
     },
     {
-        "text": "Атаковать врага мечом",
-        "metadata": { "intent": "COMBAT" }
+      "text": "Поговорить с незнакомцем",
+      "metadata": { "intent": "DIALOGUE" }
     },
     {
-        "text": "Ударить монстра",
-        "metadata": { "intent": "COMBAT" }
+      "text": "Расспросить старика",
+      "metadata": { "intent": "DIALOGUE" }
     },
     {
-        "text": "Бью паука со всей силы",
-        "metadata": { "intent": "COMBAT" }
-    },
-    {
-        "text": "Напасть на скелета",
-        "metadata": { "intent": "COMBAT" }
-    },
-    {
-        "text": "Пытаюсь убить гоблина",
-        "metadata": { "intent": "COMBAT" }
+      "text": "Поторговаться с купцом",
+      "metadata": { "intent": "DIALOGUE" }
     }
   ]

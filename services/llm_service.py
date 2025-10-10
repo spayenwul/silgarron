@@ -1,20 +1,15 @@
 # services/llm_service.py
-import os
-from typing import List
-import google.generativeai as genai
-from dotenv import load_dotenv
 from typing import List, Optional
+import google.generativeai as genai
 import json
+from config import settings
 from utils.logger import log_llm_trace
 from utils.prompt_manager import load_and_format_prompt
 from logic.constants import *
 
 # --- Конфигурация ---
-# Загружаем переменные окружения один раз при запуске
-load_dotenv()
-
-API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-pro") 
+API_KEY = settings.gemini_api_key
+MODEL_NAME = settings.llm_model 
 
 
 try:

@@ -8,9 +8,10 @@
 # Сюда можно добавлять как обычные растения, так и редкие ресурсы.
 # parent_biome_ids - в каких биомах можно найти этот ресурс.
 # rarity - условная редкость (например, common, uncommon, rare, legendary).
-FLORA: []
+
+FLORA:
   # Пример:
- - id: iron_bark_tree
+  - id: iron_bark_tree
     name: "Железодрев"
     parent_biome_ids: [biolume_forest, bone_needles]
     rarity: common
@@ -22,7 +23,7 @@ FLORA: []
     description: "Редкий гриб, чьи споры вызывают осознанные сновидения."
 
 # 13, 14. Фауна и знаковые формы жизни
-FAUNA: []
+FAUNA:
   # Пример:
   - id: bone_scavenger
     name: "Костяной падальщик"
@@ -32,7 +33,7 @@ FAUNA: []
 
 # 15. Экологическая угроза
 # Глобальные или региональные угрозы, которые можно "внедрить" в регион при генерации.
-ECOLOGICAL_THREATS: []
+ECOLOGICAL_THREATS:
   # Пример:
   - id: lymph_fever
     name: "Лимфатическая лихорадка"

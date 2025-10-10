@@ -2,18 +2,11 @@
 import chromadb
 from pathlib import Path
 from typing import List, Dict, Any
+from config import settings
 from logic.constants import META_TYPE, TYPE_EVENT, TYPE_LORE
 
-# Инициализируем клиент ChromaDB. 
-# Он создаст файлы для хранения данных в папке проекта.
-client = chromadb.Client()
-DB_PATH = str(Path(__file__).parent.parent / "db") 
-
-# Создаем "коллекцию" (аналог таблицы в SQL). 
-# Если она уже есть, просто подключаемся к ней.
-# embedding_function - это то, как Chroma будет превращать текст в векторы.
-# Мы оставляем значение по умолчанию, которое отлично работает.
-collection = client.get_or_create_collection(name="game_world_lore")
+# Путь к базе данных из конфигурации или дефолтный
+DB_PATH = settings.chromadb_persist_directory or str(Path(__file__).parent.parent / "db")
 
 class MemoryService:
     def __init__(self):
@@ -25,7 +18,7 @@ class MemoryService:
         Добавляет фрагмент текста с метаданными.
         """
         try:
-            collection.add(
+            self.collection.add(
                 documents=[text],
                 ids=[memory_id],
                 metadatas=[metadata]
@@ -65,13 +58,13 @@ class MemoryService:
                 query_options["where"] = chroma_where_filter
         else:
             print(f"🧠 Поиск общих воспоминаний, связанных с: '{query_text}'...")
-        
-        results = collection.query(**query_options)
-        
+
+        results = self.collection.query(**query_options)
+
         retrieved = results['documents'][0]
         if retrieved:
             print(f"📚 Найдено: {retrieved}")
         else:
             print("📚 Ничего релевантного не найдено.")
-            
+
         return retrieved

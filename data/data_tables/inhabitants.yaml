@@ -1,151 +1,975 @@
-# Раздел IV. Обитатели и Культура (Социальная структура)
+# =============================================================================
+# ОБИТАТЕЛИ МИРА СИЛЬГАРРОН
+# =============================================================================
+# Версия схемы: 2.0.0
+# Описание: Расы, фракции, поселения
 
-# 23, 24. Расы: Полный список всех разумных и полуразумных рас Сильгаррона.
+meta:
+  schema_version: "2.0.0"
+  last_updated: "2025-10-05"
+  description: "Разумные и полуразумные обитатели Сильгаррона"
+
+
+# =============================================================================
+# 1. РАСЫ (Races)
+# =============================================================================
+
 RACES:
-  # --- Люди (Потомки Выживших) ---
+  
+  # === ЛЮДИ: ПОТОМКИ ВЫЖИВШИХ ===
+  
   - id: kith
-    name: Киты (Дети Кости)
-    type: human
-    description: "Прагматичные строители и воины, ценящие порядок и стабильность. Потомки касты Зодчих."
-  - id: fen-kin
-    name: Топяники (Дети Гнили)
-    type: human
-    description: "Скрытные выживальщики, адаптировавшиеся к токсичной среде болот. Потомки касты Биологов."
+    name: "Киты (Дети Кости)"
+    category: human_descendant
+    description: "Прагматичные строители и воины, ценящие порядок и стабильность. Потомки касты Зодчих Воздушных Княжеств."
+    
+    # Столповые теги расы
+    pillar_tags:
+      lifestyle: lifestyle:sedentary
+      social_structure: social:hierarchical
+      technology_level: tech:medieval
+      
+    # Определяющие теги
+    defining_tags:
+      - culture:militaristic
+      - culture:building
+      - relation:pragmatic
+      - tech:bone_crafting
+      
+    # КЛЮЧЕВОЙ РАЗДЕЛ: Совместимость с окружением
+    environmental_compatibility:
+      # Сильно предпочитают (вес > 1.0)
+      preferred:
+        terrain:flat: 2.5
+        terrain:elevated: 1.5
+        surface:stable: 3.0
+        ecology:moderate: 1.8
+        resource:bone_chitin: 3.0
+        resource:pure_lymph: 2.0
+        
+      # Избегают (вес < 1.0)
+      avoided:
+        surface:dynamic: 0.3
+        ecology:toxic: 0.2
+        ecology:corrupted: 0.1
+        
+      # Абсолютно несовместимо (не появятся вообще)
+      incompatible:
+        - narrative:new_god_ulcer
+        - terrain:aquatic
+        
+    # Социальные связи
+    relations:
+      allies: [geodes, dorsals]
+      neutral: [pulsars, fen-kin, saprophytes]
+      hostile: [ursines, chimerics]
+      
+    # Уникальные способности расы
+    racial_abilities:
+      - id: master_builders
+        name: "Мастера-строители"
+        effect: "Строительство на 30% быстрее, +2 к прочности зданий"
+        
+      - id: bone_affinity
+        name: "Родство с костью"
+        effect: "+20% к эффективности добычи костехитина"
+        
+    # Типичные поселения
+    settlement_types: [fortress_cave, hilltop_citadel, bone_city]
+    
+    # Культурные особенности
+    culture:
+      governance: military_council
+      religion: ancestor_worship
+      values: [order, strength, tradition]
+      taboos: [chaos, weakness, nomadism]
+      
+    # Экономика
+    economy:
+      primary_resources: [bone_chitin_raw, lymph_pure]
+      exports: [bone_chitin_polished_plate, tools, weapons]
+      imports: [food, textiles, luxuries]
+      
+    population_params:
+      base_growth_rate: 0.02
+      max_settlement_size: 5000
+      preferred_settlement_density: high
+
   - id: pulsars
-    name: Пульсары (Дети Дыхания)
-    type: human
+    name: "Пульсары (Дети Дыхания)"
+    category: human_descendant
     description: "Кочевники, чья жизнь подчинена ритму дыхания равнин. Потомки касты Навигаторов."
+    
+    pillar_tags:
+      lifestyle: lifestyle:nomadic
+      social_structure: social:tribal
+      technology_level: tech:bronze_age
+      
+    defining_tags:
+      - culture:nomadic
+      - culture:spiritual
+      - relation:harmonious
+      - manifestation:attuned  # Чувствуют Дыхание мира
+      
+    environmental_compatibility:
+      preferred:
+        terrain:flat: 3.0
+        surface:dynamic: 2.5
+        ecology:moderate: 2.0
+        narrative:megafauna_migration: 5.0
+        
+      avoided:
+        surface:stable: 0.8
+        terrain:elevated: 0.5
+        lifestyle:sedentary: 0.3
+        
+      incompatible:
+        - terrain:subterranean
+        - ecology:toxic
+        
+    relations:
+      allies: [dorsals, synaptics]
+      neutral: [kith, fen-kin, silt_weavers]
+      hostile: [ursines]
+      
+    racial_abilities:
+      - id: breath_sense
+        name: "Чувство Дыхания"
+        effect: "Предсказывают пульсации земли, +3 к навигации"
+        
+      - id: rapid_camp
+        name: "Быстрый лагерь"
+        effect: "Разбивают/сворачивают лагерь за 1 час вместо 4"
+        
+    settlement_types: [nomad_camp, seasonal_village, mobile_caravan]
+    
+    culture:
+      governance: council_of_elders
+      religion: breath_cult
+      values: [freedom, adaptation, respect_for_nature]
+      taboos: [killing_megatherium, permanent_buildings]
+      
+    # НОВОЕ: Внутренние фракции
+    internal_factions:
+      - id: great_caravan
+        name: "Великий Караван"
+        ideology: "Традиционализм, мигрируем по древним путям"
+        size: majority
+        
+      - id: sons_of_wind
+        name: "Сыны Ветра"
+        ideology: "Экстремальный кочевничество, никогда не останавливаемся"
+        size: minority
+        conflict_with: [great_caravan]
+        
+    population_params:
+      base_growth_rate: 0.015
+      max_settlement_size: 500
+      preferred_settlement_density: scattered
+
+  - id: fen-kin
+    name: "Топяники (Дети Гнили)"
+    category: human_descendant
+    description: "Скрытные выживальщики, адаптировавшиеся к токсичной среде болот. Потомки касты Биологов."
+    
+    pillar_tags:
+      lifestyle: lifestyle:sedentary
+      social_structure: social:tribal
+      technology_level: tech:stone_age
+      
+    defining_tags:
+      - culture:survivalist
+      - culture:secretive
+      - tech:bio_alchemy
+      - adaptation:toxic_resistance
+      
+    environmental_compatibility:
+      preferred:
+        ecology:toxic: 3.0
+        ecology:corrupted: 2.0
+        terrain:flat: 2.0
+        surface:unstable: 2.0
+        resource:toxins: 3.0
+        
+      avoided:
+        ecology:fertile: 0.5
+        surface:stable: 0.7
+        
+      incompatible:
+        - terrain:elevated
+        - ecology:barren
+        
+    relations:
+      allies: [saprophytes, chimerics]
+      neutral: [pulsars, silt_weavers]
+      hostile: [kith, phages]  # Фаги видят их как "нечистых"
+      
+    racial_abilities:
+      - id: toxic_immunity
+        name: "Иммунитет к ядам"
+        effect: "Невосприимчивы к большинству токсинов и болезней"
+        
+      - id: swamp_walker
+        name: "Болотный ходок"
+        effect: "Движение по болотам без штрафов"
+        
+      - id: poison_crafter
+        name: "Мастер ядов"
+        effect: "+50% к силе создаваемых ядов и противоядий"
+        
+    settlement_types: [stilt_village, hidden_grove, fungal_shelter]
+    
+    culture:
+      governance: shaman_council
+      religion: cult_of_decay
+      values: [survival, secrecy, adaptation]
+      taboos: [cleanliness_obsession, fire_worship]
+      
+    economy:
+      primary_resources: [toxins, medicinal_fungi, rare_antidotes]
+      exports: [poisons, antidotes, rare_reagents]
+      imports: [metal_tools, clean_water, preservatives]
+      
+    population_params:
+      base_growth_rate: 0.01
+      max_settlement_size: 300
+      preferred_settlement_density: low
+
   - id: ursines
-    name: Урсины (Сестры Когтя)
-    type: human
+    name: "Урсины (Сестры Когтя)"
+    category: human_descendant
     description: "Матриархальный культ воительниц, отвергший адаптацию в пользу доминирования над природой."
+    
+    pillar_tags:
+      lifestyle: lifestyle:nomadic
+      social_structure: social:matriarchal
+      technology_level: tech:iron_age
+      
+    defining_tags:
+      - culture:militaristic
+      - culture:aggressive
+      - relation:domination
+      - social:female_supremacy
+      
+    environmental_compatibility:
+      preferred:
+        danger:predators: 2.0
+        danger:environmental: 1.5
+        terrain:elevated: 1.5
+        ecology:moderate: 1.3
+        
+      avoided:
+        ecology:toxic: 0.6
+        surface:dynamic: 0.5
+        
+      incompatible:
+        - narrative:new_god_ulcer
+        - ecology:barren
+        
+    relations:
+      allies: []  # Ни с кем не дружат
+      neutral: [fen-kin, barophiles]
+      hostile: [kith, pulsars, dorsals]
+      
+    racial_abilities:
+      - id: combat_frenzy
+        name: "Боевое безумие"
+        effect: "+30% к урону в бою, -10% к защите"
+        
+      - id: apex_predator
+        name: "Вершина пищевой цепи"
+        effect: "+2 к запугиванию животных, охота на 40% эффективнее"
+        
+    settlement_types: [war_camp, hunting_lodge, contested_territory]
+    
+    culture:
+      governance: war_matriarch
+      religion: cult_of_the_hunt
+      values: [strength, dominance, female_power]
+      taboos: [cowardice, male_leadership, agriculture]
+      
+    internal_factions:
+      - id: blood_claws
+        name: "Кровавые Когти"
+        ideology: "Ультра-агрессия, война со всеми"
+        size: majority
+        
+      - id: grey_mothers
+        name: "Серые Матери"
+        ideology: "Умеренность, избирательная агрессия"
+        size: minority
+        
+    population_params:
+      base_growth_rate: 0.025  # Высокая рождаемость
+      max_settlement_size: 800
+      preferred_settlement_density: scattered
 
-  # --- Люди (Наследие Старых Богов) ---
-  - id: stillborn
-    name: Нерожденные
-    type: human_legacy
-    description: "Потомки 'гармонизаторов' мира. Излучают ауру спокойствия, их Сцепка направлена на подавление и отмену."
+  # === ЛЮДИ: НАСЛЕДИЕ СТАРЫХ БОГОВ ===
+  
   - id: synaptics
-    name: Синаптики
-    type: human_legacy
+    name: "Синаптики"
+    category: human_legacy
     description: "Потомки 'сенсоров' мира. Способны напрямую подключаться к нервной системе Сильгаррона, что является даром и проклятием."
-  - id: phages
-    name: Фаги
-    type: human_legacy
-    description: "Потомки 'иммунной системы' мира. Фанатично стремятся к биологической чистоте, уничтожая мутации."
+    
+    pillar_tags:
+      lifestyle: lifestyle:isolated
+      social_structure: social:egalitarian
+      technology_level: tech:mystical
+      
+    defining_tags:
+      - manifestation:high_attuned
+      - culture:mystical
+      - anomaly:psychic_affinity
+      - narrative:old_gods_legacy
+      
+    environmental_compatibility:
+      preferred:
+        manifestation:high: 3.0
+        manifestation:chaotic: 2.0
+        anomaly:psychic: 2.5
+        narrative:old_gods_legacy: 3.0
+        terrain:subterranean: 1.5
+        
+      avoided:
+        manifestation:numb: 0.1
+        danger:disease: 0.5
+        ecology:toxic: 0.4
+        
+      incompatible:
+        - narrative:new_god_ulcer  # Новые Боги блокируют их дар
+        
+    relations:
+      allies: [relicts, stillborn, pulsars]
+      neutral: [geodes, acoustics]
+      hostile: [phages, crystalline_cultists]
+      
+    racial_abilities:
+      - id: ganglion_link
+        name: "Ганглионная Связь"
+        effect: "Может подключаться к нервной системе мира, получая видения"
+        cost: "Каждое использование уменьшает Sanity на 1d6"
+        
+      - id: memory_read
+        name: "Чтение Памяти"
+        effect: "Прикосновением считывает историю объекта или места"
+        
+      - id: psychic_vulnerable
+        name: "Психическая уязвимость"
+        effect: "Удвоенный урон от психических атак и аномалий"
+        is_flaw: true
+        
+    settlement_types: [monastery, meditation_cave, ganglion_outpost]
+    
+    culture:
+      governance: conclave_of_seers
+      religion: communion_with_old_gods
+      values: [knowledge, connection, sacrifice]
+      taboos: [ignorance, isolation_from_world, new_gods]
+      
+    population_params:
+      base_growth_rate: 0.005  # Очень медленный рост
+      max_settlement_size: 100
+      preferred_settlement_density: very_low
+      
+    special_mechanics:
+      madness_system: true
+      vision_quests: true
+      ganglion_dependence: true
 
-  # --- Человекообразные Расы ---
+  # === ЧЕЛОВЕКООБРАЗНЫЕ РАСЫ ===
+  
   - id: geodes
-    name: Геоды
-    type: humanoid
+    name: "Геоды"
+    category: humanoid
     description: "Бледные подземные гуманоиды с огромными глазами, потомки тех, кто укрылся от растущего давления в кавернах."
-  - id: grendels
-    name: Грендели
-    type: humanoid
-    description: "Массивные гуманоиды без внутреннего скелета, чья форма поддерживается гидростатическим давлением."
-  - id: silt_weavers
-    name: Иловые Ткачи
-    type: humanoid
-    description: "Амфибии-гуманоиды со спинными щупальцами, строящие эфемерные города из ила в сезон Отлива."
-  - id: chimerics
-    name: Химерные
-    type: humanoid
-    description: "Генетически нестабильные мутанты из Сточной Дельты, чьи тела являются хаотичным набором черт разных видов."
-  - id: saprophytes
-    name: Сапрофиты
-    type: humanoid
-    description: "Симбиоты грибов, обладающие коллективным разумом через общую мицелиальную сеть."
-  - id: lithophages
-    name: Литофаги (Камнееды)
-    type: humanoid
-    description: "Коренастые гуманоиды с каменистой кожей, способные переваривать горные породы."
-  - id: acoustics
-    name: Акустики
-    type: humanoid
-    description: "Хрупкие обитатели Поющих Утесов, чье тело является живым резонатором, а язык основан на звуковых гармониях."
+    
+    pillar_tags:
+      lifestyle: lifestyle:sedentary
+      social_structure: social:hierarchical
+      technology_level: tech:crystal_tech
+      
+    defining_tags:
+      - culture:mining
+      - culture:xenophobic
+      - adaptation:darkness_vision
+      - tech:crystal_working
+      
+    environmental_compatibility:
+      preferred:
+        terrain:subterranean: 4.0
+        terrain:elevated: 0.1  # Только в пещерах гор
+        resource:resonance_crystal: 3.0
+        ecology:unique: 2.0
+        
+      avoided:
+        terrain:flat: 0.2
+        surface:dynamic: 0.3
+        ecology:fertile: 0.5
+        
+      incompatible:
+        - terrain:aquatic
+        - ecology:toxic
+        - sunlight: true  # Не выходят на поверхность днем
+        
+    relations:
+      allies: [kith, lithophages]
+      neutral: [synaptics, acoustics]
+      hostile: [saprophytes, chimerics]
+      
+    racial_abilities:
+      - id: darkvision
+        name: "Темновидение"
+        effect: "Видят в полной темноте на 60 футов"
+        
+      - id: crystal_resonance
+        name: "Кристальный резонанс"
+        effect: "+50% к эффективности использования резонирующих кристаллов"
+        
+      - id: sunlight_weakness
+        name: "Чувствительность к свету"
+        effect: "-2 ко всем проверкам при ярком свете"
+        is_flaw: true
+        
+    settlement_types: [crystal_city, mineral_mine, geode_ruins]
+    
+    culture:
+      governance: elder_oligarchy
+      religion: crystal_harmony
+      values: [precision, tradition, isolation]
+      taboos: [surface_dwelling, destroying_crystals, outsiders]
+      
+    economy:
+      primary_resources: [resonance_crystal_raw, minerals, gems]
+      exports: [crystal_tools, jewelry, light_sources]
+      imports: [food, textiles, wood]
+      
+    population_params:
+      base_growth_rate: 0.008
+      max_settlement_size: 2000
+      preferred_settlement_density: moderate
+
   - id: dorsals
-    name: Дорсалы
-    type: humanoid
+    name: "Дорсалы"
+    category: humanoid
     description: "Маленькие симбиоты, живущие на спинах гигантских Мегатериев, которые являются для них целым миром."
-  - id: barophiles
-    name: Барофилы
-    type: humanoid
-    description: "Высокие и легкие обитатели горных пиков с полыми костями и планирующими мембранами."
-  - id: relicts
-    name: Реликты
-    type: humanoid
-    description: "Слепые гуманоиды, способные 'читать' память прошлого через прикосновение."
-  - id: foci
-    name: Фокусы
-    type: humanoid
-    description: "Живые 'линзы', неспособные к своей Сцепке, но многократно усиливающие чужую. Их кожа покрыта био-проводящими узорами."
-  - id: abyssals
-    name: Глубинные
-    type: humanoid
-    description: "Прозрачные, дышащие лимфой обитатели дна Протоплазменного Океана, приспособленные к чудовищному давлению."
+    
+    pillar_tags:
+      lifestyle: lifestyle:nomadic
+      social_structure: social:tribal
+      technology_level: tech:primitive
+      
+    defining_tags:
+      - culture:symbiotic
+      - relation:harmonious
+      - adaptation:small_size
+      - narrative:megafauna_migration
+      
+    environmental_compatibility:
+      preferred:
+        narrative:megafauna_migration: 5.0  # Абсолютная зависимость
+        terrain:flat: 3.0
+        surface:dynamic: 2.0
+        ecology:moderate: 2.0
+        
+      avoided:
+        terrain:subterranean: 0.0  # Невозможно
+        terrain:aquatic: 0.0
+        ecology:toxic: 0.3
+        
+      incompatible:
+        - location:without_megatherium  # Не могут жить без них
+        
+    relations:
+      allies: [pulsars, kith]
+      neutral: [fen-kin, silt_weavers]
+      hostile: [ursines]  # Охотятся на Мегатериев
+      
+    racial_abilities:
+      - id: megatherium_bond
+        name: "Связь с Мегатерием"
+        effect: "Интуитивно понимают настроение своего носителя"
+        
+      - id: small_and_agile
+        name: "Маленький и ловкий"
+        effect: "+4 к акробатике, +2 к скрытности, -2 к силовым проверкам"
+        
+      - id: symbiotic_healing
+        name: "Симбиотическое исцеление"
+        effect: "Лечат раны Мегатерия, получая взамен его защиту"
+        
+    settlement_types: [back_village, mobile_nest, megatherium_caravan]
+    
+    culture:
+      governance: herd_matriarch
+      religion: megatherium_worship
+      values: [symbiosis, care, migration]
+      taboos: [killing_megatherium, ground_dwelling, metal_weapons]
+      
+    population_params:
+      base_growth_rate: 0.02
+      max_settlement_size: 200  # На одном Мегатерии
+      preferred_settlement_density: clustered
+      
+    special_mechanics:
+      megatherium_dependence: true
+      mobile_settlements: true
+      
+  - id: silt_weavers
+    name: "Иловые Ткачи"
+    category: humanoid
+    description: "Амфибии-гуманоиды со спинными щупальцами, строящие эфемерные города из ила в сезон Отлива."
+    
+    pillar_tags:
+      lifestyle: lifestyle:semi_nomadic
+      social_structure: social:egalitarian
+      technology_level: tech:organic
+      
+    defining_tags:
+      - culture:artisan
+      - adaptation:amphibious
+      - tech:silt_weaving
+      - relation:peaceful
+      
+    environmental_compatibility:
+      preferred:
+        terrain:aquatic: 2.5
+        terrain:flat: 2.0
+        surface:unstable: 2.0  # Любят приливы/отливы
+        ecology:fertile: 1.8
+        
+      avoided:
+        terrain:elevated: 0.4
+        ecology:barren: 0.5
+        surface:stable: 0.7  # Скучно без изменений
+        
+      incompatible:
+        - terrain:subterranean
+        - ecology:toxic
+        
+    relations:
+      allies: [pulsars, fen-kin]
+      neutral: [kith, dorsals, saprophytes]
+      hostile: []  # Миролюбивы
+      
+    racial_abilities:
+      - id: amphibious
+        name: "Амфибия"
+        effect: "Дышат под водой и на суше одинаково хорошо"
+        
+      - id: silt_shaping
+        name: "Формование ила"
+        effect: "Создают прочные структуры из речного ила за минуты"
+        
+      - id: tentacle_craft
+        name: "Щупальцевое ремесло"
+        effect: "+3 к ремесленным проверкам, могут работать 4 руками"
+        
+    settlement_types: [tidal_city, silt_pavilion, ephemeral_market]
+    
+    culture:
+      governance: artisan_guild
+      religion: river_spirits
+      values: [beauty, temporality, trade]
+      taboos: [permanent_architecture, violence, hoarding]
+      
+    economy:
+      primary_resources: [silt, river_plants, pearls]
+      exports: [woven_silt_fabric, temporary_art, river_delicacies]
+      imports: [durable_goods, metals, preservatives]
+      
+    population_params:
+      base_growth_rate: 0.018
+      max_settlement_size: 1500
+      preferred_settlement_density: high_during_ebb
+      
+    special_mechanics:
+      seasonal_cities: true
+      tidal_dependence: true
 
-  # --- Полуразумные Существа ---
-  - id: chittering_stalkers
-    name: Стрекотуны
-    type: semi_sentient
-    description: "Стайные хищники, гибриды рептилии и насекомого с коллективным тактическим интеллектом."
-  - id: mycoid_swarm
-    name: Микоидный Рой
-    type: semi_sentient
-    description: "Ходячая колония из грибов, мха и насекомых, имитирующая гуманоидную форму."
-  - id: aero_skates
-    name: Аэро-скаты
-    type: semi_sentient
-    description: "Огромные парящие существа, 'плавающие' в плотной атмосфере."
-  - id: bone_scribes
-    name: Костяные Книжники
-    type: semi_sentient
-    description: "Маленькие существа, инстинктивно выцарапывающие историю мира на костях умерших животных."
-  - id: mirror_octopoids
-    name: Зеркальные Осьминоги
-    type: semi_sentient
-    description: "Обитатели Глазкового Ока, способные идеально копировать облик и поведение всего, что увидят."
-  - id: acoustic_hives
-    name: Акустические Ульи
-    type: semi_sentient
-    description: "Симбиотические колонии насекомых, обладающие коллективным 'музыкальным' разумом и управляющие звуком."
-  - id: nomad_stones
-    name: Кочующие Камни
-    type: semi_sentient
-    description: "Живые мегалиты, медленно мигрирующие по плато и питающиеся минералами из почвы."
-  - id: fog_weavers
-    name: Ткачи Тумана
-    type: semi_sentient
-    description: "Паукообразные существа из уплотненного тумана, создающие иллюзии и ловушки."
+  - id: saprophytes
+    name: "Сапрофиты"
+    category: humanoid
+    description: "Симбиоты грибов, обладающие коллективным разумом через общую мицелиальную сеть."
+    
+    pillar_tags:
+      lifestyle: lifestyle:sedentary
+      social_structure: social:hive_mind
+      technology_level: tech:organic
+      
+    defining_tags:
+      - culture:collective
+      - adaptation:fungal_symbiosis
+      - relation:decomposer
+      - manifestation:network_mind
+      
+    environmental_compatibility:
+      preferred:
+        ecology:toxic: 2.0
+        ecology:fertile: 2.5
+        surface:unstable: 1.5
+        terrain:subterranean: 2.0
+        resource:decay: 3.0
+        
+      avoided:
+        ecology:barren: 0.3
+        surface:stable: 0.8
+        
+      incompatible:
+        - narrative:new_god_ulcer  # Кристалл убивает грибы
+        - ecology:corrupted  # Кроме Хорала
+        
+    relations:
+      allies: [fen-kin, chimerics]
+      neutral: [kith, silt_weavers]
+      hostile: [phages, geodes]
+      
+    racial_abilities:
+      - id: mycelial_network
+        name: "Мицелиальная сеть"
+        effect: "Телепатическая связь со всеми Сапрофитами в радиусе 1 км"
+        
+      - id: decomposer
+        name: "Разлагатель"
+        effect: "Может питаться мертвой органикой, иммунитет к гнили"
+        
+      - id: spore_cloud
+        name: "Споровое облако"
+        effect: "1/день выпускает облако спор: враги -2 к атаке"
+        
+      - id: slow_movement
+        name: "Медлительность"
+        effect: "-2 к скорости, -1 к инициативе"
+        is_flaw: true
+        
+    settlement_types: [fungal_grove, rot_garden, mycelial_nexus]
+    
+    culture:
+      governance: collective_consciousness
+      religion: cycle_of_decay
+      values: [unity, recycling, patience]
+      taboos: [individualism, fire, preservation]
+      
+    population_params:
+      base_growth_rate: 0.03  # Быстрое размножение спорами
+      max_settlement_size: 5000  # Огромные колонии
+      preferred_settlement_density: very_high
+      
+    special_mechanics:
+      hive_mind: true
+      spore_reproduction: true
 
-# 25. Форма правления: Справочник политических систем.
-GOVERNANCE_FORMS:
-  # - id: tribal_council
-  #   name: Совет племен
-  #   description: "Власть принадлежит совету старейшин или вождей разных кланов."
-  # - ... и т.д. (монархия, теократия, военная диктатура, анархия)
+  - id: chimerics
+    name: "Химерные"
+    category: humanoid
+    description: "Генетически нестабильные мутанты из Сточной Дельты, чьи тела являются хаотичным набором черт разных видов."
+    
+    pillar_tags:
+      lifestyle: lifestyle:nomadic
+      social_structure: social:anarchic
+      technology_level: tech:scavenged
+      
+    defining_tags:
+      - adaptation:mutation
+      - culture:outcast
+      - ecology:corrupted_affinity
+      - relation:unpredictable
+      
+    environmental_compatibility:
+      preferred:
+        ecology:corrupted: 4.0
+        ecology:toxic: 3.0
+        anomaly:mutation: 5.0
+        danger:environmental: 2.0
+        
+      avoided:
+        ecology:fertile: 0.6
+        surface:stable: 0.7
+        
+      incompatible:
+        - narrative:old_gods_legacy  # Боги стабильности
+        
+    relations:
+      allies: [fen-kin, saprophytes]
+      neutral: []
+      hostile: [kith, phages, ursines]
+      
+    racial_abilities:
+      - id: adaptive_mutation
+        name: "Адаптивная мутация"
+        effect: "Каждый сезон получают случайную мутацию"
+        
+      - id: chimeric_traits
+        name: "Химерические черты"
+        effect: "Начинают с 1d4 случайных животных черт"
+        examples: [claws, gills, wings, poison_glands, thick_hide]
+        
+      - id: unstable_form
+        name: "Нестабильная форма"
+        effect: "Не могут использовать стандартную броню"
+        is_flaw: true
+        
+    settlement_types: [mutation_pit, scavenger_camp, chimeric_warren]
+    
+    culture:
+      governance: survival_of_the_fittest
+      religion: embrace_of_change
+      values: [adaptation, survival, chaos]
+      taboos: [purity, stability, discrimination]
+      
+    population_params:
+      base_growth_rate: 0.01  # Нестабильны
+      max_settlement_size: 400
+      preferred_settlement_density: scattered
+      
+    special_mechanics:
+      mutation_system: true
+      unstable_genetics: true
 
-# 26. Типы поселений: Классификация мест обитания.
-SETTLEMENT_TYPES:
-  # - id: fortress_cave
-  #   name: Крепость-пещера
-  #   description: "Город, вырезанный в толще горы или естественной пещерной системе."
-  # - ... и т.д. (кочевой лагерь, деревня на сваях, вертикальное поселение)
 
-# 30, 45. Фракции: Основные организации, культы и политические группы.
+# =============================================================================
+# 2. ФРАКЦИИ (Factions)
+# =============================================================================
+
 FACTIONS:
+  
   - id: kith_stone_fist_clan
-    name: Клан Каменного Кулака
-    parent_race_id: kith
-    description: "Крупнейшая и самая милитаризованная фракция Китов."
-  # - ... и т.д. (Артель, Культ Бледного Гриба, Сыны Ветра, Круг Сказителей)
+    name: "Клан Каменного Кулака"
+    parent_race: kith
+    faction_type: military_order
+    size: large
+    territory: [spine_ridge, foothills]
+    
+    ideology:
+      name: "Непреклонная Стена"
+      description: "Мир хаотичен и опасен. Только сила и порядок могут защитить нас."
+      
+    goals:
+      - "Построить неприступные крепости на каждом важном перевале"
+      - "Искоренить угрозу Урсин"
+      - "Монополизировать добычу костехитина"
+      
+    relations:
+      allies: [kith_artisan_guild, geode_crystal_delvers]
+      rivals: [kith_trade_consortium]
+      enemies: [ursines_blood_claws, chimeric_warband]
+      
+    military_strength: 8/10
+    economic_power: 6/10
+    political_influence: 7/10
+    
+    unique_units:
+      - bone_plate_warriors
+      - siege_engineers
+      - mountain_scouts
+      
+    controlled_locations:
+      - fortress_of_eternal_vigil
+      - bone_quarry_outpost
+      - iron_pass_watchtower
 
-# 32. Архитектурный стиль: Справочник строительных традиций.
-ARCHITECTURE_STYLES:
-  - id: carved_bone
-    name: Резьба по кости
-    description: "Монолитная архитектура, вырезанная прямо в костехитине мира."
-  # - ... и т.д. (живая грибная, мобильная, илистая)
+  - id: pulsars_great_caravan
+    name: "Великий Караван"
+    parent_race: pulsars
+    faction_type: nomadic_confederation
+    size: massive
+    territory: [dermal_plateau, megatherium_pastures]
+    
+    ideology:
+      name: "Путь Предков"
+      description: "Мы следуем древним маршрутам, дышим в такт с миром."
+      
+    goals:
+      - "Сохранить традиционные пути миграции"
+      - "Защитить Мегатериев от охотников"
+      - "Поддерживать баланс с Дорсалами"
+      
+    relations:
+      allies: [dorsals_herd_council, synaptics_oracle_circle]
+      rivals: [pulsars_sons_of_wind]
+      enemies: [ursines_any]
+      
+    military_strength: 5/10
+    economic_power: 7/10
+    political_influence: 8/10
+    
+    unique_mechanics:
+      migration_routes: true
+      breath_prediction: true
+      
+    cultural_artifacts:
+      - staff_of_first_walker
+      - breath_drum
+      - migration_map_tapestry
 
-# Остальные пункты (TECH_LEVEL, LANGUAGES, ALIGNMENTS, SOCIAL_STRUCTURES, CUISINE)
-# могут быть простыми тегами или генерироваться на основе комбинации расы, региона и фракции.
+  - id: cult_of_crystalline_order
+    name: "Культ Кристального Порядка"
+    parent_race: humans_corrupted
+    faction_type: religious_cult
+    size: medium
+    territory: [crystal_scar, nearby_corrupted_zones]
+    
+    ideology:
+      name: "Преображение через Порядок"
+      description: "Плоть несовершенна. Кристалл вечен. Присоединитесь к Единому."
+      
+    goals:
+      - "Распространить Кристаллический Шрам"
+      - "Обратить население в веру Нового Бога"
+      - "Уничтожить наследие Старых Богов"
+      
+    relations:
+      allies: []  # Фанатики
+      rivals: [cult_of_choral_unity]  # Другой Новый Бог
+      enemies: [all_organic_races, synaptics]
+      
+    military_strength: 6/10
+    economic_power: 3/10
+    political_influence: 2/10
+    fanaticism: 10/10
+    
+    threat_level: high
+    
+    unique_units:
+      - crystalline_zealots
+      - shard_bearers
+      - conversion_priests
+      
+    special_mechanics:
+      corruption_spread: true
+      converts_enemies: true
+      immune_to_negotiation: true
+
+  - id: circle_of_storytellers
+    name: "Круг Сказителей"
+    parent_race: multi_racial
+    faction_type: knowledge_keepers
+    size: small
+    territory: scattered_monasteries
+    
+    ideology:
+      name: "Память должна жить"
+      description: "Мы храним истории Воздушных Княжеств и тайны Старых Богов."
+      
+    goals:
+      - "Сохранить знания об Эпохе до Разобщения"
+      - "Найти способ пробудить Старых Богов"
+      - "Противостоять забвению"
+      
+    member_races: [synaptics, relicts, kith_scholars, geodes]
+    
+    relations:
+      allies: [synaptics_oracle_circle, geode_historians]
+      rivals: []
+      enemies: [cult_of_crystalline_order, entropy_followers]
+      
+    military_strength: 2/10
+    economic_power: 4/10
+    political_influence: 6/10
+    knowledge: 10/10
+    
+    unique_services:
+      - ancient_lore_consultation
+      - artifact_identification
+      - quest_guidance
+
+
+# =============================================================================
+# 3. ТИПЫ ПОСЕЛЕНИЙ (Settlement Types)
+# =============================================================================
+
+SETTLEMENT_TYPES:
+  
+  - id: fortress_cave
+    name: "Крепость-пещера"
+    typical_races: [kith, geodes]
+    size_range: [500, 3000]
+    
+    required_terrain:
+      - terrain:elevated OR terrain:subterranean
+      - surface:stable
+      
+    features:
+      - defensive_walls
+      - bone_chitin_construction
+      - underground_storages
+      - barracks
+      
+    economy: military_production
+    
+  - id: nomad_camp
+    name: "Кочевой лагерь"
+    typical_races: [pulsars, ursines, chimerics]
+    size_range: [50, 500]
+    
+    required_terrain:
+      - terrain:flat
+      
+    features:
+      - portable_tents
+      - central_firepit
+      - animal_pens
+      - quick_assembly
+      
+    economy: hunting_gathering
+    mobility: high
+    
+  - id: tidal_city
+    name: "Приливный город"
+    typical_races: [silt_weavers]
+    size_range: [500, 2000]
+    
+    required_terrain:
+      - terrain:aquatic OR surface:unstable
+      - seasonal:great_ebb
+      
+    features:
+      - silt_architecture
+      - temporary_structures
+      - floating_docks
+      - tide_channels
+      
+    economy: trade_artisan
+    special: ephemeral_during_tide
+
+
+# =============================================================================
+# 4. ПРАВИЛА ГЕНЕРАЦИИ НАСЕЛЕНИЯ
+# =============================================================================
+
+POPULATION_GENERATION_RULES:
+  
+  # Как определить доминирующую расу региона
+  dominant_race_selection:
+    method: compatibility_weighted
+    factors:
+      - environmental_compatibility: 0.5
+      - resource_availability: 0.2
+      - existing_settlements: 0.2
+      - historical_presence: 0.1
+      
+  # Вторичные расы
+  secondary_races:
+    max_count: 2
+    min_compatibility_with_dominant: 0.3
+    prefer_allied_races: true
+    
+  # Размещение поселений
+  settlement_placement:
+    min_distance_between_same_race: 15  # гексов
+    min_distance_between_different_races: 10
+    prefer_resource_proximity: true
+    avoid_extreme_danger: true
+    
+  # NPC генерация
+  npc_generation:
+    per_settlement_size:
+      small: [3, 8]      # именованных NPC
+      medium: [8, 15]
+      large: [15, 30]
+      
+    role_distribution:
+      leader: 1
+      merchants: 0.3
+      craftsmen: 0.4
+      warriors: 0.2
+      mystics: 0.1

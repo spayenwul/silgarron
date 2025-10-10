@@ -1,382 +1,2490 @@
-# data/data_tables/anatomy.yaml
-# ===============================================================
-# I. Анатомия Мира (Физическая основа)
-# ===============================================================
+# =============================================================================
+# АНАТОМИЯ МИРА СИЛЬГАРРОН
+# =============================================================================
+# Версия схемы: 2.0.0
+# Описание: Физическая структура мира - регионы, биомы, лендмарки
 
-# 2. Тип Региона (внутри Органоида)
-# weight - шанс выпадения. Чем выше, тем чаще встречается.
-# description - краткое описание сути региона.
+meta:
+  schema_version: "2.0.0"
+  last_updated: "2025-10-05"
+  description: "Анатомическая структура живого мира Сильгаррон"
+
+
+# =============================================================================
+# 1. ТИПЫ РЕГИОНОВ (Region Types)
+# =============================================================================
+
 REGION_TYPES:
+  
   - id: dermal_plateau
     name: "Дермальное плато"
-    weight: 15
     description: "Обширная равнина, 'кожа' мира, часто подвижная и участвующая в Дыхании."
-    base_tags:
-      - "рельеф:горизонтальный"
-      - "земля:подвижная"
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:dynamic
+      fertility: ecology:moderate
+    
+    defining_tags:
+      - location:accessible
+      
+    spawn_weight: 15
+    
+    biome_generation:
+      allowed_biomes:
+        - pulsating_plains
+        - spore_savanna
+        - geyser_fields
+        - crystal_scar
+        - megatherium_pastures
+        - broken_lands
+      
+      biome_weights:
+        pulsating_plains: 3.0
+        spore_savanna: 2.0
+        megatherium_pastures: 1.5
+        geyser_fields: 0.5
+        crystal_scar: 0.1
 
   - id: lymph_valley
     name: "Долина Лимфотока"
-    weight: 12
     description: "Плодородная низина, сформированная крупной 'артерией' мира."
-    base_tags:
-      - "рельеф:горизонтальный"
-      - "экология:плодородная"
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:fertile
+    
+    defining_tags:
+      - resource:pure_lymph
+      - location:trade_route
+      
+    spawn_weight: 12
+    
+    biome_generation:
+      allowed_biomes:
+        - biolume_forest
+        - neuroflower_meadows
+        - fungal_mangroves
+        - silt_flats
+        - blood_clot_thicket
+        - springheads
+      
+      biome_weights:
+        biolume_forest: 3.0
+        neuroflower_meadows: 2.5
+        silt_flats: 1.5
+        blood_clot_thicket: 0.3
 
   - id: spine_ridge
     name: "Хребет-Остов"
-    weight: 8
     description: "Высокогорная цепь, скелетная основа мира из костехитина."
-    base_tags:
-      - "рельеф:вертикальный"
-      - "ресурс:есть_костехитин"
+    
+    pillar_tags:
+      terrain_type: terrain:elevated
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - resource:bone_chitin
+      - location:isolated
+      - danger:environmental
+      
+    spawn_weight: 8
+    
+    biome_generation:
+      allowed_biomes:
+        - bone_needles
+        - litho-lichen_slopes
+        - cloud_forest
+        - ruined_spires
+        - wind_caves
+        - crystal_geode
+      
+      altitude_distribution:
+        low: [litho-lichen_slopes, wind_caves]
+        mid: [cloud_forest, crystal_geode]
+        high: [bone_needles, ruined_spires]
 
   - id: foothills
     name: "Предгорья"
-    weight: 10
     description: "Переходная зона между хребтами и равнинами, холмистая местность."
-    base_tags:
-      - "рельеф:пересеченный"
-      - "география:переходная_зона"
+    
+    pillar_tags:
+      terrain_type: terrain:hill
+      surface_stability: surface:stable
+      fertility: ecology:moderate
+    
+    defining_tags:
+      - location:transitional_zone
+      
+    spawn_weight: 10
+    
+    biome_generation:
+      allowed_biomes:
+        - rolling_hills
+        - broken_lands
+        - boneyard
+        - fortress_hills
+        - springheads
+        - spore_savanna
+        - biolume_forest
+        - litho-lichen_slopes
+      
+      biome_weights:
+        rolling_hills: 3.0
+        fortress_hills: 2.0
+        broken_lands: 1.5
+        springheads: 1.0
+        boneyard: 0.5
 
   - id: alveoli_caves
     name: "Альвеолярные каверны"
-    weight: 7
     description: "Обширная сеть подземелий, 'легкие' мира с уникальной экосистемой."
-    base_tags:
-      - "география:подземный"
-      - "экология:уникальная"
+    
+    pillar_tags:
+      terrain_type: terrain:subterranean
+      surface_stability: surface:stable
+      fertility: ecology:unique
+    
+    defining_tags:
+      - location:underground
+      - manifestation:stable
+      
+    spawn_weight: 7
+    
+    biome_generation:
+      allowed_biomes:
+        - luminous_fungi_caves
+        - wind_tunnels
+        - subterranean_lymph_lake
+        - crystal_geode
+        - geode_ruins
+      
+      biome_weights:
+        luminous_fungi_caves: 3.0
+        wind_tunnels: 2.0
+        subterranean_lymph_lake: 1.0
+        crystal_geode: 1.5
+        geode_ruins: 0.3
 
   - id: sclerite_delta
     name: "Склеритовая дельта"
-    weight: 4
     description: "Болотистая местность, где Лимфотоки впадают в океан; 'печень' или 'фильтр' мира."
-    base_tags:
-      - "биом:болото"
-      - "география:прибрежный"
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:unstable
+      fertility: ecology:toxic
+    
+    defining_tags:
+      - biome:swamp
+      - location:coastal
+      - danger:disease
+      
+    spawn_weight: 4
+    
+    biome_generation:
+      allowed_biomes:
+        - toxic_swamp
+        - rot_forest
+        - mutation_pits
+        - unity_expanse
+        - filter_beds
+        - fungal_mangroves
+      
+      biome_weights:
+        toxic_swamp: 3.0
+        rot_forest: 2.0
+        filter_beds: 1.5
+        mutation_pits: 0.8
+        unity_expanse: 0.2
 
   - id: tendon_strait
     name: "Сухожильный пролив"
-    weight: 3
     description: "Опасный водный путь, где под поверхностью натянуты гигантские мышечные волокна, вызывающие аномальные течения."
-    base_tags:
-      - "география:водный"
-      - "признак:опасный"
+    
+    pillar_tags:
+      terrain_type: terrain:aquatic
+      surface_stability: surface:unstable
+      fertility: ecology:moderate
+    
+    defining_tags:
+      - location:aquatic
+      - danger:environmental
+      
+    spawn_weight: 3
+    
+    biome_generation:
+      allowed_biomes:
+        - whirlpool_alley
+        - graveyard_of_ships
+        - kelp_forests
+        - rogue_currents
+        - abyssal_trench
+      
+      biome_weights:
+        whirlpool_alley: 2.0
+        rogue_currents: 2.5
+        kelp_forests: 2.0
+        graveyard_of_ships: 1.0
+        abyssal_trench: 0.5
 
   - id: scar_tissue
     name: "Рубцовая ткань"
-    weight: 3
     description: "Местность, где Сильгаррон был серьезно поврежден в прошлом и 'зажил', образовав бесплодный и искаженный ландшафт."
-    base_tags:
-      - "признак:поврежденный"
-      - "экология:бесплодный"
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - trait:damaged
+      - narrative:ancient_wound
+      
+    spawn_weight: 3
+    
+    biome_generation:
+      allowed_biomes:
+        - barren_wastes
+        - glass_desert
+        - necrotic_follicle_zone
+        - petrified_forest
+        - echoing_crater
+        - broken_lands
+        - geyser_fields
+      
+      biome_weights:
+        barren_wastes: 3.0
+        glass_desert: 1.5
+        echoing_crater: 1.0
+        petrified_forest: 0.8
+        necrotic_follicle_zone: 0.3
 
   - id: chitinous_coast
     name: "Хитиновый берег"
-    weight: 2
     description: "Отвесная, гладкая стена из черного хитина, служащая панцирем-защитой от океана."
-    base_tags:
-      - "рельеф:вертикальный"
-      - "география:прибрежный"
+    
+    pillar_tags:
+      terrain_type: terrain:elevated
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - location:coastal
+      - location:isolated
+      - trait:defensive
+      
+    spawn_weight: 2
+    
+    biome_generation:
+      allowed_biomes:
+        - black_wall
+        - barnacle_settlements
+        - sea_caves
+        - shadow_watch
+        - wind_caves
+      
+      biome_weights:
+        black_wall: 3.0
+        barnacle_settlements: 1.5
+        sea_caves: 2.0
+        shadow_watch: 1.0
 
   - id: ganglion_nexus
     name: "Ганглионный узел"
-    weight: 2
     description: "Редкая зона вокруг 'нервного узла' Старых Богов с аномально высокой Проводностью."
-    base_tags:
-      - "проявление:аномальный"
-      - "проявление:высокая_проводность"
+    
+    pillar_tags:
+      terrain_type: terrain:subterranean
+      surface_stability: surface:stable
+      fertility: ecology:unique
+    
+    defining_tags:
+      - manifestation:high
+      - anomaly:psychic
+      - narrative:old_gods_legacy
+      - location:sacred
+      - danger:supernatural
+      
+    spawn_weight: 2
+    
+    biome_generation:
+      allowed_biomes:
+        - crystal_synapse_forest
+        - memory_pools
+        - resonant_gardens
+        - silent_zone
+        - petrified_forest
+      
+      required_center: crystal_synapse_forest
+      
+      biome_weights:
+        crystal_synapse_forest: 5.0
+        memory_pools: 2.0
+        resonant_gardens: 1.5
 
   - id: sensory_organ
     name: "Сенсорный орган"
-    weight: 1
     description: "Уникальный, единичный регион, выполняющий особую функцию (например, Глазковое Око)."
-    base_tags:
-      - "признак:уникальный"
-      - "проявление:сенсорный"
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:unique
+    
+    defining_tags:
+      - trait:unique
+      - manifestation:sensory
+      - location:sacred
+      
+    spawn_weight: 1
+    
+    biome_generation:
+      allowed_biomes:
+        - rainbow_caldera
+        - singing_cliffs
+        - dream_fog_basin
+        - memory_pools
+      
+      required_center: rainbow_caldera
+      
+      biome_weights:
+        rainbow_caldera: 5.0
+        singing_cliffs: 2.0
+        dream_fog_basin: 2.0
 
-# 3. Доминантный биом
-# Справочник всех возможных биомов.
-# parent_region_ids - список ID регионов, в которых этот биом может доминировать.
+
+# =============================================================================
+# 2. БИОМЫ (Biomes)
+# =============================================================================
+
 BIOMES:
-  # --- Биомы для 'dermal_plateau' (Дермальное плато) ---
+  
+  # --- БИОМЫ ДЕРМАЛЬНОГО ПЛАТО ---
+  
   - id: pulsating_plains
     name: "Пульсирующие равнины"
-    parent_region_ids: [dermal_plateau]
     description: "Классическая Великая Диафрагма. Равнина, покрытая упругим мхом, чья поверхность медленно и ритмично колеблется."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:dynamic
+      fertility: ecology:moderate
+    
+    defining_tags:
+      - location:accessible
+      
+    compatibility:
+      favored_races: [pulsars, dorsals]
+      disfavored_races: [kith, ursines]
+      can_border: [spore_savanna, megatherium_pastures, biolume_forest]
+      cannot_border: [bone_needles, toxic_swamp, crystal_scar]
+      
+    content_generation:
+      common_fauna: [bone_scavenger, nomad_stones]
+      common_flora: [pulse_moss, breath_grass]
+      resources:
+        - id: lymph_pure
+          abundance: common
+        - id: pulse_moss_extract
+          abundance: uncommon
+      poi_types:
+        - nomad_camp
+        - abandoned_watch_tower
+        - natural_spring
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.3, 0.6]
+      temperature: [0.4, 0.7]
+      moisture: [0.4, 0.8]
+      
+    spawn_weight: 10
+
   - id: spore_savanna
     name: "Споровая саванна"
-    parent_region_ids: [dermal_plateau, foothills]
     description: "Сухое плато, где вместо травы растут высокие, похожие на зонтики грибы, постоянно выпускающие в воздух цветную пыльцу."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:moderate
+    
+    defining_tags:
+      - resource:dream_spores
+      - danger:environmental
+      
+    compatibility:
+      favored_races: [pulsars, saprophytes]
+      disfavored_races: [kith]
+      can_border: [pulsating_plains, megatherium_pastures, broken_lands, rolling_hills]
+      cannot_border: [biolume_forest, toxic_swamp, subterranean_lymph_lake]
+      
+    content_generation:
+      common_fauna: [spore_grazer, filter_beetle]
+      common_flora: [umbrella_fungus, pollen_cactus]
+      resources:
+        - id: dream_spore
+          abundance: common
+      poi_types:
+        - fungal_grove
+        - spore_harvester_camp
+      poi_density: 2
+    
+    noise_generation:
+      elevation: [0.4, 0.7]
+      temperature: [0.6, 0.9]
+      moisture: [0.2, 0.4]
+      
+    spawn_weight: 8
+
   - id: geyser_fields
     name: "Гейзерные поля"
-    parent_region_ids: [dermal_plateau, scar_tissue]
     description: "Нестабильный участок 'кожи' мира, где из-подо 'дермы' периодически вырываются струи горячего пара и биоактивных газов."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:unstable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - danger:environmental
+      - resource:bioactive_gases
+      
+    compatibility:
+      favored_races: []
+      disfavored_races: [kith, pulsars, dorsals]
+      can_border: [pulsating_plains, barren_wastes, scar_tissue]
+      cannot_border: [biolume_forest, toxic_swamp]
+      
+    content_generation:
+      common_fauna: [heat_resistant_lizard, steam_bat]
+      common_flora: [thermal_lichen, geyser_reed]
+      resources:
+        - id: bioactive_gases
+          abundance: common
+        - id: thermal_minerals
+          abundance: uncommon
+      poi_types:
+        - active_geyser
+        - mineral_deposit
+        - hazard_zone
+      poi_density: 4
+    
+    noise_generation:
+      elevation: [0.3, 0.6]
+      temperature: [0.8, 1.0]
+      moisture: [0.5, 0.8]
+      turbulence: [0.7, 1.0]
+      
+    spawn_weight: 5
+
   - id: crystal_scar
     name: "Кристаллический шрам"
-    parent_region_ids: [dermal_plateau]
     description: "Мертвая, абсолютно плоская зона, где живая плоть мира была заменена монолитной кристаллической структурой (Язва Нового Бога)."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - narrative:new_god_ulcer
+      - manifestation:numb
+      - danger:supernatural
+      - resource:corrupted_crystal
+      
+    compatibility:
+      favored_races: [crystalline_cult]
+      disfavored_races: [all_organic]
+      can_border: [geyser_fields, barren_wastes, glass_desert]
+      cannot_border: [biolume_forest, neuroflower_meadows, any_fertile]
+      
+      spreading_ulcer: true
+      expansion_rate: 0.01
+      
+    content_generation:
+      common_fauna: []
+      common_flora: []
+      resources:
+        - id: corrupted_crystal
+          abundance: abundant
+      poi_types:
+        - crystalline_spire
+        - conversion_zone
+        - cult_shrine
+      poi_density: 1
+    
+    noise_generation:
+      elevation: [0.4, 0.5]
+      temperature: [0.3, 0.7]
+      moisture: [0.0, 0.1]
+      anomaly_strength: [0.9, 1.0]
+      
+    spawn_weight: 2
+
   - id: megatherium_pastures
     name: "Пастбища Мегатериев"
-    parent_region_ids: [dermal_plateau]
     description: "Обширные равнины, по которым мигрируют гигантские стада броненосных травоядных, служащие домом для Дорсалов."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:moderate
+    
+    defining_tags:
+      - location:inhabited
+      - narrative:megafauna_migration
+      
+    compatibility:
+      favored_races: [dorsals, pulsars]
+      disfavored_races: [kith, fen-kin]
+      can_border: [pulsating_plains, spore_savanna, rolling_hills]
+      cannot_border: [toxic_swamp, crystal_scar, abyssal_trench]
+      
+    content_generation:
+      common_fauna: [megatherium, dorsals_herder, plains_predator]
+      common_flora: [grazing_grass, salt_bush]
+      resources:
+        - id: megatherium_bone
+          abundance: common
+        - id: dried_meat
+          abundance: common
+      poi_types:
+        - dorsals_camp
+        - watering_hole
+        - ancient_path
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.3, 0.5]
+      temperature: [0.4, 0.7]
+      moisture: [0.4, 0.7]
+      
+    spawn_weight: 7
 
-  # --- Биомы для 'lymph_valley' (Долина Лимфотока) ---
+  # --- БИОМЫ ДОЛИНЫ ЛИМФОТОКА ---
+  
   - id: biolume_forest
     name: "Биолюмный лес"
-    parent_region_ids: [lymph_valley, foothills, sclerite_delta]
     description: "Густой лес из кожистых Бронелистов и Древ-Насосов, где воздух наполнен светящимся Биолюмом, а земля мягкая и плодородная."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:fertile
+    
+    defining_tags:
+      - resource:pure_lymph
+      - resource:bioluminescent_sap
+      - location:inhabited
+      
+    compatibility:
+      favored_races: [kith, fen-kin, saprophytes, silt_weavers]
+      disfavored_races: [barophiles, lithophages]
+      can_border: [neuroflower_meadows, fungal_mangroves, springheads, rolling_hills]
+      cannot_border: [bone_needles, crystal_scar, barren_wastes]
+      
+    content_generation:
+      common_fauna: [tree_dweller, light_moth, sap_sucker]
+      common_flora: [bronze_leaf_tree, pump_tree, glow_mushroom]
+      resources:
+        - id: lymph_pure
+          abundance: abundant
+        - id: bioluminescent_sap
+          abundance: common
+        - id: medicinal_herbs
+          abundance: uncommon
+      poi_types:
+        - village
+        - lumber_camp
+        - sacred_grove
+        - healer_hut
+      poi_density: 5
+    
+    noise_generation:
+      elevation: [0.2, 0.5]
+      temperature: [0.4, 0.7]
+      moisture: [0.7, 0.95]
+      
+    spawn_weight: 10
+
   - id: neuroflower_meadows
     name: "Луга Нейроцветов"
-    parent_region_ids: [lymph_valley]
     description: "Открытые, залитые лимфой луга, где доминируют растения, реагирующие на Сцепку и эмоции вспышками света или движения."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:fertile
+    
+    defining_tags:
+      - manifestation:stable
+      - anomaly:psychic
+      - resource:pure_lymph
+      
+    compatibility:
+      favored_races: [pulsars, synaptics, stillborn]
+      disfavored_races: [ursines, phages]
+      can_border: [biolume_forest, silt_flats, pulsating_plains]
+      cannot_border: [toxic_swamp, barren_wastes, crystal_scar]
+      
+    content_generation:
+      common_fauna: [emotion_butterfly, empathic_deer]
+      common_flora: [neuroflower, thought_vine, memory_blossom]
+      resources:
+        - id: neuroflower_extract
+          abundance: common
+        - id: lymph_pure
+          abundance: common
+      poi_types:
+        - meditation_circle
+        - emotion_garden
+        - synaptic_node
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.2, 0.4]
+      temperature: [0.5, 0.7]
+      moisture: [0.6, 0.9]
+      conductivity: [0.6, 0.9]
+      
+    spawn_weight: 8
+
   - id: fungal_mangroves
     name: "Грибные мангры"
-    parent_region_ids: [lymph_valley, sclerite_delta]
     description: "Заболоченные берега Лимфотока, где гигантские, похожие на деревья грибы пускают в вязкую лимфу свои 'воздушные' корни."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:unstable
+      fertility: ecology:fertile
+    
+    defining_tags:
+      - biome:swamp
+      - resource:pure_lymph
+      
+    compatibility:
+      favored_races: [fen-kin, saprophytes, silt_weavers]
+      disfavored_races: [kith, dorsals]
+      can_border: [biolume_forest, silt_flats, toxic_swamp, filter_beds]
+      cannot_border: [bone_needles, crystal_scar]
+      
+    content_generation:
+      common_fauna: [swamp_walker, root_borer, fungal_crab]
+      common_flora: [fungal_tree, air_root, slime_moss]
+      resources:
+        - id: lymph_pure
+          abundance: common
+        - id: fungal_spores
+          abundance: common
+      poi_types:
+        - fen_kin_stilt_village
+        - fungal_harvest_site
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.1, 0.3]
+      temperature: [0.5, 0.8]
+      moisture: [0.8, 1.0]
+      
+    spawn_weight: 7
+
   - id: silt_flats
     name: "Илистые отмели"
-    parent_region_ids: [lymph_valley, sclerite_delta]
     description: "Широкие, плоские берега, которые обнажаются в сезон Отлива, служа временным домом для городов Иловых Ткачей."
-  - id: blood_clot_thicket
-    name: "Тромбовый бурелом"
-    parent_region_ids: [lymph_valley]
-    description: "Опасный участок долины, где лимфа загустела и свернулась, образовав барьеры из липкой, волокнистой биомассы и мертвой растительности."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:dynamic
+      fertility: ecology:moderate
+    
+    defining_tags:
+      - location:coastal
+      - location:inhabited
+      
+    compatibility:
+      favored_races: [silt_weavers]
+      disfavored_races: [barophiles, ursines]
+      can_border: [biolume_forest, neuroflower_meadows, fungal_mangroves]
+      cannot_border: [bone_needles, crystal_scar]
+      
+    content_generation:
+      common_fauna: [mud_crawler, filter_feeder, tidal_hunter]
+      common_flora: [tide_grass, salt_reed]
+      resources:
+        - id: silt
+          abundance: abundant
+        - id: lymph_pure
+          abundance: common
+      poi_types:
+        - silt_weaver_camp
+        - temporary_market
+        - mudflat_farm
+      poi_density: 4
+    
+    noise_generation:
+      elevation: [0.1, 0.2]
+      temperature: [0.4, 0.7]
+      moisture: [0.7, 0.9]
+      
+    spawn_weight: 6
 
-  # --- Биомы для 'spine_ridge' (Хребет-Остов) ---
-  - id: bone_needles
-    name: "Костяные иглы"
-    parent_region_ids: [spine_ridge, foothills]
-    description: "Высокогорный биом из голых, острых, как бритва, пиков костехитина, продуваемый плотными ветрами."
-  - id: litho-lichen_slopes
-    name: "Лито-лишайниковые склоны"
-    parent_region_ids: [spine_ridge, foothills, scar_tissue]
-    description: "Более пологие склоны хребта, покрытые разноцветными лишайниками-камнеедами, которые медленно превращают кость в почву."
-  - id: cloud_forest
-    name: "Облачный лес"
-    parent_region_ids: [spine_ridge]
-    description: "Пояс на средней высоте хребта, постоянно окутанный споровыми туманами, где живут Барофилы и растут уникальные эпифиты."
-  - id: ruined_spires
-    name: "Разрушенные шпили"
-    parent_region_ids: [spine_ridge]
-    description: "Вершины, на которых до сих пор цепляются скелеты рухнувших летающих городов Эпохи Воздушных Княжеств."
-  - id: wind_caves
-    name: "Ветряные пещеры"
-    parent_region_ids: [spine_ridge, chitinous_coast]
-    description: "Сеть сквозных пещер и туннелей в толще хребта, где ветер создает постоянную, гулкую 'музыку костей'."
-
-  # --- Биомы для 'foothills' (Предгорья) ---
-  - id: rolling_hills
-    name: "Холмистая гряда"
-    parent_region_ids: [foothills]
-    description: "Классические предгорья: пологие холмы, покрытые жесткой травой и редкими, корявыми деревьями."
-  - id: broken_lands
-    name: "Разломы"
-    parent_region_ids: [foothills, dermal_plateau, scar_tissue]
-    description: "Лабиринт из неглубоких каньонов и трещин, образовавшихся в результате 'спазмов' Сильгаррона. Отличное место для засад."
-  - id: boneyard
-    name: "Костяное кладбище"
-    parent_region_ids: [foothills, scar_tissue]
-    description: "Обширная территория, усеянная скелетами гигантских существ, пришедших умирать к подножию хребта. Дом для Костяных Книжников."
-  - id: fortress_hills
-    name: "Холмы-крепости"
-    parent_region_ids: [foothills]
-    description: "Предгорья, где Киты вырезали свои форпосты и дозорные башни прямо в толще самых крупных холмов."
   - id: springheads
     name: "Истоки"
-    parent_region_ids: [foothills, lymph_valley]
     description: "Влажная, заболоченная местность, где из-под земли просачивается и собирается в ручьи лимфа, давая начало малым Лимфотокам."
 
-  # --- Биомы для 'alveoli_caves' (Альвеолярные каверны) ---
-  - id: luminous_fungi_caves
-    name: "Пещеры светящихся грибов"
-    parent_region_ids: [alveoli_caves]
-    description: "Классические каверны: огромные залы, освещенные пульсирующим светом биолюминесцентных грибов, с высокой влажностью."
-  - id: wind_tunnels
-    name: "Ветровые туннели"
-    parent_region_ids: [alveoli_caves]
-    description: "Прямые, гладкие туннели, соединяющие разные уровни каверн. Здесь постоянно дуют мощные потоки воздуха, участвуя в Дыхании мира."
-  - id: subterranean_lymph_lake
-    name: "Подземное лимфатическое озеро"
-    parent_region_ids: [alveoli_caves]
-    description: "Гигантская каверна, заполненная чистой, нетронутой лимфой. Дом для слепых, уникальных форм жизни и, возможно, Глубинных."
-  - id: crystal_geode
-    name: "Кристаллическая жеода"
-    parent_region_ids: [alveoli_caves, spine_ridge]
-    description: "Сухая пещера, чьи стены полностью покрыты огромными, идеально сформированными кристаллами, часто обладающими резонансными свойствами."
-  - id: geode_ruins
-    name: "Руины Геодов"
-    parent_region_ids: [alveoli_caves]
-    description: "Заброшенные поселения древней расы Геодов, вырезанные в стенах каверн и украшенные потускневшими минеральными инкрустациями."
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:unstable
+      fertility: ecology:fertile
 
-  # --- Биомы для 'sclerite_delta' (Склеритовая дельта) ---
-  - id: toxic_swamp
-    name: "Токсичные топи"
-    parent_region_ids: [sclerite_delta]
-    description: "Классическая дельта: лабиринт из черных, пузырящихся проток лимфы, ядовитых туманов и хищных растений. Дом для Топяников."
-  - id: rot_forest
-    name: "Гнилой лес"
-    parent_region_ids: [sclerite_delta]
-    description: "Лес из мертвых, но не разлагающихся до конца деревьев, покрытых толстым слоем грибов-паразитов. Территория Сапрофитов."
-  - id: mutation_pits
-    name: "Мутационные ямы"
-    parent_region_ids: [sclerite_delta]
-    description: "Зоны с аномально высокой концентрацией токсинов, где жизнь постоянно и хаотично меняется. Родина Химерных."
-  - id: unity_expanse
-    name: "Пространство Единства"
-    parent_region_ids: [sclerite_delta]
-    description: "Территория, поглощенная Язвой Нового Бога (Хорал Единства), где вся органика слилась в единую, пульсирующую биомассу."
-  - id: filter_beds
-    name: "Фильтрующие отмели"
-    parent_region_ids: [sclerite_delta]
-    description: "Обширные отмели, состоящие из пористых, похожих на губки минералов, которые фильтруют лимфу перед ее уходом в океан."
+    defining_tags:
+      - resource:pure_lymph
+      - location:transitional_zone
 
-  # --- Биомы для 'tendon_strait' (Сухожильный пролив) ---
+    compatibility:
+      favored_races: [fen-kin, silt_weavers, pulsars]
+      disfavored_races: [ursines, kith]
+      can_border: [rolling_hills, biolume_forest, fungal_mangroves]
+      cannot_border: [bone_needles, crystal_scar, barren_wastes]
+
+    content_generation:
+      common_fauna: [spring_frog, lymph_skimmer]
+      common_flora: [water_reed, spring_moss]
+      resources:
+        - id: lymph_pure
+          abundance: abundant
+        - id: spring_water_crystal
+          abundance: rare
+      poi_types:
+        - sacred_spring
+        - water_shrine
+        - lymph_collector_camp
+      poi_density: 3
+
+    noise_generation:
+      elevation: [0.3, 0.5]
+      temperature: [0.4, 0.7]
+      moisture: [0.7, 0.95]
+
+    spawn_weight: 6
+
+  # --- БИОМЫ СУХОЖИЛЬНОГО ПРОЛИВА ---
+  
   - id: whirlpool_alley
     name: "Аллея водоворотов"
-    parent_region_ids: [tendon_strait]
     description: "Открытый участок пролива, где сокращения подводных 'сухожилий' создают постоянные, смертельно опасные водовороты."
+    
+    pillar_tags:
+      terrain_type: terrain:aquatic
+      surface_stability: surface:unstable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - danger:environmental
+      - location:aquatic
+      
+    compatibility:
+      favored_races: [skilled_navigators]
+      disfavored_races: [land_dwellers]
+      can_border: [rogue_currents, graveyard_of_ships, kelp_forests]
+      cannot_border: [pulsating_plains, bone_needles]
+      
+    content_generation:
+      common_fauna: [whirlpool_predator, current_rider]
+      common_flora: []
+      resources:
+        - id: deep_water_salvage
+          abundance: uncommon
+      poi_types:
+        - whirlpool_center
+        - navigation_hazard
+        - shipwreck_site
+      poi_density: 2
+    
+    noise_generation:
+      elevation: [-0.3, 0.0]
+      temperature: [0.3, 0.6]
+      moisture: [1.0, 1.0]
+      turbulence: [0.9, 1.0]
+      
+    spawn_weight: 7
+
   - id: graveyard_of_ships
     name: "Кладбище кораблей"
-    parent_region_ids: [tendon_strait]
     description: "Мелководный участок, усеянный обломками судов и костями морских чудовищ, разбитых аномальными течениями."
+    
+    pillar_tags:
+      terrain_type: terrain:aquatic
+      surface_stability: surface:unstable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - narrative:shipwrecks
+      - resource:salvage
+      - danger:environmental
+      
+    compatibility:
+      favored_races: [salvagers, pirates]
+      disfavored_races: [land_dwellers]
+      can_border: [whirlpool_alley, rogue_currents, kelp_forests]
+      cannot_border: [pulsating_plains]
+      
+    content_generation:
+      common_fauna: [scavenger_fish, wreck_haunter, bone_picker]
+      common_flora: [underwater_moss]
+      resources:
+        - id: ship_salvage
+          abundance: common
+        - id: ancient_treasure
+          abundance: rare
+      poi_types:
+        - shipwreck
+        - salvage_camp
+        - pirate_hideout
+      poi_density: 5
+    
+    noise_generation:
+      elevation: [-0.2, 0.0]
+      temperature: [0.3, 0.6]
+      moisture: [1.0, 1.0]
+      
+    spawn_weight: 6
+
   - id: kelp_forests
     name: "Леса 'водорослей'"
-    parent_region_ids: [tendon_strait]
     description: "Подводные леса из гигантских, похожих на ламинарию организмов, которые цепляются за натянутые под водой сухожилия."
+    
+    pillar_tags:
+      terrain_type: terrain:aquatic
+      surface_stability: surface:stable
+      fertility: ecology:moderate
+    
+    defining_tags:
+      - location:aquatic
+      
+    compatibility:
+      favored_races: [aquatic_folk, fen-kin]
+      disfavored_races: [land_dwellers]
+      can_border: [whirlpool_alley, rogue_currents, graveyard_of_ships]
+      cannot_border: [bone_needles, crystal_scar]
+      
+    content_generation:
+      common_fauna: [kelp_fish, underwater_predator, tendril_crab]
+      common_flora: [giant_kelp, underwater_vine, anchor_plant]
+      resources:
+        - id: kelp_fiber
+          abundance: abundant
+        - id: underwater_herbs
+          abundance: common
+      poi_types:
+        - underwater_grove
+        - kelp_farm
+        - hidden_grotto
+      poi_density: 4
+    
+    noise_generation:
+      elevation: [-0.3, -0.1]
+      temperature: [0.4, 0.7]
+      moisture: [1.0, 1.0]
+      
+    spawn_weight: 8
+
   - id: rogue_currents
     name: "Блуждающие течения"
-    parent_region_ids: [tendon_strait]
     description: "Зона, где течения непредсказуемы и постоянно меняют направление. Рай для опытных навигаторов и пиратов."
+    
+    pillar_tags:
+      terrain_type: terrain:aquatic
+      surface_stability: surface:unstable
+      fertility: ecology:moderate
+    
+    defining_tags:
+      - danger:environmental
+      - location:trade_route
+      
+    compatibility:
+      favored_races: [skilled_sailors, pirates]
+      disfavored_races: [novice_sailors]
+      can_border: [whirlpool_alley, kelp_forests, graveyard_of_ships]
+      cannot_border: [pulsating_plains]
+      
+    content_generation:
+      common_fauna: [current_fish, swift_predator]
+      common_flora: []
+      resources:
+        - id: rare_pearls
+          abundance: rare
+      poi_types:
+        - navigation_marker
+        - pirate_rendezvous
+        - hidden_passage
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [-0.3, 0.0]
+      temperature: [0.3, 0.7]
+      moisture: [1.0, 1.0]
+      turbulence: [0.7, 0.95]
+      
+    spawn_weight: 7
+
   - id: abyssal_trench
     name: "Бездонная впадина"
-    parent_region_ids: [tendon_strait]
     description: "Глубоководный разлом, где 'сухожилия' уходят вглубь планеты. Предполагаемое место обитания Глубинных."
+    
+    pillar_tags:
+      terrain_type: terrain:aquatic
+      surface_stability: surface:stable
+      fertility: ecology:unique
+    
+    defining_tags:
+      - location:aquatic
+      - danger:supernatural
+      - narrative:deep_ones
+      
+    compatibility:
+      favored_races: [deep_ones]
+      disfavored_races: [surface_dwellers]
+      can_border: [kelp_forests, rogue_currents]
+      cannot_border: [pulsating_plains, bone_needles]
+      
+    content_generation:
+      common_fauna: [deep_leviathan, abyssal_horror, blind_fish]
+      common_flora: [deep_fungus, pressure_resistant_plant]
+      resources:
+        - id: abyssal_mineral
+          abundance: uncommon
+        - id: deep_artifact
+          abundance: rare
+      poi_types:
+        - deep_ones_city
+        - abyssal_shrine
+        - pressure_chamber
+      poi_density: 2
+    
+    noise_generation:
+      elevation: [-1.0, -0.5]
+      temperature: [0.1, 0.3]
+      moisture: [1.0, 1.0]
+      
+    spawn_weight: 4
 
-  # --- Биомы для 'scar_tissue' (Рубцовая ткань) ---
+  # --- БИОМЫ РУБЦОВОЙ ТКАНИ ---
+  
   - id: barren_wastes
     name: "Бесплодные пустоши"
-    parent_region_ids: [scar_tissue]
     description: "Классическая рубцовая ткань: твердая, потрескавшаяся земля, лишенная почти всякой жизни, кроме самых стойких лишайников."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - trait:damaged
+      
+    compatibility:
+      favored_races: [hardy_survivors]
+      disfavored_races: [comfort_loving]
+      can_border: [broken_lands, glass_desert, echoing_crater, geyser_fields]
+      cannot_border: [biolume_forest, neuroflower_meadows, toxic_swamp]
+      
+    content_generation:
+      common_fauna: [desert_lizard, hardy_scavenger]
+      common_flora: [survival_lichen, drought_resistant_shrub]
+      resources:
+        - id: cracked_earth
+          abundance: abundant
+        - id: rare_minerals
+          abundance: uncommon
+      poi_types:
+        - abandoned_settlement
+        - dry_well
+        - mineral_outcrop
+      poi_density: 2
+    
+    noise_generation:
+      elevation: [0.3, 0.6]
+      temperature: [0.6, 0.9]
+      moisture: [0.0, 0.2]
+      
+    spawn_weight: 9
+
   - id: glass_desert
     name: "Стеклянная пустыня"
-    parent_region_ids: [scar_tissue]
     description: "Место древнего катаклизма (возможно, магического), где поверхность оплавилась и превратилась в поля черного, острого обсидиана."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - narrative:ancient_catastrophe
+      - danger:environmental
+      - resource:obsidian
+      
+    compatibility:
+      favored_races: [heat_resistant]
+      disfavored_races: [most_races]
+      can_border: [barren_wastes, echoing_crater, crystal_scar]
+      cannot_border: [biolume_forest, toxic_swamp]
+      
+    content_generation:
+      common_fauna: [glass_walker, heat_lizard]
+      common_flora: []
+      resources:
+        - id: black_obsidian
+          abundance: abundant
+        - id: glass_shard
+          abundance: common
+      poi_types:
+        - obsidian_field
+        - melted_ruin
+        - glass_formation
+      poi_density: 2
+    
+    noise_generation:
+      elevation: [0.3, 0.5]
+      temperature: [0.8, 1.0]
+      moisture: [0.0, 0.1]
+      
+    spawn_weight: 5
+
   - id: necrotic_follicle_zone
     name: "Зона Некротического Фолликула"
-    parent_region_ids: [scar_tissue]
     description: "Область, где процессы старения и распада ускорены, а время течет быстрее. Все быстро обращается в прах."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:unstable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - narrative:new_god_ulcer
+      - anomaly:time
+      - danger:supernatural
+      
+    compatibility:
+      favored_races: []
+      disfavored_races: [all_mortals]
+      can_border: [barren_wastes, echoing_crater]
+      cannot_border: [biolume_forest, neuroflower_meadows, any_fertile]
+      
+      spreading_ulcer: true
+      expansion_rate: 0.015
+      
+    content_generation:
+      common_fauna: []
+      common_flora: []
+      resources:
+        - id: ash
+          abundance: abundant
+        - id: time_dust
+          abundance: uncommon
+      poi_types:
+        - rapid_decay_zone
+        - ash_island
+        - time_anomaly
+      poi_density: 1
+    
+    noise_generation:
+      elevation: [0.2, 0.4]
+      temperature: [0.4, 0.7]
+      moisture: [0.1, 0.3]
+      anomaly_strength: [0.9, 1.0]
+      
+    spawn_weight: 3
+
   - id: petrified_forest
     name: "Окаменевший лес"
-    parent_region_ids: [scar_tissue, ganglion_nexus]
     description: "Древний лес, который был мгновенно минерализован в результате травмы мира, превратившись в лес каменных статуй."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - narrative:ancient_wound
+      - resource:petrified_wood
+      
+    compatibility:
+      favored_races: [relicts, bone_scribes]
+      disfavored_races: []
+      can_border: [barren_wastes, echoing_crater, crystal_synapse_forest]
+      cannot_border: [biolume_forest, toxic_swamp]
+      
+    content_generation:
+      common_fauna: [stone_bird, fossil_crawler]
+      common_flora: []
+      resources:
+        - id: petrified_wood
+          abundance: abundant
+        - id: fossil
+          abundance: common
+      poi_types:
+        - stone_tree_grove
+        - fossil_site
+        - petrification_center
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.3, 0.5]
+      temperature: [0.3, 0.6]
+      moisture: [0.1, 0.3]
+      
+    spawn_weight: 6
+
   - id: echoing_crater
     name: "Звенящий кратер"
-    parent_region_ids: [scar_tissue]
     description: "Огромный кратер от удара, чья акустика такова, что любой звук повторяется эхом тысячи раз, сводя с ума незащищенных."
+    
+    pillar_tags:
+      terrain_type: terrain:rough
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - anomaly:sound
+      - danger:supernatural
+      - narrative:ancient_catastrophe
+      
+    compatibility:
+      favored_races: [deaf, protected]
+      disfavored_races: [unprotected]
+      can_border: [barren_wastes, glass_desert, petrified_forest]
+      cannot_border: [biolume_forest]
+      
+    content_generation:
+      common_fauna: [deaf_creature, echo_beast]
+      common_flora: []
+      resources:
+        - id: impact_mineral
+          abundance: uncommon
+      poi_types:
+        - crater_center
+        - echo_chamber
+        - madness_zone
+      poi_density: 2
+    
+    noise_generation:
+      elevation: [0.0, 0.3]
+      temperature: [0.3, 0.7]
+      moisture: [0.1, 0.4]
+      acoustic_resonance: [0.9, 1.0]
+      
+    spawn_weight: 4
 
-  # --- Биомы для 'chitinous_coast' (Хитиновый берег) ---
+  # --- БИОМЫ ХИТИНОВОГО БЕРЕГА ---
+  
   - id: black_wall
     name: "Черная Стена"
-    parent_region_ids: [chitinous_coast]
     description: "Классический Хитиновый берег: отвесная, гладкая стена из черного, как обсидиан, хитина, уходящая в небо и в глубины Протоплазменного Океана."
+    
+    pillar_tags:
+      terrain_type: terrain:elevated
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - location:coastal
+      - trait:defensive
+      
+    compatibility:
+      favored_races: [edge_guardians, climbers]
+      disfavored_races: [plains_dwellers]
+      can_border: [barnacle_settlements, sea_caves, shadow_watch]
+      cannot_border: [pulsating_plains, biolume_forest]
+      
+    content_generation:
+      common_fauna: [wall_climber, cliff_bird]
+      common_flora: [wall_lichen]
+      resources:
+        - id: black_chitin
+          abundance: abundant
+      poi_types:
+        - vertical_path
+        - watch_post
+        - climbing_anchor
+      poi_density: 2
+    
+    noise_generation:
+      elevation: [0.9, 1.0]
+      temperature: [0.3, 0.6]
+      moisture: [0.4, 0.7]
+      
+    spawn_weight: 10
+
   - id: barnacle_settlements
     name: "Поселения-наросты"
-    parent_region_ids: [chitinous_coast]
     description: "Участки Стены, где 'Стражи Края' вырезали свои вертикальные поселения, похожие на гнезда или колонии морских уточек."
+    
+    pillar_tags:
+      terrain_type: terrain:elevated
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - location:coastal
+      - location:inhabited
+      - location:fortified
+      
+    compatibility:
+      favored_races: [edge_guardians]
+      disfavored_races: [plains_dwellers]
+      can_border: [black_wall, sea_caves, shadow_watch]
+      cannot_border: [pulsating_plains]
+      
+    content_generation:
+      common_fauna: [guard_creature, messenger_bird]
+      common_flora: [wall_moss]
+      resources:
+        - id: black_chitin
+          abundance: common
+        - id: ocean_salvage
+          abundance: uncommon
+      poi_types:
+        - vertical_village
+        - watch_nest
+        - trading_platform
+      poi_density: 5
+    
+    noise_generation:
+      elevation: [0.7, 0.9]
+      temperature: [0.3, 0.6]
+      moisture: [0.5, 0.8]
+      
+    spawn_weight: 7
+
   - id: sea_caves
     name: "Морские пещеры"
-    parent_region_ids: [chitinous_coast]
     description: "Сеть пещер у основания Стены, затопляемых во время штормов Протоплазменного Океана. Логова морских хищников."
+    
+    pillar_tags:
+      terrain_type: terrain:subterranean
+      surface_stability: surface:unstable
+      fertility: ecology:moderate
+    
+    defining_tags:
+      - location:coastal
+      - danger:environmental
+      
+    compatibility:
+      favored_races: [amphibious, edge_guardians]
+      disfavored_races: [land_dwellers]
+      can_border: [black_wall, barnacle_settlements, kelp_forests]
+      cannot_border: [pulsating_plains, bone_needles]
+      
+    content_generation:
+      common_fauna: [sea_predator, cave_crab, tide_beast]
+      common_flora: [cave_algae, salt_fungus]
+      resources:
+        - id: sea_salt
+          abundance: common
+        - id: ocean_pearl
+          abundance: rare
+      poi_types:
+        - tidal_cave
+        - predator_lair
+        - smuggler_hideout
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.0, 0.2]
+      temperature: [0.4, 0.7]
+      moisture: [0.8, 1.0]
+      
+    spawn_weight: 6
+
   - id: shadow_watch
     name: "Дозор Теней"
-    parent_region_ids: [chitinous_coast]
     description: "Самые высокие и изолированные участки Стены, откуда 'Стражи Края' наблюдают за Океаническими Тенями в глубинах."
+    
+    pillar_tags:
+      terrain_type: terrain:elevated
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - location:coastal
+      - location:isolated
+      - location:fortified
+      - narrative:ocean_watchers
+      
+    compatibility:
+      favored_races: [edge_guardians]
+      disfavored_races: [most_races]
+      can_border: [black_wall, barnacle_settlements]
+      cannot_border: [pulsating_plains, toxic_swamp]
+      
+    content_generation:
+      common_fauna: [watch_bird, warning_beast]
+      common_flora: []
+      resources:
+        - id: black_chitin
+          abundance: common
+      poi_types:
+        - observation_post
+        - signal_tower
+        - isolated_hermitage
+      poi_density: 2
+    
+    noise_generation:
+      elevation: [0.9, 1.0]
+      temperature: [0.2, 0.5]
+      moisture: [0.4, 0.7]
+      
+    spawn_weight: 5
 
-  # --- Биомы для 'ganglion_nexus' (Ганглионный узел) ---
+  # --- БИОМЫ ГАНГЛИОННОГО УЗЛА ---
+  
   - id: crystal_synapse_forest
     name: "Лес кристальных синапсов"
-    parent_region_ids: [ganglion_nexus]
     description: "Центральная часть Ганглия: пещера, где со свода свисают гигантские, окаменевшие нейронные структуры, слабо пульсирующие светом."
+    
+    pillar_tags:
+      terrain_type: terrain:subterranean
+      surface_stability: surface:stable
+      fertility: ecology:unique
+    
+    defining_tags:
+      - narrative:old_gods_legacy
+      - anomaly:psychic
+      - anomaly:memory
+      - location:sacred
+      
+    compatibility:
+      favored_races: [synaptics, relicts, stillborn]
+      disfavored_races: [phages, chimerics]
+      can_border: [memory_pools, resonant_gardens, silent_zone]
+      cannot_border: [toxic_swamp, crystal_scar]
+      
+    content_generation:
+      common_fauna: [psychic_entity, memory_guardian]
+      common_flora: [neural_crystal, synapse_vine]
+      resources:
+        - id: memory_crystal
+          abundance: uncommon
+        - id: psychic_residue
+          abundance: rare
+      poi_types:
+        - great_ganglion
+        - vision_chamber
+        - memory_archive
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.1, 0.3]
+      temperature: [0.4, 0.6]
+      moisture: [0.5, 0.8]
+      conductivity: [0.9, 1.0]
+      
+    spawn_weight: 8
+
   - id: memory_pools
     name: "Озера Памяти"
-    parent_region_ids: [ganglion_nexus, sensory_organ]
     description: "Небольшие, идеально чистые водоемы с прозрачной лимфой, долгое пребывание у которых вызывает спонтанные видения прошлого мира."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:unique
+    
+    defining_tags:
+      - anomaly:memory
+      - anomaly:psychic
+      - location:sacred
+      - resource:pure_lymph
+      
+    compatibility:
+      favored_races: [synaptics, relicts, stillborn]
+      disfavored_races: [phages]
+      can_border: [crystal_synapse_forest, resonant_gardens, rainbow_caldera]
+      cannot_border: [toxic_swamp, crystal_scar]
+      
+    content_generation:
+      common_fauna: [vision_fish, memory_spirit]
+      common_flora: [thought_lily, remembrance_reed]
+      resources:
+        - id: memory_water
+          abundance: uncommon
+        - id: vision_essence
+          abundance: rare
+      poi_types:
+        - sacred_pool
+        - vision_site
+        - memory_shrine
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.2, 0.4]
+      temperature: [0.4, 0.6]
+      moisture: [0.8, 1.0]
+      conductivity: [0.8, 1.0]
+      
+    spawn_weight: 6
+
   - id: resonant_gardens
     name: "Резонирующие сады"
-    parent_region_ids: [ganglion_nexus]
     description: "Области вокруг Ганглия, где Проводность настолько высока, что флора мутировала, обретя рудиментарный разум и способность к общению."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:unique
+    
+    defining_tags:
+      - manifestation:high
+      - anomaly:psychic
+      - location:sacred
+      
+    compatibility:
+      favored_races: [synaptics, pulsars, stillborn]
+      disfavored_races: [phages, fen-kin]
+      can_border: [crystal_synapse_forest, memory_pools, silent_zone]
+      cannot_border: [toxic_swamp, barren_wastes]
+      
+    content_generation:
+      common_fauna: [empathic_creature, thought_butterfly]
+      common_flora: [sentient_plant, resonance_flower, thinking_vine]
+      resources:
+        - id: resonant_pollen
+          abundance: common
+        - id: consciousness_seed
+          abundance: rare
+      poi_types:
+        - speaking_grove
+        - plant_oracle
+        - communion_circle
+      poi_density: 4
+    
+    noise_generation:
+      elevation: [0.2, 0.5]
+      temperature: [0.4, 0.7]
+      moisture: [0.6, 0.9]
+      conductivity: [0.9, 1.0]
+      
+    spawn_weight: 7
+
   - id: silent_zone
     name: "Зона Тишины"
-    parent_region_ids: [ganglion_nexus]
     description: "Область, где 'шум' мира полностью отсутствует. Здесь Сцепка невозможна, но разум обретает необычайную ясность. Место для медитации Реликтов."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - manifestation:numb
+      - anomaly:psychic
+      - location:sacred
+      
+    compatibility:
+      favored_races: [relicts, meditators]
+      disfavored_races: [synaptics, pulsars]
+      can_border: [crystal_synapse_forest, resonant_gardens]
+      cannot_border: [neuroflower_meadows]
+      
+    content_generation:
+      common_fauna: []
+      common_flora: [silence_lichen]
+      resources:
+        - id: silence_crystal
+          abundance: rare
+      poi_types:
+        - meditation_chamber
+        - silence_shrine
+        - clarity_pool
+      poi_density: 2
+    
+    noise_generation:
+      elevation: [0.2, 0.4]
+      temperature: [0.4, 0.6]
+      moisture: [0.3, 0.6]
+      conductivity: [0.0, 0.1]
+      
+    spawn_weight: 5
 
-  # --- Биомы для 'sensory_organ' (Сенсорный орган) ---
+  # --- БИОМЫ СЕНСОРНОГО ОРГАНА ---
+  
   - id: rainbow_caldera
     name: "Радужная Кальдера"
-    parent_region_ids: [sensory_organ]
     description: "Центральное озеро острова, 'зрачок' мира. Его кристальное дно преломляет свет, создавая постоянную игру цвета на поверхности."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:unique
+    
+    defining_tags:
+      - trait:unique
+      - manifestation:sensory
+      - location:sacred
+      - resource:pure_lymph
+      
+    compatibility:
+      favored_races: [pilgrims, artists, synaptics]
+      disfavored_races: [phages]
+      can_border: [singing_cliffs, dream_fog_basin, memory_pools]
+      cannot_border: [toxic_swamp, barren_wastes]
+      
+    content_generation:
+      common_fauna: [rainbow_fish, light_spirit]
+      common_flora: [prismatic_reed, color_lotus]
+      resources:
+        - id: rainbow_crystal
+          abundance: uncommon
+        - id: pure_light_essence
+          abundance: rare
+      poi_types:
+        - rainbow_heart
+        - vision_platform
+        - color_shrine
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.1, 0.3]
+      temperature: [0.5, 0.7]
+      moisture: [0.9, 1.0]
+      
+    spawn_weight: 10
+
   - id: singing_cliffs
     name: "Поющие утесы"
-    parent_region_ids: [sensory_organ]
     description: "Берега острова, состоящие из пористой, резонирующей породы. Ветер, проходя через них, создает постоянную, меняющуюся мелодию."
+    
+    pillar_tags:
+      terrain_type: terrain:elevated
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    
+    defining_tags:
+      - anomaly:sound
+      - manifestation:sensory
+      - location:sacred
+      
+    compatibility:
+      favored_races: [acoustics, pilgrims]
+      disfavored_races: []
+      can_border: [rainbow_caldera, dream_fog_basin]
+      cannot_border: [toxic_swamp]
+      
+    content_generation:
+      common_fauna: [song_bird, echo_spirit]
+      common_flora: [resonant_moss]
+      resources:
+        - id: singing_stone
+          abundance: common
+        - id: harmony_crystal
+          abundance: rare
+      poi_types:
+        - singing_chamber
+        - wind_organ
+        - acoustic_temple
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.5, 0.8]
+      temperature: [0.4, 0.7]
+      moisture: [0.4, 0.7]
+      acoustic_resonance: [0.8, 1.0]
+      
+    spawn_weight: 7
+
   - id: dream_fog_basin
     name: "Лощина тумана снов"
-    parent_region_ids: [sensory_organ]
     description: "Низина, где постоянно скапливается Золотой Туман Снов, делая грань между реальностью и видениями почти неразличимой."
+    
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:unique
+    
+    defining_tags:
+      - anomaly:dream
+      - manifestation:sensory
+      - danger:supernatural
+      - location:sacred
+      
+    compatibility:
+      favored_races: [dreamers, synaptics, stillborn]
+      disfavored_races: [phages, practical_minded]
+      can_border: [rainbow_caldera, singing_cliffs, memory_pools]
+      cannot_border: [toxic_swamp, barren_wastes]
+      
+    content_generation:
+      common_fauna: [dream_entity, vision_creature]
+      common_flora: [dream_flower, fog_vine]
+      resources:
+        - id: dream_fog_essence
+          abundance: common
+        - id: nightmare_shard
+          abundance: rare
+      poi_types:
+        - dream_circle
+        - vision_pool
+        - oracle_chamber
+      poi_density: 3
+    
+    noise_generation:
+      elevation: [0.1, 0.3]
+      temperature: [0.5, 0.7]
+      moisture: [0.8, 1.0]
+      conductivity: [0.7, 0.9]
+      
+    spawn_weight: 6
 
-# 4. Ключевые анатомические объекты
-# Справочник уникальных, "легендарных" мест в Сильгарроне.
-# allowed_biome_ids - список ID биомов, внутри которых этот объект может быть расположен.
+    # --- БИОМЫ ХРЕБТА-ОСТОВА ---
+  - id: bone_needles
+    name: "Костяные иглы"
+    description: "Высокогорный биом из голых, острых, как бритва, пиков костехитина, продуваемый плотными ветрами."
+
+    pillar_tags:
+      terrain_type: terrain:mountain
+      surface_stability: surface:stable
+      fertility: ecology:barren
+
+    defining_tags:
+      - resource:bone_chitin
+      - danger:environmental
+      - location:isolated
+
+    compatibility:
+      favored_races: [barophiles, ursines]
+      disfavored_races: [silt_weavers, dorsals, geodes]
+      can_border: [litho-lichen_slopes, wind_caves, cloud_forest]
+      cannot_border: [biolume_forest, toxic_swamp, pulsating_plains]
+
+    content_generation:
+      common_fauna: [wind_raptor, cliff_crawler]
+      common_flora: [hardy_lichen, wind_grass]
+      resources:
+        - id: bone_chitin_raw
+          abundance: abundant
+        - id: wind_crystal
+          abundance: rare
+      poi_types:
+        - mining_site
+        - eagle_nest
+        - wind_shrine
+      poi_density: 2
+
+    noise_generation:
+      elevation: [0.8, 1.0]
+      temperature: [0.1, 0.3]
+      moisture: [0.1, 0.3]
+
+    spawn_weight: 8
+
+  - id: litho-lichen_slopes
+    name: "Лито-лишайниковые склоны"
+    description: "Более пологие склоны хребта, покрытые разноцветными лишайниками-камнеедами, которые медленно превращают кость в почву."
+    pillar_tags:
+      terrain_type: terrain:hill
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    defining_tags: [ resource:bone_chitin ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 9
+
+  - id: cloud_forest
+    name: "Облачный лес"
+    description: "Пояс на средней высоте хребта, постоянно окутанный споровыми туманами, где живут Барофилы и растут уникальные эпифиты."
+    pillar_tags:
+      terrain_type: terrain:elevated
+      surface_stability: surface:stable
+      fertility: ecology:unique
+    defining_tags: [ location:isolated, manifestation:stable ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 6
+
+  - id: ruined_spires
+    name: "Разрушенные шпили"
+    description: "Вершины, на которых до сих пор цепляются скелеты рухнувших летающих городов Эпохи Воздушных Княжеств."
+    pillar_tags:
+      terrain_type: terrain:mountain
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    defining_tags: [ narrative:sky_city_ruins, location:isolated, resource:ancient_tech ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 5
+
+  - id: wind_caves
+    name: "Ветряные пещеры"
+    description: "Сеть сквозных пещер и туннелей в толще хребта, где ветер создает постоянную, гулкую 'музыку костей'."
+    pillar_tags:
+      terrain_type: terrain:subterranean
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    defining_tags: [ resource:bone_chitin, anomaly:sound, location:sacred ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 6
+
+    # --- БИОМЫ ПРЕДГОРИЙ ---
+
+  - id: rolling_hills
+    name: "Холмистая гряда"
+    description: "Классические предгорья: пологие холмы, покрытые жесткой травой и редкими, корявыми деревьями."
+
+    pillar_tags:
+      terrain_type: terrain:hill
+      surface_stability: surface:stable
+      fertility: ecology:moderate
+
+    defining_tags:
+      - location:trade_route
+
+    compatibility:
+      favored_races: [kith, pulsars]
+      disfavored_races: [fen-kin, silt_weavers]
+      can_border: [pulsating_plains, spore_savanna, biolume_forest, fortress_hills]
+      cannot_border: [toxic_swamp, crystal_scar, abyssal_trench]
+
+    content_generation:
+      common_fauna: [hill_grazer, stone_lizard]
+      common_flora: [tough_grass, gnarled_tree]
+      resources:
+        - id: stone_common
+          abundance: common
+        - id: medicinal_herbs
+          abundance: uncommon
+      poi_types:
+        - trading_post
+        - abandoned_farm
+        - hilltop_watchtower
+      poi_density: 4
+
+    noise_generation:
+      elevation: [0.4, 0.7]
+      temperature: [0.3, 0.6]
+      moisture: [0.3, 0.6]
+    spawn_weight: 10
+
+  - id: broken_lands
+    name: "Разломы"
+    description: "Лабиринт из неглубоких каньонов и трещин, образовавшихся в результате 'спазмов' Сильгаррона. Отличное место для засад."
+
+    pillar_tags:
+      terrain_type: terrain:rough
+      surface_stability: surface:unstable
+      fertility: ecology:barren
+
+    defining_tags:
+      - danger:environmental
+      - trait:damaged
+
+    compatibility:
+      favored_races: [bandits, outcasts]
+      disfavored_races: [dorsals]
+      can_border: [rolling_hills, spore_savanna, litho-lichen_slopes, barren_wastes]
+      cannot_border: [biolume_forest, neuroflower_meadows]
+
+    content_generation:
+      common_fauna: [canyon_stalker, scavenger]
+      common_flora: [cliff_moss, crack_weed]
+      resources:
+        - id: stone_common
+          abundance: common
+      poi_types:
+        - bandit_hideout
+        - abandoned_mine
+        - natural_trap
+      poi_density: 3
+
+    noise_generation:
+      elevation: [0.4, 0.6]
+      temperature: [0.3, 0.7]
+      moisture: [0.2, 0.5]
+      turbulence: [0.6, 0.9]
+
+    spawn_weight: 7
+
+  - id: boneyard
+    name: "Костяное кладбище"
+    description: "Обширная территория, усеянная скелетами гигантских существ, пришедших умирать к подножию хребта. Дом для Костяных Книжников."
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    defining_tags: [ location:sacred, resource:bone_chitin, narrative:megafauna_migration ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 5
+
+  - id: fortress_hills
+    name: "Холмы-крепости"
+    description: "Предгорья, где Киты вырезали свои форпосты и дозорные башни прямо в толще самых крупных холмов."
+    pillar_tags:
+      terrain_type: terrain:hill
+      surface_stability: surface:stable
+      fertility: ecology:moderate
+    defining_tags: [ location:fortified, location:inhabited ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 6
+
+    # --- БИОМЫ АЛЬВЕОЛЯРНЫХ КАВЕРН ---
+
+  - id: subterranean_lymph_lake
+    name: "Подземное лимфатическое озеро"
+    description: "Гигантская каверна, заполненная чистой, нетронутой лимфой. Дом для слепых, уникальных форм жизни и, возможно, Глубинных."
+
+    pillar_tags:
+      terrain_type: terrain:subterranean
+      surface_stability: surface:stable
+      fertility: ecology:unique
+
+    defining_tags:
+      - resource:pure_lymph
+      - location:sacred
+      - danger:supernatural
+
+    compatibility:
+      favored_races: [deep_ones, blind_folk]
+      disfavored_races: [surface_dwellers]
+      can_border: [luminous_fungi_caves, crystal_geode]
+      cannot_border: [bone_needles, pulsating_plains]
+
+    content_generation:
+      common_fauna: [blind_leviathan, cave_fish, lymph_jellyfish]
+      common_flora: [underwater_fungus, biolume_algae]
+      resources:
+        - id: lymph_pure
+          abundance: abundant
+        - id: deep_water_crystal
+          abundance: rare
+      poi_types:
+        - deep_ones_shrine
+        - submerged_ruin
+        - sacred_depth
+      poi_density: 2
+
+    noise_generation:
+      elevation: [0.0, 0.2]
+      temperature: [0.3, 0.5]
+      moisture: [1.0, 1.0]
+
+    spawn_weight: 5
+
+  - id: luminous_fungi_caves
+    name: "Пещеры светящихся грибов"
+    description: "Классические каверны: огромные залы, освещенные пульсирующим светом биолюминесцентных грибов, с высокой влажностью."
+    pillar_tags:
+      terrain_type: terrain:subterranean
+      surface_stability: surface:stable
+      fertility: ecology:moderate
+    defining_tags: [ location:underground ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 10
+
+  - id: wind_tunnels
+    name: "Ветровые туннели"
+    description: "Прямые, гладкие туннели, соединяющие разные уровни каверн. Здесь постоянно дуют мощные потоки воздуха, участвуя в Дыхании мира."
+    pillar_tags:
+      terrain_type: terrain:subterranean
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    defining_tags: [ anomaly:breathing, danger:environmental ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 7
+
+  - id: crystal_geode
+    name: "Кристаллическая жеода"
+    description: "Сухая пещера, чьи стены полностью покрыты огромными, идеально сформированными кристаллами, часто обладающими резонансными свойствами."
+    pillar_tags:
+      terrain_type: terrain:subterranean
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    defining_tags: [ resource:crystals, anomaly:sound ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 6
+
+  - id: geode_ruins
+    name: "Руины Геодов"
+    description: "Заброшенные поселения древней расы Геодов, вырезанные в стенах каверн и украшенные потускневшими минеральными инкрустациями."
+    pillar_tags:
+      terrain_type: terrain:subterranean
+      surface_stability: surface:stable
+      fertility: ecology:barren
+    defining_tags: [ narrative:ancient_ruins, resource:ancient_tech ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 3
+
+    # --- БИОМЫ СКЛЕРИТОВОЙ ДЕЛЬТЫ ---
+
+  - id: toxic_swamp
+    name: "Токсичные топи"
+    description: "Классическая дельта: лабиринт из черных, пузырящихся проток лимфы, ядовитых туманов и хищных растений. Дом для Топяников."
+
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:unstable
+      fertility: ecology:toxic
+
+    defining_tags:
+      - danger:environmental
+      - danger:disease
+      - resource:toxins
+      - location:inhabited
+
+    compatibility:
+      favored_races: [fen-kin, saprophytes, chimerics]
+      disfavored_races: [kith, pulsars, dorsals]
+      can_border: [rot_forest, fungal_mangroves, filter_beds, mutation_pits]
+      cannot_border: [biolume_forest, crystal_scar, bone_needles]
+
+    content_generation:
+      common_fauna: [swamp_predator, toxic_leech, plague_carrier]
+      common_flora: [carnivorous_plant, poison_fungus, miasma_tree]
+      resources:
+        - id: toxins
+          abundance: abundant
+        - id: corrupted_lymph
+          abundance: common
+        - id: rare_antidote_plant
+          abundance: rare
+      poi_types:
+        - fen_kin_village
+        - poison_garden
+        - plague_pit
+        - alchemist_hideout
+      poi_density: 4
+
+    noise_generation:
+      elevation: [0.0, 0.2]
+      temperature: [0.5, 0.8]
+      moisture: [0.9, 1.0]
+      toxicity: [0.7, 1.0]
+
+    spawn_weight: 8
+
+  - id: filter_beds
+    name: "Фильтрующие отмели"
+    description: "Обширные отмели, состоящие из пористых, похожих на губки минералов, которые фильтруют лимфу перед ее уходом в океан."
+
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:stable
+      fertility: ecology:moderate
+
+    defining_tags:
+      - location:coastal
+      - resource:minerals
+
+    compatibility:
+      favored_races: [silt_weavers, fen-kin]
+      disfavored_races: [ursines, barophiles]
+      can_border: [toxic_swamp, rot_forest, fungal_mangroves]
+      cannot_border: [bone_needles, crystal_scar]
+
+    content_generation:
+      common_fauna: [filter_feeder, mineral_crab, cleaner_worm]
+      common_flora: [filter_sponge, purifier_reed]
+      resources:
+        - id: filter_minerals
+          abundance: abundant
+        - id: purified_lymph
+          abundance: common
+      poi_types:
+        - filtration_site
+        - mineral_harvest_camp
+        - purifier_shrine
+      poi_density: 3
+
+    noise_generation:
+      elevation: [0.0, 0.2]
+      temperature: [0.4, 0.7]
+      moisture: [0.7, 0.9]
+      
+    spawn_weight: 6
+
+  - id: rot_forest
+    name: "Гнилой лес"
+    description: "Лес из мертвых, но не разлагающихся до конца деревьев, покрытых толстым слоем грибов-паразитов. Территория Сапрофитов."
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:unstable
+      fertility: ecology:barren
+    defining_tags: [ location:inhabited, danger:disease ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 7
+
+  - id: mutation_pits
+    name: "Мутационные ямы"
+    description: "Зоны с аномально высокой концентрацией токсинов, где жизнь постоянно и хаотично меняется. Родина Химерных."
+    pillar_tags:
+      terrain_type: terrain:rough
+      surface_stability: surface:unstable
+      fertility: ecology:toxic
+    defining_tags: [ anomaly:mutation, danger:supernatural, location:inhabited ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 5
+
+  - id: unity_expanse
+    name: "Пространство Единства"
+    description: "Территория, поглощенная Язвой Нового Бога (Хорал Единства), где вся органика слилась в единую, пульсирующую биомассу."
+    pillar_tags:
+      terrain_type: terrain:flat
+      surface_stability: surface:dynamic
+      fertility: ecology:barren
+    defining_tags: [ narrative:new_god_ulcer, danger:supernatural, manifestation:numb ]
+    compatibility: # TODO: Заполнить
+    content_generation: # TODO: Заполнить
+    noise_generation: # TODO: Заполнить
+    spawn_weight: 2
+
+# =============================================================================
+# 3. ЛЕНДМАРКИ (Landmarks)
+# =============================================================================
 LANDMARKS:
-  # --- Объекты, связанные со Старыми Богами и памятью мира ---
+  
   - id: great_ganglion_dreaming_eye
     name: "Великий Ганглий 'Око Сна'"
-    allowed_biome_ids: [crystal_synapse_forest]
     description: "Крупнейший и наиболее сохранившийся Ганглионный узел. Центральная точка 'нервной системы' мира. Пребывание здесь вызывает яркие, пророческие и опасные видения."
-  - id: ruins_of_aerie
-    name: "Руины парящего города Эйри"
-    allowed_biome_ids: [ruined_spires]
-    description: "Наиболее сохранившиеся руины летающего города Эпохи Воздушных Княжеств, цепляющиеся за самый высокий пик Склеритового Хребта."
-  - id: megatherium_graveyard
-    name: "Кладбище Великих Мегатериев"
-    allowed_biome_ids: [boneyard]
-    description: "Древнее, священное для Пульсаров место, куда стада Мегатериев приходили умирать на протяжении тысячелетий. Здесь лежат кости размером с холмы."
+    
+    parent_biome: crystal_synapse_forest
+    
+    tags:
+      - narrative:old_gods_legacy
+      - anomaly:memory
+      - anomaly:psychic
+      - location:sacred
+      - danger:supernatural
+      
+    size: massive
+    accessibility: difficult
+    danger_level: 8
+    
+    unique_npcs:
+      - dreamer_prophet
+      - ganglion_guardian
+      
+    unique_quests:
+      - commune_with_old_gods
+      - retrieve_ancient_memory
+      - survive_the_vision
+      
+    lore:
+      era: era_of_old_gods
+      significance: "Последний активный узел связи с Нейроцитами"
 
-  # --- Объекты, связанные с Новыми Богами (Язвы) ---
   - id: the_crystalline_scar
     name: "Кристаллический Шрам"
-    allowed_biome_ids: [crystal_scar]
     description: "Эпицентр и самая старая часть Язвы Кристаллического Струпа, где земля и все, что на ней было, превратилось в единый, идеально гладкий кристалл."
+    
+    parent_biome: crystal_scar
+    
+    tags:
+      - narrative:new_god_ulcer
+      - manifestation:numb
+      - danger:supernatural
+      
+    size: large
+    accessibility: moderate
+    danger_level: 9
+    
+    unique_npcs:
+      - crystalline_prophet
+      - converted_ones
+      
+    unique_quests:
+      - stop_the_spread
+      - infiltrate_cult
+      - study_transformation
+      
+    lore:
+      era: arrival_of_new_gods
+      significance: "Первая точка проникновения Нового Бога в Сильгаррон"
+
+  - id: megatherium_graveyard
+    name: "Кладбище Великих Мегатериев"
+    description: "Древнее, священное для Пульсаров место, куда стада Мегатериев приходили умирать на протяжении тысячелетий. Здесь лежат кости размером с холмы."
+    
+    parent_biome: boneyard
+    
+    tags:
+      - narrative:megafauna_migration
+      - location:sacred
+      - resource:bone_chitin
+      
+    size: massive
+    accessibility: moderate
+    danger_level: 3
+    
+    unique_npcs:
+      - bone_priest
+      - dorsals_elder
+      
+    unique_quests:
+      - find_ancient_bones
+      - protect_sacred_ground
+      - witness_final_journey
+      
+    lore:
+      era: ancient
+      significance: "Духовный центр культуры Дорсалов и Пульсаров"
+
+  - id: ruins_of_aerie
+    name: "Руины парящего города Эйри"
+    description: "Наиболее сохранившиеся руины летающего города Эпохи Воздушных Княжеств, цепляющиеся за самый высокий пик Хребта-Остова."
+    
+    parent_biome: ruined_spires
+    
+    tags:
+      - narrative:sky_city_ruins
+      - location:isolated
+      - danger:environmental
+      
+    size: large
+    accessibility: difficult
+    danger_level: 7
+    
+    unique_npcs:
+      - ghost_of_the_aviator
+      - kith_relic_hunter
+      
+    unique_quests:
+      - find_the_flight_chronicles
+      - reactivate_the_old_wardens
+      - explore_collapsed_districts
+      
+    lore:
+      era: era_of_sky_principalities
+      significance: "Последний осколок былого величия Китов"
+
   - id: heart_of_the_choral
     name: "Сердце Хорала"
-    allowed_biome_ids: [unity_expanse]
     description: "Центральный 'мозг' Язвы Хорала Единства, гигантская, пульсирующая биомасса, транслирующая свою волю на всю Сточную Дельту."
+    
+    parent_biome: unity_expanse
+    
+    tags:
+      - narrative:new_god_ulcer
+      - danger:supernatural
+      - manifestation:numb
+      
+    size: massive
+    accessibility: very_difficult
+    danger_level: 10
+    
+    unique_npcs:
+      - unity_prophet
+      - absorbed_collective
+      
+    unique_quests:
+      - infiltrate_the_heart
+      - destroy_the_core
+      - resist_assimilation
+      
+    lore:
+      era: arrival_of_new_gods
+      significance: "Центральный узел Язвы Хорала Единства"
+
   - id: the_ash_island
     name: "Пепельный Остров"
-    allowed_biome_ids: [necrotic_follicle_zone]
     description: "Место, где зародился Некротический Фолликул. Небольшой остров на Хватательной Конечности, где время течет в сотни раз быстрее, и все мгновенно обращается в прах."
+    
+    parent_biome: necrotic_follicle_zone
+    
+    tags:
+      - narrative:new_god_ulcer
+      - anomaly:time
+      - danger:supernatural
+      
+    size: small
+    accessibility: very_difficult
+    danger_level: 10
+    
+    unique_npcs:
+      - time_warden
+      - ash_prophet
+      
+    unique_quests:
+      - study_time_anomaly
+      - retrieve_artifact_before_decay
+      - stop_the_spread
+      
+    lore:
+      era: arrival_of_new_gods
+      significance: "Эпицентр временной аномалии Некротического Фолликула"
 
-  # --- Природные и аномальные объекты ---
   - id: the_great_maw
     name: "Великая Пасть"
-    allowed_biome_ids: [whirlpool_alley]
     description: "Самый большой и постоянный водоворот в Сухожильном Проливе, который, по легендам, ведет прямо в 'желудок' Сильгаррона."
+    
+    parent_biome: whirlpool_alley
+    
+    tags:
+      - danger:environmental
+      - narrative:world_mystery
+      - location:aquatic
+      
+    size: large
+    accessibility: very_difficult
+    danger_level: 9
+    
+    unique_npcs:
+      - master_navigator
+      - maw_cultist
+      
+    unique_quests:
+      - survive_the_maw
+      - explore_the_depths
+      - uncover_the_secret
+      
+    lore:
+      era: ancient
+      significance: "Легендарный водоворот, связанный с мифами о 'пищеварении' мира"
+
   - id: the_singing_mountain
     name: "Поющая Гора"
-    allowed_biome_ids: [wind_caves]
     description: "Единственная гора в Склеритовом Хребте, полностью пронизанная Ветряными пещерами, из-за чего она постоянно издает сложную, меняющуюся мелодию."
+    
+    parent_biome: wind_caves
+    
+    tags:
+      - anomaly:sound
+      - location:sacred
+      - location:isolated
+      
+    size: massive
+    accessibility: difficult
+    danger_level: 5
+    
+    unique_npcs:
+      - acoustic_hermit
+      - song_keeper
+      
+    unique_quests:
+      - learn_the_song
+      - find_the_resonance_chamber
+      - communicate_with_mountain
+      
+    lore:
+      era: ancient
+      significance: "Священное место для Акустиков и Геодов"
+
   - id: the_still_lake
     name: "Застывшее Озеро"
-    allowed_biome_ids: [subterranean_lymph_lake]
     description: "Гигантское подземное озеро, чья лимфа по неизвестной причине застыла, превратившись в прозрачную, стекловидную массу, в которой навеки замерли древние существа."
+    
+    parent_biome: subterranean_lymph_lake
+    
+    tags:
+      - anomaly:frozen_time
+      - location:sacred
+      - narrative:ancient_mystery
+      
+    size: large
+    accessibility: difficult
+    danger_level: 6
+    
+    unique_npcs:
+      - frozen_guardian
+      - lake_researcher
+      
+    unique_quests:
+      - study_the_anomaly
+      - retrieve_frozen_artifact
+      - awaken_the_sleepers
+      
+    lore:
+      era: ancient
+      significance: "Необъяснимая аномалия, хранящая замороженных существ древности"
+
   - id: the_rainbow_heart
     name: "Радужное Сердце"
-    allowed_biome_ids: [rainbow_caldera]
     description: "Самая глубокая точка Радужной Кальдеры, где со дна бьет источник чистейшей лимфы, проходя через гигантский кристалл, что и создает игру цвета на поверхности."
+    
+    parent_biome: rainbow_caldera
+    
+    tags:
+      - trait:unique
+      - manifestation:sensory
+      - location:sacred
+      - resource:pure_lymph
+      
+    size: medium
+    accessibility: moderate
+    danger_level: 2
+    
+    unique_npcs:
+      - rainbow_keeper
+      - vision_oracle
+      
+    unique_quests:
+      - commune_with_the_heart
+      - retrieve_rainbow_essence
+      - witness_the_vision
+      
+    lore:
+      era: era_of_old_gods
+      significance: "Один из 'глаз' Сильгаррона, сенсорный орган мира"
 
-# --- Остальные параметры анатомии (пока пустые) ---
-METABOLIC_MODES: []
-ATMOSPHERIC_PHENOMENA: []
-LYMPHOGRAPHY: []
-BREATHING_PHASE: []
+  - id: the_black_gate
+    name: "Черные Врата"
+    description: "Участок Хитиновой Стены с единственным известным проходом сквозь нее, ведущим к Протоплазменному Океану. Контролируется Стражами Края."
+    
+    parent_biome: black_wall
+    
+    tags:
+      - location:coastal
+      - location:fortified
+      - narrative:ocean_gateway
+      - trait:unique
+      
+    size: small
+    accessibility: controlled
+    danger_level: 8
+    
+    unique_npcs:
+      - gate_commander
+      - ocean_watcher
+      
+    unique_quests:
+      - gain_passage_rights
+      - defend_the_gate
+      - explore_beyond
+      
+    lore:
+      era: ancient
+      significance: "Единственный известный проход через Хитиновую Стену"
+
+  - id: the_silent_temple
+    name: "Храм Тишины"
+    description: "Древнее святилище Реликтов в центре Зоны Тишины, где полностью отсутствует Сцепка и любой ментальный шум."
+    
+    parent_biome: silent_zone
+    
+    tags:
+      - manifestation:numb
+      - anomaly:psychic
+      - location:sacred
+      - narrative:relict_heritage
+      
+    size: medium
+    accessibility: difficult
+    danger_level: 4
+    
+    unique_npcs:
+      - silent_master
+      - relict_guardian
+      
+    unique_quests:
+      - achieve_perfect_silence
+      - learn_ancient_meditation
+      - understand_the_void
+      
+    lore:
+      era: era_of_old_gods
+      significance: "Священное место Реликтов, центр их духовной практики"
+
+
+# =============================================================================
+# 4. ПРАВИЛА ГЕНЕРАЦИИ РЕГИОНА
+# =============================================================================
+
+REGION_GENERATION_RULES:
+  
+  default_map_size: [128, 128]
+  
+  noise_params:
+    elevation:
+      scale: 0.05
+      octaves: 6
+      persistence: 0.5
+      lacunarity: 2.0
+      
+    temperature:
+      scale: 0.03
+      octaves: 4
+      persistence: 0.6
+      
+    moisture:
+      scale: 0.04
+      octaves: 5
+      persistence: 0.55
+      
+    turbulence:
+      scale: 0.08
+      octaves: 3
+      persistence: 0.4
+      
+    conductivity:
+      scale: 0.06
+      octaves: 4
+      persistence: 0.5
+      
+    toxicity:
+      scale: 0.05
+      octaves: 4
+      persistence: 0.5
+      
+    corruption:
+      scale: 0.04
+      octaves: 3
+      persistence: 0.6
+      
+    acoustic_resonance:
+      scale: 0.07
+      octaves: 3
+      persistence: 0.4
+      
+    anomaly_strength:
+      scale: 0.06
+      octaves: 4
+      persistence: 0.5
+      
+    chaos:
+      scale: 0.09
+      octaves: 3
+      persistence: 0.7
+  
+  biome_distribution:
+    min_cluster_size: 9
+    boundary_smoothing: true
+    smoothing_iterations: 3
+    diversity: 0.6
+  
+  landmark_placement:
+    prefer_center: true
+    min_distance: 50
+    max_per_region: 3
+
+
+# =============================================================================
+# 5. ДОПОЛНИТЕЛЬНЫЕ ПАРАМЕТРЫ (Заглушки для будущего расширения)
+# =============================================================================
+
+#METABOLIC_MODES: []
+#ATMOSPHERIC_PHENOMENA: []
+#LYMPHOGRAPHY: []
+#BREATHING_PHASE: []

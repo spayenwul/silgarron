@@ -1,211 +1,201 @@
-# api/game_session.py (ЗАВЕРШЕННАЯ ВЕРСЯ)
+# api/game_session.py (УЛУЧШЕННАЯ ВЕРСИЯ)
 from typing import Optional, Dict, List
-import uuid
-import random
-
 from game import Game
-from services.world_graph_service import WorldGraph
+from services.hex_world_service import HexWorldService
+from services.config_loader import WorldGenerationConfig
 from services.persistence_service import PersistenceService
-from generators.spatial_location_generator import SpatialLocationGenerator
 from models.location import Location
 from models.character import Character
 from services.llm_service import generate_location_description
 
 class GameSession:
-    """
-    Инкапсулирует всю логику игровой сессии.
-    API-эндпоинты только вызывают методы этого класса.
-    """
-    
     def __init__(
-        self,
-        session_id: str,
-        persistence: PersistenceService,
-        world_data, tag_registry, memory
+        self, session_id: str, persistence: PersistenceService,
+        world_data, tag_registry, memory, config: WorldGenerationConfig = None
     ):
         self.session_id = session_id
         self.persistence = persistence
         self.world_data = world_data
         self.tag_registry = tag_registry
         self.memory = memory
-        # Эти компоненты будут загружены или созданы заново
+        self.config = config or WorldGenerationConfig()
+        
         self.game: Optional[Game] = None
-        self.world_graph: Optional[WorldGraph] = None
-        self.spatial_generator: Optional[SpatialLocationGenerator] = None
-        self.current_location_id: Optional[str] = None
+        self.hex_world: Optional[HexWorldService] = None
+        self.current_biome_id: Optional[str] = None
     
-    # === МЕТОДЫ-ФАСАДЫ (публичный API класса) ===
-    
-    def move_player_to(self, target_location_id: str) -> Dict:
-        """ЕДИНАЯ точка для всей логики перемещения."""
-        # 1. Проверка доступности
-        neighbors = self.world_graph.get_neighbors(self.current_location_id)
-        if not any(n['id'] == target_location_id for n in neighbors):
-            return {"success": False, "message": "Эта локация недоступна отсюда."}
-        
-        # 2. Проверка условий перехода
-        edge_data = self.world_graph.graph.edges[self.current_location_id, target_location_id]
-        if condition := edge_data.get('condition'):
-            if not self._check_condition(condition):
-                return {"success": False, "message": f"Проход заблокирован. Требуется: {condition}"}
+    @property
+    def current_region_id(self) -> Optional[str]:
+        """Получает ID текущего региона из текущего биома."""
+        if self.current_biome_id and self.current_biome_id in self.hex_world.biomes:
+            return self.hex_world.biomes[self.current_biome_id].parent_region_id
+        return None
 
-        # 3. Перемещение
-        self.current_location_id = target_location_id
-        self.world_graph.mark_visited(target_location_id)
+    def move_player_to(self, target_biome_id: str) -> Dict:
+        if not (self.hex_world and self._validate_biome_exists(target_biome_id)):
+            return {"success": False, "message": f"Биом {target_biome_id} не существует."}
         
-        # 4. Обновление текущей локации в игре
-        location_data = self.world_graph.graph.nodes[target_location_id]
-        self.game.current_location = Location.from_dict(location_data)
+        accessible = self.hex_world.get_accessible_biomes(self.current_biome_id)
+        if not any(b['id'] == target_biome_id for b in accessible):
+            return {"success": False, "message": "Этот биом недоступен отсюда."}
         
-        # 5. Генерация описания (если ещё нет)
-        if not location_data.get('description'):
-            context = self.game._get_layered_context(f"описание {location_data['name']}")
-            description = generate_location_description(tags=location_data.get('tags', []), context=context)
-            self.game.current_location.description = description
-            self.world_graph.graph.nodes[target_location_id]['description'] = description
+        self.current_biome_id = target_biome_id
+        self.hex_world.mark_biome_visited(target_biome_id)
         
-        # 6. Расширение мира (30% шанс)
-        new_locations = self.spatial_generator.expand_from_location(target_location_id) if random.random() < 0.3 else []
+        biome_data = self.hex_world.biomes[target_biome_id]
+        self.game.current_location = self._create_location_view(biome_data)
+        
+        if not biome_data.description:
+            biome_data.description = self._generate_biome_description(biome_data)
+            self.game.current_location.description = biome_data.description
         
         self._save_session()
         
         return {
-            "success": True,
-            "message": f"Вы переместились в: {self.game.current_location.name}",
+            "success": True, "message": f"Вы переместились в: {biome_data.name}",
             "current_location": self.game.current_location.to_dict(),
-            "player": self.game.player.to_dict(), # Добавляем игрока
-            "world_graph": self.get_discovered_world() # Добавляем карту
+            "player": self.game.player.to_dict(),
+            "world_graph": self.get_local_map() # <-- ИЗМЕНЕНИЕ: Отдаем локальную карту
         }
     
     def perform_action(self, command: str) -> Dict:
-        """Выполняет игровую команду и возвращает результат."""
+        # ... (без изменений, но теперь возвращает локальную карту)
         narrative = self.game.process_player_command(command)
         self._save_session()
-        
         return {
             "narrative": narrative,
             "player": self.game.player.to_dict(),
             "current_location": self.game.current_location.to_dict(),
             "game_state": self.game.state.name,
-            "world_graph": self.get_discovered_world() # Добавляем карту
+            "world_graph": self.get_local_map() # <-- ИЗМЕНЕНИЕ
         }
-    
+
     def explore_boundaries(self) -> Dict:
-        """
-        Генерирует новые локации и ВОЗВРАЩАЕТ ПОЛНУЮ ОБНОВЛЕННУЮ КАРТУ.
-        """
-        new_locations = self.spatial_generator.expand_from_location(
-            self.current_location_id
-        )
-        
-        # Сохраняем сессию с новыми локациями
+        new_biome_ids = self.hex_world.explore_from_biome(self.current_biome_id)
         self._save_session()
-        
-        # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-        # Вместо простого сообщения, возвращаем объект с сообщением И обновленным графом
-        return {
-            "success": True,
-            "message": f"Вы обнаружили {len(new_locations)} новых локаций!",
-            "world_graph": self.get_discovered_world() # <--- Возвращаем результат вызова этого метода
-        }
-    
-    # === Методы управления состоянием сессии ===
-    
+        message = f"Вы обнаружили {len(new_biome_ids)} новых биомов в соседних регионах!" if new_biome_ids else "Вы не нашли новых мест. Все соседние регионы уже открыты."
+        return {"success": True, "message": message, "world_graph": self.get_world_map()} # <-- ИЗМЕНЕНИЕ: Отдаем глобальную карту
+
     def initialize_new_game(self, player_name: str, starting_continent: str = "torax"):
-        """
-        Создаёт все компоненты для новой игры, выбирая случайный регион на континенте.
-        """
+        continent_data = self.world_data.get_continent_data(starting_continent)
+        if not continent_data:
+            raise ValueError(f"Континент '{starting_continent}' не найден")
+        
         self.game = Game(self.world_data, self.tag_registry, self.memory)
         self.game.player = Character(name=player_name)
         
-        self.world_graph = WorldGraph(self.session_id)
-        self.spatial_generator = SpatialLocationGenerator(
-            self.world_graph, self.game.world_data, self.game.tag_registry
-        )
+        self.hex_world = HexWorldService(self.session_id, self.world_data, self.tag_registry, self.config)
+        center_region_id = self.hex_world.generate_continent(starting_continent, radius=self.config.default_continent_radius)
         
-        possible_regions = self.game.world_data.get_region_types_for_continent(starting_continent)
-        if not possible_regions:
-            raise ValueError(f"Для континента '{starting_continent}' не найдено регионов в world_anatomy.yaml!")
+        center_region = self.hex_world.regions[center_region_id]
+        settlement_biome = self._find_settlement_in_region(center_region)
+        if not settlement_biome:
+            settlement_biome = self.hex_world.biomes[center_region.biome_ids[0]]
         
-        start_region_data = random.choice(possible_regions)
-        start_region_id = start_region_data['id']
-        print(f"🌍 Мир генерируется... Выбран стартовый регион: '{start_region_data['name']}' ({start_region_id})")
-
-        start_location_id = self.spatial_generator.generate_starting_region(region_type=start_region_id)
+        self.current_biome_id = settlement_biome.id
+        self.hex_world.mark_biome_visited(settlement_biome.id)
         
-        self.current_location_id = start_location_id
-        
-        location_data = self.world_graph.graph.nodes[start_location_id]
-        self.game.current_location = Location.from_dict(location_data)
-        
-        description = generate_location_description(tags=location_data.get('tags', []), context=[])
-        self.game.current_location.description = description
-        self.world_graph.graph.nodes[start_location_id]['description'] = description
+        self.game.current_location = self._create_location_view(settlement_biome)
+        settlement_biome.description = self._generate_biome_description(settlement_biome)
+        self.game.current_location.description = settlement_biome.description
         
         self._save_session()
+        print(f"✅ Игра инициализирована. Стартовая локация: {settlement_biome.name}")
     
     def get_full_state(self) -> Dict:
-        """Возвращает полное состояние сессии для UI."""
         return {
             "session_id": self.session_id,
             "current_location": self.game.current_location.to_dict(),
             "player": self.game.player.to_dict(),
-            "world_graph": self.get_discovered_world()
+            "world_graph": self.get_local_map() # <-- ИЗМЕНЕНИЕ
         }
 
-    def get_discovered_world(self) -> Dict:
-        """Возвращает только открытые части мира (для UI)."""
-        graph_data = self.world_graph.to_dict()
-        
-        discovered_nodes = [{"id": node_id, **node_data} for node_id, node_data in graph_data['nodes'].items() if node_data.get('discovered', False)]
-        discovered_node_ids = {node['id'] for node in discovered_nodes}
-        
-        discovered_edges = [edge for edge in graph_data['edges'] if edge['from'] in discovered_node_ids and edge['to'] in discovered_node_ids and edge['data'].get('discovered', False)]
-        
-        return {
-            "nodes": discovered_nodes,
-            "edges": discovered_edges,
-            "current_location_id": self.current_location_id
-        }
-
+    def get_world_map(self) -> Dict:
+        """НОВОЕ: Возвращает глобальную карту регионов."""
+        return self.hex_world.get_world_map_for_ui()
+    
+    def get_local_map(self) -> Dict:
+        """ИЗМЕНЕНО: Возвращает локальную карту биомов."""
+        if not self.current_region_id: return {"nodes": [], "edges": []}
+        return self.hex_world.get_local_map_for_ui(self.current_region_id, self.current_biome_id)
+    
+    # ========== СОХРАНЕНИЕ/ЗАГРУЗКА ==========
+    
     def _save_session(self):
-        """Сохраняет полное состояние сессии в хранилище."""
         full_session_data = {
             "session_id": self.session_id,
-            "current_location_id": self.current_location_id,
+            "current_biome_id": self.current_biome_id,
             "game_state": self.game.to_dict(),
-            "world_graph_state": self.world_graph.to_dict()
+            "hex_world_state": self.hex_world.to_dict()
         }
         self.persistence.save_game_state(self.session_id, full_session_data)
 
     @classmethod
-    def load_session(cls, session_id: str, persistence: PersistenceService, world_data, tag_registry, memory):
-        """Загружает сессию из хранилища."""
+    def load_session(cls, session_id: str, persistence: PersistenceService, world_data, tag_registry, memory, config: WorldGenerationConfig = None):
         session_data = persistence.load_game_state(session_id)
-        if not session_data:
-            return None
-        
-        instance = cls(session_id, persistence, world_data, tag_registry, memory)
-        instance.current_location_id = session_data["current_location_id"]
-        
-        # Восстанавливаем игру
+        if not session_data: return None
+        instance = cls(session_id, persistence, world_data, tag_registry, memory, config)
+        instance.current_biome_id = session_data["current_biome_id"]
         instance.game = Game(world_data, tag_registry, memory)
         instance.game.load_from_dict(session_data["game_state"])
-        
-        # Восстанавливаем граф
-        instance.world_graph = WorldGraph.from_dict(session_data["world_graph_state"])
-        
-        # Восстанавливаем генератор
-        instance.spatial_generator = SpatialLocationGenerator(
-            instance.world_graph, instance.game.world_data, instance.game.tag_registry
-        )
-        
+        instance.hex_world = HexWorldService.from_dict(session_data["hex_world_state"], world_data, tag_registry)
         return instance
-
-    def _check_condition(self, condition: str) -> bool:
-        """Проверяет условия для действий (например, наличие ключа)."""
-        if ":" in condition:
-            cond_type, cond_value = condition.split(":", 1)
-            if cond_type == "has_item":
-                return self.game.player.inventory.has_item(cond_value)
-        return False
+    
+    def _validate_biome_exists(self, biome_id: str) -> bool:
+        return biome_id in self.hex_world.biomes
+    
+    def _find_settlement_in_region(self, region) -> Optional[Dict]:
+        for biome_id in region.biome_ids:
+            biome = self.hex_world.biomes[biome_id]
+            if biome.biome_type == "kith_settlement":
+                return biome
+        return None
+    
+    def _create_location_view(self, biome_data) -> Location:
+        return Location.from_dict({"name": biome_data.name, "description": biome_data.description, "tags": biome_data.tags})
+    
+    def _generate_biome_description(self, biome_data) -> str:
+        try:
+            context = self.game._get_layered_context(f"описание {biome_data.name}")
+            return generate_location_description(tags=biome_data.tags, context=context)
+        except Exception as e:
+            print(f"⚠️ Ошибка генерации описания: {e}")
+            return f"Вы находитесь в биоме '{biome_data.name}'."
+    
+    # ========== ПРИВАТНЫЕ УТИЛИТЫ ==========
+    
+    def _validate_biome_exists(self, biome_id: str) -> bool:
+        """Проверяет существование биома"""
+        return biome_id in self.hex_world.biomes
+    
+    def _find_settlement_in_region(self, region) -> Optional:
+        """Ищет поселение в регионе"""
+        for biome_id in region.biome_ids:
+            biome = self.hex_world.biomes[biome_id]
+            if biome.biome_type == "kith_settlement":
+                return biome
+        return None
+    
+    def _create_location_view(self, biome_data) -> Location:
+        """
+        НОВОЕ: Создаёт Location как VIEW (представление) биома для Game.
+        Game не владеет этим объектом, а только отображает его.
+        """
+        return Location.from_dict({
+            "name": biome_data.name,
+            "description": biome_data.description,
+            "tags": biome_data.tags
+        })
+    
+    def _generate_biome_description(self, biome_data) -> str:
+        """Генерирует описание биома через LLM"""
+        try:
+            context = self.game._get_layered_context(f"описание {biome_data.name}")
+            description = generate_location_description(
+                tags=biome_data.tags, 
+                context=context
+            )
+            return description
+        except Exception as e:
+            print(f"⚠️ Ошибка генерации описания: {e}")
+            return f"Вы находитесь в биоме '{biome_data.name}'. Здесь царит атмосфера {', '.join(biome_data.tags[:3])}."

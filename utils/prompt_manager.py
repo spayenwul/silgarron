@@ -1,7 +1,8 @@
 from pathlib import Path
+from config import settings
 
-# Указываем путь к папке с промптами относительно корня проекта
-PROMPT_DIR = Path(__file__).parent.parent / "prompts"
+# Указываем путь к папке с промптами из конфигурации
+PROMPT_DIR = Path(settings.prompts_dir)
 
 def load_and_format_prompt(prompt_name: str, **kwargs) -> str:
     """

@@ -1,0 +1,44 @@
+# ===============================================================
+# II. Экосистема (Живой мир)
+# ===============================================================
+# Примечание: Справочник биомов (biomes) находится в anatomy.yaml,
+# так как он тесно связан с типами регионов.
+
+# 11, 12. Флора и био-ресурсы
+# Сюда можно добавлять как обычные растения, так и редкие ресурсы.
+# parent_biome_ids - в каких биомах можно найти этот ресурс.
+# rarity - условная редкость (например, common, uncommon, rare, legendary).
+FLORA: []
+  # Пример:
+ - id: iron_bark_tree
+    name: "Железодрев"
+    parent_biome_ids: [biolume_forest, bone_needles]
+    rarity: common
+    description: "Дерево с корой, прочной как металл."
+  - id: dream_spore_mushroom
+    name: "Гриб Сноходца"
+    parent_biome_ids: [luminous_fungi_caves, dream_fog_basin]
+    rarity: rare
+    description: "Редкий гриб, чьи споры вызывают осознанные сновидения."
+
+# 13, 14. Фауна и знаковые формы жизни
+FAUNA: []
+  # Пример:
+  - id: bone_scavenger
+    name: "Костяной падальщик"
+    parent_biome_ids: [boneyard, bone_needles]
+    danger_level: 3
+    description: "Стайное существо, питающееся костным мозгом."
+
+# 15. Экологическая угроза
+# Глобальные или региональные угрозы, которые можно "внедрить" в регион при генерации.
+ECOLOGICAL_THREATS: []
+  # Пример:
+  - id: lymph_fever
+    name: "Лимфатическая лихорадка"
+    description: "Болезнь, передающаяся через зараженную лимфу, вызывает слабость и галлюцинации."
+    affected_regions: [lymph_valley, sclerite_delta]
+  - id: awakening_nightmare
+    name: "Пробуждающийся Кошмар"
+    description: "Сон Сильгаррона в этом регионе становится беспокойным, порождая агрессивных фантомов и искажая реальность."
+    affected_regions: [ganglion_nexus, scar_tissue]

@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class Location:
     def __init__(self, passport: Dict[str, Any]):
@@ -7,6 +7,10 @@ class Location:
         # Описание тоже может быть в паспорте, либо генерироваться позже
         self.description: str = passport.get("description", "Место выглядит неопределенно...")
         self.passport = passport # Сохраняем весь паспорт на всякий случай
+
+        # НОВОЕ: Гексагональная карта локации
+        self.hex_grid: Optional['HexGridService'] = None
+        self.id = self.name.lower().replace(" ", "_")  # ID для Event Sourcing
 
     def __str__(self):
         # Метод для отображения не меняется
@@ -26,6 +30,20 @@ class Location:
             "description": self.description,
             "passport": self.passport # Сохраняем и паспорт
         }
+
+    def initialize_hex_grid(self, radius: int = 15) -> None:
+        """Создать гексагональную карту для локации."""
+        from services.hex_grid_service import HexGridService
+
+        self.hex_grid = HexGridService(radius=radius)
+        self.hex_grid.initialize_empty_grid()
+        print(f"✅ Hex grid создан для '{self.name}' (радиус: {radius})")
+
+    def get_hex_grid(self) -> 'HexGridService':
+        """Получить hex grid, создав если нужно."""
+        if not self.hex_grid:
+            self.initialize_hex_grid()
+        return self.hex_grid
 
     @classmethod
     def from_dict(cls, data: dict):

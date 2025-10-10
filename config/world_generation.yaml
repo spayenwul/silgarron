@@ -1,0 +1,71 @@
+# config/world_generation.yaml
+# Централизованная конфигурация генерации мира Сильгаррона
+
+# ========== КОНТИНЕНТЫ ==========
+continents:
+  default_radius: 3  # Радиус генерации континента в гексах
+  # radius=1 -> 7 регионов
+  # radius=2 -> 19 регионов
+  # radius=3 -> 37 регионов
+  # radius=4 -> 61 регион
+
+# ========== РЕГИОНЫ ==========
+regions:
+  biomes_per_region:
+    min: 4
+    max: 7
+  
+  max_biomes_of_same_type: 1  # Не более 1 одинакового биома в регионе
+
+# ========== БИОМЫ ==========
+biomes:
+  positioning:
+    distance_from_center: 70.0  # Расстояние от центра региона
+    angle_variance: 15.0         # Случайное отклонение угла (градусы)
+  
+  generation:
+    max_attempts_per_biome: 10   # Попыток найти совместимый биом
+    guarantee_settlement: true    # Всегда создавать поселение в регионе
+
+# ========== ЛОКАЦИИ (внутри биомов) ==========
+locations:
+  per_biome:
+    min: 1
+    max: 3
+  
+  positioning:
+    distance_from_biome_center:
+      min: 15.0
+      max: 35.0
+    angle_variance: 20.0
+
+# ========== ГЕКСАГОНАЛЬНАЯ СЕТКА ==========
+hex_grid:
+  size: 100.0  # Размер гекса в пикселях
+  
+  # Визуализация (для будущего)
+  render:
+    region_stroke_width: 3
+    biome_stroke_width: 2
+    region_colors:
+      dermal_plateau: "#8B7355"
+      spine_ridge: "#D3D3D3"
+      lymph_valley: "#6B8E23"
+      alveoli_caves: "#2F4F4F"
+      sclerite_delta: "#556B2F"
+
+# ========== ИССЛЕДОВАНИЕ ==========
+exploration:
+  reveal_neighbor_regions: true
+  probability_of_new_discoveries: 0.3  # 30% шанс при explore_boundaries()
+
+# ========== ПРОИЗВОДИТЕЛЬНОСТЬ ==========
+performance:
+  cache_compatibility_checks: true
+  max_cached_compatibility_pairs: 1000
+
+# ========== ОТЛАДКА ==========
+debug:
+  log_generation: true
+  log_compatibility_checks: false
+  verbose_biome_creation: true
