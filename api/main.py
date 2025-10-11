@@ -34,6 +34,10 @@ memory = MemoryService()
 persistence = create_persistence_service(backend_type="file")
 print("--- Глобальные сервисы готовы ---")
 
+# WebSocket connections storage
+from typing import Dict
+active_websockets: Dict[str, WebSocket] = {}
+
 # --- 4. Определяем модели данных для API ---
 class StartGameRequest(BaseModel):
     player_name: str
@@ -88,19 +92,88 @@ async def explore_boundaries(session: GameSession = Depends(get_session)):
 
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
+    """
+    WebSocket endpoint для real-time обновлений.
+
+    Сообщения от сервера:
+    - initial_state: начальное состояние при подключении
+    - body_update: обновление состояния тела
+    - action_result: результат действия
+    - narrative: новый текст нарратива
+
+    Сообщения от клиента:
+    - command: текстовая команда игрока
+    - ping: keepalive
+    """
     await websocket.accept()
+    active_websockets[session_id] = websocket
+    print(f"[WS] Client connected: {session_id}")
+
     try:
-        session = get_session(session_id)
-        if not session:
+        # Проверить сессию
+        try:
+            session = get_session(session_id)
+        except:
+            await websocket.send_json({"type": "error", "message": "Session not found"})
             await websocket.close(code=1008)
             return
+
+        # Отправить начальное состояние
+        await websocket.send_json({
+            "type": "initial_state",
+            "data": session.get_full_state()
+        })
+
+        # Основной цикл обработки сообщений
         while True:
-            await websocket.receive_text() # Просто поддерживаем соединение
+            # Получить сообщение от клиента
+            raw_message = await websocket.receive_text()
+
+            try:
+                message = eval(raw_message)  # или json.loads(raw_message)
+
+                if message.get("type") == "command":
+                    # Обработать команду игрока
+                    command = message.get("command", "")
+                    result = session.perform_action(command)
+
+                    # Отправить результат
+                    await websocket.send_json({
+                        "type": "action_result",
+                        "data": result
+                    })
+
+                    # Если у игрока есть body system, отправить обновление
+                    if hasattr(session.game.player, 'body') and session.game.player.body:
+                        body_data = {
+                            "blood_volume": session.game.player.body.blood_volume,
+                            "consciousness": session.game.player.body.consciousness,
+                            "is_dead": session.game.player.body.is_dead(),
+                        }
+
+                        await websocket.send_json({
+                            "type": "body_update",
+                            "data": body_data
+                        })
+
+                elif message.get("type") == "ping":
+                    # Keepalive response
+                    await websocket.send_json({"type": "pong"})
+
+            except Exception as e:
+                print(f"[WS] Error processing message: {e}")
+                await websocket.send_json({"type": "error", "message": str(e)})
+
     except WebSocketDisconnect:
-        print(f"WebSocket соединение закрыто для сессии: {session_id}")
+        print(f"[WS] Client disconnected: {session_id}")
+        active_websockets.pop(session_id, None)
     except Exception as e:
-        print(f"Ошибка в WebSocket: {e}")
-        await websocket.close(code=1011)
+        print(f"[WS] Error: {e}")
+        active_websockets.pop(session_id, None)
+        try:
+            await websocket.close(code=1011)
+        except:
+            pass
 
 # --- 7. Event Sourcing эндпоинты ---
 @app.post("/game/load_from_events", summary="Загрузить игру из событий (Event Sourcing)")
@@ -152,3 +225,130 @@ async def get_session_events(session_id: str):
             for e in events
         ]
     }
+
+
+# --- 8. Body System Endpoints ---
+
+@app.get("/game/{session_id}/character/body", summary="Получить состояние тела персонажа")
+async def get_body_state(session: GameSession = Depends(get_session)):
+    """
+    Получить детальное состояние тела персонажа.
+
+    Используется для:
+    - Body visualizer в UI
+    - Индикаторы крови и сознания
+    - Отладки боевой системы
+    """
+    player = session.game.player
+
+    if not hasattr(player, 'body') or player.body is None:
+        raise HTTPException(status_code=400, detail="Player does not have body system")
+
+    body = player.body
+
+    return {
+        "blood_volume": body.blood_volume,
+        "max_blood_volume": body.max_blood_volume,
+        "blood_percentage": body.blood_volume / body.max_blood_volume,
+        "consciousness": body.consciousness,
+        "is_unconscious": body.is_unconscious(),
+        "is_dead": body.is_dead(),
+
+        "parts": {
+            part_name: {
+                "name": part_name,
+                "integrity": part.integrity,
+                "functional": part.functional,
+                "wounds_count": len(part.wounds),
+                "total_bleeding": part.get_total_bleeding(),
+                "pain_level": part.get_pain_level(),
+                "armor": part.armor,
+            }
+            for part_name, part in body.parts.items()
+        },
+
+        "status_effects": [
+            {
+                "type": effect.type.value,
+                "severity": effect.severity,
+                "duration_remaining": effect.duration_remaining,
+                "source": effect.source,
+            }
+            for effect in body.status_effects
+        ],
+
+        "instant_death": body.instant_death,
+        "instant_death_reason": body.instant_death_reason,
+    }
+
+
+@app.get("/game/{session_id}/wounds", summary="Получить список всех активных ран")
+async def get_wounds(session: GameSession = Depends(get_session)):
+    """
+    Получить детальный список всех ран на теле персонажа.
+
+    Для детального отображения в UI.
+    """
+    player = session.game.player
+
+    if not hasattr(player, 'body') or player.body is None:
+        return {"wounds": [], "total_wounds": 0, "total_bleeding_rate": 0.0}
+
+    wounds = []
+
+    for part_name, part in player.body.parts.items():
+        for wound in part.wounds:
+            # Расчет прогресса свертывания
+            clotting_progress = part.clotting_progress.get(id(wound), 0.0)
+
+            wounds.append({
+                "body_part": part_name,
+                "type": wound.type.value,
+                "depth_cm": wound.depth_cm,
+                "bleeding_rate": wound.bleeding_rate_ml_per_sec,
+                "bleeding_rate_current": wound.bleeding_rate_ml_per_sec * (1.0 - clotting_progress),
+                "tissues_damaged": wound.tissues_damaged,
+                "pain_level": wound.pain_level,
+                "created_at_turn": wound.created_at_turn,
+                "clotting_progress": clotting_progress,
+            })
+
+    return {
+        "wounds": wounds,
+        "total_wounds": len(wounds),
+        "total_bleeding_rate": sum(w["bleeding_rate_current"] for w in wounds),
+    }
+
+
+class TickRequest(BaseModel):
+    delta_turns: int = 1
+
+
+@app.post("/game/{session_id}/character/tick", summary="Обновить состояние персонажа")
+async def tick_character(
+    request: TickRequest,
+    session: GameSession = Depends(get_session)
+):
+    """
+    Принудительно обновить физиологическое состояние персонажа.
+
+    Используется для:
+    - Отдыха/ожидания (пропуск времени)
+    - Тестирования кровотечения
+    - Проверки свертывания
+    """
+    player = session.game.player
+
+    if not hasattr(player, 'body') or player.body is None:
+        raise HTTPException(status_code=400, detail="Player does not have body system")
+
+    player.body.tick(request.delta_turns)
+    session.save()
+
+    return await get_body_state(session)
+
+
+@app.get("/health", summary="Health check", tags=["System"])
+async def health_check():
+    """Health check для мониторинга"""
+    return {"status": "healthy", "version": "3.2"}
