@@ -1,218 +1,214 @@
 [
-    {
-      "text": "Атаковать врага мечом",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Ударить монстра",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Выстрелить из лука в чудовище",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Бью мечом по шее гоблина",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Колю кинжалом в сердце",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Стреляю из лука в голову",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Рублю топором сверху",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Бью рукой в живот",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Атакую мечом сбоку",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Уклоняюсь от удара",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Блокирую атаку щитом",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Парирую удар мечом",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Использую заклинание огня",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Кастую молнию на орка",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Бью паука со всей силы",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Напасть на скелета",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Пытаюсь убить гоблина",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Протыкаю копьем в грудь",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Рублю клинком по ноге",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Режу ножом по руке",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Бью посохом по голове",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Стреляю в колено",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Удар мечом в шею",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Полоснуть кинжалом по горлу",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Ударить топором со всей силы",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Быстро атакую кинжалом",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Осторожно бью по руке",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Резко уклоняюсь вправо",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Мощный удар топором сверху",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Прицельный выстрел в голову",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Режу мечом сбоку",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Атакую рукой в лицо",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Бью кулаком в челюсть",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Пронзаю мечом торс",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Колю в бок кинжалом",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Стреляю стрелой в плечо",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Рубану топором по корпусу",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Блокирую удар по ноге",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Отбиваю атаку в голову",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Увернуться от стрелы",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Прикрываюсь щитом",
-      "metadata": { "intent": "COMBAT" }
-    },
-    {
-      "text": "Осмотреться вокруг",
-      "metadata": { "intent": "EXPLORATION" }
-    },
-    {
-      "text": "Посмотреть что в сундуке",
-      "metadata": { "intent": "EXPLORATION" }
-    },
-    {
-      "text": "Изучить надписи на стене",
-      "metadata": { "intent": "EXPLORATION" }
-    },
-    {
-      "text": "Обыскать комнату",
-      "metadata": { "intent": "EXPLORATION" }
-    },
-    {
-      "text": "Проверить дверь",
-      "metadata": { "intent": "EXPLORATION" }
-    },
-    {
-      "text": "Исследовать алтарь",
-      "metadata": { "intent": "EXPLORATION" }
-    },
-    {
-      "text": "Взять предмет со стола",
-      "metadata": { "intent": "EXPLORATION" }
-    },
-    {
-      "text": "Открыть сундук",
-      "metadata": { "intent": "EXPLORATION" }
-    },
-    {
-      "text": "Поговорить с торговцем",
-      "metadata": { "intent": "DIALOGUE" }
-    },
-    {
-      "text": "Спросить стражника о слухах",
-      "metadata": { "intent": "DIALOGUE" }
-    },
-    {
-      "text": "Поговорить с незнакомцем",
-      "metadata": { "intent": "DIALOGUE" }
-    },
-    {
-      "text": "Расспросить старика",
-      "metadata": { "intent": "DIALOGUE" }
-    },
-    {
-      "text": "Поторговаться с купцом",
-      "metadata": { "intent": "DIALOGUE" }
-    }
-  ]
+  {
+    "text": "Сохранить игру",
+    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Сделай сохранение",
+    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Загрузить последнее сохранение",
+    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Выйти из игры",
+    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Открыть меню настроек",
+    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Покажи мне карту",
+    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Открыть журнал заданий",
+    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Посмотреть инвентарь",
+    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Что у меня в сумке?",
+    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Проверить свои раны",
+    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Оценить свое здоровье",
+    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Сколько у меня маны?",
+    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Посмотреть на свои характеристики",
+    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Что на мне сейчас надето?",
+    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
+  },
+  {
+    "text": "Осмотреться вокруг",
+    "metadata": { "intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Что я вижу перед собой?",
+    "metadata": { "intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Изучить надписи на стене",
+    "metadata": { "intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Внимательно рассмотреть статую",
+    "metadata": { "intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Поговорить с торговцем",
+    "metadata": { "intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Спросить стражника о последних слухах",
+    "metadata": { "intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Прислушаться к звукам в коридоре",
+    "metadata": { "intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Понюхать воздух",
+    "metadata": { "intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Потрогать поверхность алтаря",
+    "metadata": { "intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Атаковать врага мечом",
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Бью мечом по шее гоблина",
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Ударить орка по ногам",
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Выстрелить из лука в скелета",
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Метнуть кинжал в разбойника",
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Уклоняюсь от удара",
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Отпрыгнуть в сторону от летящей стрелы",
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Блокирую атаку щитом",
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Поставить блок мечом",
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Применить заклинание огненного шара",
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+  },
+  {
+    "text": "Попробовать подпереть дверь столом, чтобы ее не выломали",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Кинуть свой факел в лужу масла на полу, чтобы поджечь ее",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Перерубить веревку, на которой висит люстра, чтобы она упала на врагов",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Используя щит как укрытие, медленно продвигаться к лучнику",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Опрокинуть котел с кипящей похлебкой на приближающегося волка",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Толкнуть шаткую колонну, чтобы она обрушилась на противников",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Бросить горсть песка в глаза циклопу, чтобы его ослепить",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Налить масло из фляги на скрипящие петли, чтобы открыть дверь бесшумно",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Поджечь стрелу от факела и выстрелить в соломенную крышу барака",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Сначала отвлечь охранника, бросив камень, а потом прокрасться мимо",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Использовать зеркало, чтобы пустить солнечный зайчик в глаза часовому на вышке",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Притвориться мертвым, чтобы патруль прошел мимо",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Положить отравленное мясо у входа в пещеру, чтобы выманить зверя",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "С помощью веревки и крюка попытаться залезть на стену замка",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Разбить бутылку и использовать осколок как импровизированное оружие",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Создать дымовую завесу, бросив в костер специальный порошок из сумки",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Скомбинировать тряпку, палку и масло, чтобы сделать факел",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Вылить флягу с водой на каменный пол, а затем заморозить его магией льда",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Попытаться запугать гоблинов, издав громкий рык",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Срезать кошелек с пояса зазевавшегося купца",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  }
+]

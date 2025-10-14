@@ -1,351 +1,300 @@
-import json
+from typing import Dict, Any, List, Optional
+import pymorphy3
 import re
 import chromadb
-import pymorphy3
+import json
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-import services.llm_service as llm
-
-INTENTS_FILE = Path(__file__).parent.parent / "data/intents.json"
-COLLECTION_NAME = "intent_recognition_collection"
 
 class IntentService:
+    """
+    IntentService (Player Intent Engine) - Движок Понимания Намерений Игрока.
+
+    Архитектура:
+    1.  Парсер-Планировщик: Основная задача - разобрать сложную, написанную
+        естественным языком команду игрока на последовательность простых,
+        атомарных действий (Action Queue).
+    2.  "Тупой" и быстрый: Парсер не содержит сложной игровой логики, не знает
+        свойств предметов или правил мира. Его цель - максимально быстро и точно
+        извлечь НАМЕРЕНИЕ (action) и СУЩНОСТИ (instrument, target, body_part).
+    3.  Универсальность: Оперирует понятием "инструмент", которым может быть
+        любой объект в игре (меч, камень, книга), а не только "оружие".
+    4.  Контекст: Умеет переносить контекст (например, цель атаки) из одной
+        части команды в другую ("атакую гоблина мечом, а затем топором").
+
+    Результатом работы является список словарей, где каждый словарь - это одно
+    простое действие, готовое к передаче в основной игровой движок для симуляции.
+    """
+
     def __init__(self):
-        print("[INIT] Initializing Intent Recognition Service...")
-        client = chromadb.Client()
-        # 1. Получаем список ВСЕХ существующих коллекций
-        existing_collections = [c.name for c in client.list_collections()]
-
-        # 2. Проверяем, есть ли НАША коллекция в этом списке
-        if COLLECTION_NAME in existing_collections:
-            # 3. И удаляем ее, только если она была найдена
-            print(f"[INFO] Clearing old intents collection ('{COLLECTION_NAME}')...")
-            client.delete_collection(name=COLLECTION_NAME)
-
-        # 4. Теперь мы можем безопасно создавать новую, чистую коллекцию
-        self.collection = client.get_or_create_collection(name=COLLECTION_NAME)
-        self._load_intents_into_chroma()
-
-        # Морфологический анализатор для русского языка (Phase 2)
-        print("[INIT] Initializing morphological analyzer...")
+        """
+        Инициализирует морфологический анализатор и ChromaDB для классификации intent.
+        """
+        print("[INIT] Initializing Player Intent Engine...")
         self.morph = pymorphy3.MorphAnalyzer()
 
-    def _load_intents_into_chroma(self):
-        """Загружает все примеры из JSON в векторную базу."""
-        with open(INTENTS_FILE, "r", encoding="utf-8") as f:
-            intents_data = json.load(f)
-        
-        # Готовим данные для ChromaDB
-        documents = [item['text'] for item in intents_data]
-        metadatas = [item['metadata'] for item in intents_data]
-        ids = [f"intent_{i}" for i in range(len(documents))]
-
-        self.collection.add(documents=documents, metadatas=metadatas, ids=ids)
-        print(f"[OK] Intents vector database loaded ({len(documents)} examples).")
-
-    def recognize_intent(self, player_command: str) -> str:
-        """
-        Находит наиболее близкое намерение к команде игрока.
-        """
-        results = self.collection.query(
-            query_texts=[player_command],
-            n_results=1 # Нам нужен только один, самый похожий результат
+        # ChromaDB для классификации намерений
+        self.chroma_client = chromadb.Client()
+        self.intent_collection = self.chroma_client.get_or_create_collection(
+            name="intent_recognition",
+            metadata={"hnsw:space": "cosine"}
         )
 
-        if not results['metadatas'][0]:
-            return "UNKNOWN" # На случай, если ничего не найдено
+        # Загружаем intents.json и заполняем ChromaDB
+        self._load_intents_into_chroma()
 
-        # Извлекаем намерение из метаданных самого похожего примера
-        recognized_intent = results['metadatas'][0][0]['intent']
-        print(f"[INTENT] Recognized intent: '{player_command}' -> {recognized_intent}")
-        return recognized_intent
+        # Валидные типы сложности
+        self.VALID_COMPLEXITY_TYPES = {"CODE_ONLY", "SIMPLE_LLM", "COMPLEX_TOOL_CALL"}
 
-    # ============================================
-    # PHASE 2: ACTION DETAIL EXTRACTION
-    # ============================================
+        # Маркеры для разбиения сложных команд на простые сегменты.
+        self.SEQUENCE_MARKERS = [
+            ", а затем ", ", потом ", ", после чего ", ", и затем ",
+            "; ", ", ", " и "
+        ]
+        # Сортируем от самого длинного к самому короткому для корректной замены
+        self.SEQUENCE_MARKERS.sort(key=len, reverse=True)
 
-    # Словари для маппинга (с нормализованными формами)
-    ACTION_KEYWORDS = {
-        "strike": ["бить", "ударять", "ударить", "удар"],
-        "slash": ["рубить", "резать", "полоснуть", "рубануть"],
-        "stab": ["колоть", "протыкать", "пронзать", "укол"],
-        "shoot": ["стрелять", "выпускать", "пускать", "выстрел"],
-        "dodge": ["увернуться", "уклониться", "уклоняться", "отскочить"],
-        "block": ["блокировать", "парировать", "отбить", "прикрыться"],
-        "cast": ["использовать", "колдовать", "применять", "кастовать"]
-    }
+        # Определения базовых действий (интентов).
+        self.ACTION_KEYWORDS = {
+            "move": ["подойти", "подбежать", "отойти", "отбежать", "переместиться", "двинуться", "идти"],
+            "dodge": ["увернуться", "уклониться", "отскочить", "уворот", "перекат"],
+            "block": ["блокировать", "парировать", "отбить", "защититься", "защита", "блок"],
+            "strike": ["бить", "ударить", "атаковать", "стукнуть", "удар", "атака", "бью"],
+            "slash": ["рубить", "резать", "рассечь", "взмах", "рублю", "рубануть"],
+            "stab": ["колоть", "проткнуть", "ткнуть", "укол", "выпад", "колю"],
+            "shoot": ["стрелять", "выстрелить", "палить", "выстрел"],
+            "throw": ["кинуть", "метнуть", "бросить", "кидок", "бросок", "кидаю"],
+            "cast": ["использовать", "колдовать", "заклинание", "кастовать", "применить"],
+        }
 
-    WEAPON_KEYWORDS = {
-        "sword": ["меч", "клинок"],
-        "dagger": ["кинжал", "нож"],
-        "axe": ["топор", "секира"],
-        "bow": ["лук", "стрела", "луковой"],  # Добавлена форма родительного падежа
-        "staff": ["посох", "палка"],
-        "fists": ["кулак", "рука"]
-    }
+        # Определения частей тела.
+        self.BODY_PART_KEYWORDS = {
+            "head": ["голова", "череп", "лицо", "шлем", "башка", "висок", "глаз"],
+            "neck": ["шея", "горло"],
+            "torso": ["грудь", "живот", "торс", "корпус", "тело", "спина", "ребро", "бок"],
+            "arm": ["рука", "плечо", "локоть", "предплечье", "кисть"],
+            "leg": ["нога", "колено", "бедро", "голень", "стопа"],
+        }
+        
+        # Определения модификаторов действия.
+        self.MODIFIER_KEYWORDS = {
+            "from_side": ["сбоку", "с фланга"],
+            "from_above": ["сверху", "вниз", "в прыжке"],
+            "from_behind": ["со спины", "сзади", "в спину"],
+            "with_force": ["сильно", "мощно", "изо всех сил", "с размаху"],
+            "carefully": ["осторожно", "аккуратно", "точно", "прицельно", "целясь"],
+            "quickly": ["быстро", "молниеносно", "резко", "мгновенно"],
+        }
 
-    BODY_PART_KEYWORDS = {
-        "head": ["голова", "череп", "лицо", "башка"],
-        "neck": ["шея", "горло", "глотка"],
-        "torso": ["грудь", "живот", "торс", "корпус", "тело"],
-        "arm": ["рука", "плечо", "локоть", "запястье"],
-        "leg": ["нога", "колено", "бедро", "голень"],
-        "heart": ["сердце"]
-    }
 
-    TARGET_KEYWORDS = {
-        "goblin": ["гоблин"],
-        "orc": ["орк"],
-        "skeleton": ["скелет", "костяк"],
-        "spider": ["паук", "паучище"],
-        "wolf": ["волк", "псина"]
-    }
+    def parse_command_sequence(self, full_command: str) -> List[Dict[str, Any]]:
+        action_queue: List[Dict[str, Any]] = []
+        context: Dict[str, Any] = {}
 
-    MODIFIER_KEYWORDS = {
-        "from_side": ["сбоку", "фланг"],
-        "from_above": ["сверху", "разворот"],
-        "with_force": ["сила", "мощно", "сильно"],
-        "carefully": ["осторожно", "аккуратно", "точно"],
-        "quickly": ["быстро", "молниеносно", "резко"]
-    }
+        delimiter = "|SEQ|"
+        temp_command = full_command.lower()
+        for marker in self.SEQUENCE_MARKERS:
+            temp_command = temp_command.replace(marker, delimiter)
+        
+        command_segments = [segment.strip() for segment in temp_command.split(delimiter)]
 
-    def _normalize_command(self, command: str) -> List[str]:
-        """
-        Лемматизация команды для улучшения распознавания.
+        for segment in command_segments:
+            if not segment: continue
+            
+            action_details = self._extract_entities(segment)
+            
+            if (action_details.get("action") == "throw" and 
+                "instrument_entity" not in action_details and 
+                "target_entity" in action_details):
+                action_details["instrument_entity"] = action_details.pop("target_entity")
 
-        "бью мечом" → ["бить", "меч"]
-        """
-        words = command.lower().split()
-        normalized = []
+            if "target_entity" not in action_details and "target_entity" in context:
+                action_details["target_entity"] = context["target_entity"]
+            
+            if "instrument_entity" not in action_details and "instrument_entity" in context:
+                 action_details["instrument_entity"] = context["instrument_entity"]
+            
+            if "action" in action_details:
+                action_details["original_segment"] = segment
+                action_queue.append(action_details)
+                context.update(action_details)
 
-        for word in words:
-            # Очистка от знаков препинания
-            word_clean = re.sub(r'[^\w]', '', word)
-            if not word_clean:
-                continue
+        return action_queue
 
-            # Лемматизация
-            parsed = self.morph.parse(word_clean)[0]
-            lemma = parsed.normal_form
-            normalized.append(lemma)
+    def _extract_entities(self, command_segment: str) -> Dict[str, Any]:
+        details: Dict[str, Any] = {}
+        words = re.findall(r"[\w'-]+", command_segment.lower())
+        
+        if not words: return {}
+        
+        lemmas = [self.morph.parse(word)[0].normal_form for word in words]
+        parsed_words = [self.morph.parse(word)[0] for word in words]
+        used_indices = set()
 
-        return normalized
+        for i, lemma in enumerate(lemmas):
+            for action, keywords in self.ACTION_KEYWORDS.items():
+                if lemma in keywords or words[i] in keywords:
+                    details["action"] = action; used_indices.add(i); break
+            if "action" in details: break
+        
+        for i, lemma in enumerate(lemmas):
+            if i in used_indices: continue
+            for modifier, keywords in self.MODIFIER_KEYWORDS.items():
+                if lemma in keywords: details["modifier"] = modifier; used_indices.add(i)
+            for part, keywords in self.BODY_PART_KEYWORDS.items():
+                if lemma in keywords:
+                    details["body_part_entity"] = self.morph.parse(words[i])[0].normal_form
+                    used_indices.add(i)
 
-    def _extract_with_rules(self, normalized_words: List[str],
-                           original_command: str) -> Dict[str, Any]:
-        """
-        Извлечение параметров через словари и нормализованные слова.
-        """
-        details = {}
+        for i, p_word in enumerate(parsed_words):
+            if i in used_indices: continue
+            
+            tags = p_word.tag
+            def get_full_entity_name(index, lemmatize=False):
+                name_parts = [words[index]]
+                if index > 0 and index - 1 not in used_indices:
+                    prev_word_tags = parsed_words[index-1].tag
+                    if 'ADJF' in prev_word_tags or 'PRTF' in prev_word_tags:
+                        used_indices.add(index-1)
+                        name_parts.insert(0, words[index-1])
+                
+                if lemmatize:
+                    return self.morph.parse(name_parts[-1])[0].normal_form
+                return " ".join(name_parts)
 
-        # 1. Действие (action)
-        for action_type, keywords in self.ACTION_KEYWORDS.items():
-            if any(kw in normalized_words for kw in keywords):
-                details["action"] = action_type
-                break
+            if 'NOUN' in tags:
+                is_target = False
+                is_instrument = False
 
-        # 2. Оружие (weapon)
-        for weapon_type, keywords in self.WEAPON_KEYWORDS.items():
-            if any(kw in normalized_words for kw in keywords):
-                details["weapon"] = weapon_type
-                break
+                if 'ablt' in tags:
+                    is_instrument = True
+                elif 'accs' in tags or 'gent' in tags:
+                    is_target = True
+                elif i > 0 and 'NOUN' in parsed_words[i].tag:
+                    prep = lemmas[i-1]
+                    # <<< ИСПРАВЛЕНИЕ: Добавляем предлог "в" в логику >>>
+                    if prep in ["по", "к"] and 'datv' in tags:
+                        is_target = True
+                    elif prep == "в" and 'accs' in tags:
+                        is_target = True
 
-        # 3. Часть тела (body_part)
-        for body_part, keywords in self.BODY_PART_KEYWORDS.items():
-            if any(kw in normalized_words for kw in keywords):
-                details["body_part"] = body_part
-                break
-
-        # 4. Цель (target)
-        for target_type, keywords in self.TARGET_KEYWORDS.items():
-            if any(kw in normalized_words for kw in keywords):
-                details["target"] = target_type
-                break
-
-        # 5. Модификаторы (modifier)
-        for modifier_type, keywords in self.MODIFIER_KEYWORDS.items():
-            if any(kw in normalized_words for kw in keywords):
-                details["modifier"] = modifier_type
-                break
+                if is_instrument:
+                    details["instrument_entity"] = get_full_entity_name(i, lemmatize=True)
+                    used_indices.add(i)
+                elif is_target:
+                    details["target_entity"] = get_full_entity_name(i, lemmatize=True)
+                    used_indices.add(i)
+                    if i > 0 and lemmas[i-1] in ["по", "к", "в"]:
+                        used_indices.add(i-1)
 
         return details
 
-    def _resolve_conflicts(self, details: Dict, normalized_words: List[str]) -> Dict:
+    def _load_intents_into_chroma(self):
         """
-        Разрешение конфликтов ключевых слов.
-
-        Пример: "атакую руку рукой" → weapon="fists", body_part="arm"
+        Загружает примеры из data/intents.json в ChromaDB для векторного поиска.
         """
-        # Конфликт: "рука" как оружие VS часть тела
-        if "рука" in normalized_words or "кулак" in normalized_words:
-            # Приоритет 1: Если есть явное оружие, "рука" = body_part
-            if details.get("weapon") and details["weapon"] != "fists":
-                if details.get("body_part") == "arm":
-                    pass  # Оставляем как есть
-            # Приоритет 2: Если нет другого оружия, "рука" = weapon (fists)
-            elif not details.get("weapon"):
-                details["weapon"] = "fists"
-                # Убираем из body_part если там тоже "рука"
-                if details.get("body_part") == "arm":
-                    details.pop("body_part")
+        intents_path = Path(__file__).parent.parent / "data" / "intents.json"
 
-        return details
-
-    def _calculate_confidence(self, details: Dict) -> float:
-        """
-        Оценка уверенности на основе найденных параметров.
-
-        Веса:
-        - action: 0.4 (самое важное)
-        - weapon: 0.2
-        - body_part: 0.25
-        - target: 0.15
-        """
-        score = 0.0
-        weights = {
-            "action": 0.4,
-            "weapon": 0.2,
-            "body_part": 0.25,
-            "target": 0.15
-        }
-
-        for key, weight in weights.items():
-            if details.get(key):
-                score += weight
-
-        return min(score, 1.0)
-
-    def _clean_llm_json(self, text: str) -> str:
-        """
-        Очистка ответа LLM от markdown и лишних символов.
-
-        ```json {...} ``` → {...}
-        """
-        # Убираем markdown блоки
-        text = re.sub(r'```json\s*', '', text)
-        text = re.sub(r'```\s*', '', text)
-
-        # Извлекаем JSON между { и }
-        match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', text)
-        if match:
-            return match.group(0)
-
-        return text.strip()
-
-    def _validate_llm_response(self, details: Dict) -> Optional[Dict]:
-        """
-        Валидация ответа LLM: проверяем, что значения входят в разрешенные списки.
-        """
-        if not details or details.get("confidence", 0) == 0:
-            return None
-
-        valid_values = {
-            "action": list(self.ACTION_KEYWORDS.keys()),
-            "weapon": list(self.WEAPON_KEYWORDS.keys()),
-            "body_part": list(self.BODY_PART_KEYWORDS.keys()),
-            "target": list(self.TARGET_KEYWORDS.keys()),
-            "modifier": list(self.MODIFIER_KEYWORDS.keys())
-        }
-
-        validated = {"confidence": details["confidence"]}
-
-        for key, allowed_values in valid_values.items():
-            value = details.get(key)
-
-            if value is None or value == "null":
-                continue
-
-            # Проверка валидности
-            if value not in allowed_values:
-                print(f"[WARN] LLM returned invalid value: {key}={value}")
-                # Можно попытаться найти ближайшее валидное
-                # Пока просто пропускаем
-                continue
-
-            validated[key] = value
-
-        return validated if len(validated) > 1 else None  # Хотя бы 1 параметр кроме confidence
-
-    def _extract_with_llm(self, command: str) -> Dict[str, Any]:
-        """
-        Использует Gemini Flash для сложных случаев.
-        """
-        prompt = f"""Ты - парсер боевых команд для RPG. Извлеки параметры из команды.
-
-ВАЖНО: Верни ТОЛЬКО валидный JSON, без markdown, комментариев и лишнего текста.
-
-Команда: "{command}"
-
-Формат ответа:
-{{
-  "action": "strike|stab|shoot|slash|dodge|block|cast",
-  "weapon": "sword|dagger|axe|bow|staff|fists",
-  "body_part": "head|neck|torso|arm|leg|heart",
-  "target": "goblin|orc|skeleton|spider|wolf",
-  "modifier": "from_side|from_above|with_force|carefully|quickly"
-}}
-
-Если параметр не указан явно, используй null.
-Твой ответ (только JSON):"""
-
-        llm_request = {
-            "prompt": prompt,
-            "prompt_template_name": "intent_extraction",
-            "game_state": "PARSING"
-        }
-
-        response_text = llm._send_prompt_to_gemini(llm_request)
-
-        # Очистка от markdown-блоков
-        response_text = self._clean_llm_json(response_text)
-
+        # Проверяем, не загружены ли уже данные
         try:
-            details = json.loads(response_text)
-            details["confidence"] = 1.0
-            return details
-        except json.JSONDecodeError as e:
-            print(f"[WARN] LLM returned invalid JSON: {response_text}")
-            print(f"[ERROR] {e}")
-            return {"confidence": 0.0}
+            count = self.intent_collection.count()
+            if count > 0:
+                print(f"[INIT] Intent collection already populated with {count} examples")
+                return
+        except:
+            pass
 
-    def extract_action_details(self, command: str) -> Dict[str, Any]:
+        # Загружаем и добавляем в ChromaDB
+        with open(intents_path, "r", encoding="utf-8") as f:
+            intents_data = json.load(f)
+
+        documents = []
+        metadatas = []
+        ids = []
+
+        for i, item in enumerate(intents_data):
+            documents.append(item["text"])
+            metadatas.append(item["metadata"])
+            ids.append(f"intent_{i}")
+
+        self.intent_collection.add(
+            documents=documents,
+            metadatas=metadatas,
+            ids=ids
+        )
+        print(f"[INIT] Loaded {len(documents)} intent examples into ChromaDB")
+
+    def recognize_intent(self, player_command: str) -> Dict[str, str]:
         """
-        Главный метод извлечения деталей действия.
+        Распознаёт намерение игрока и уровень сложности команды.
+
+        Args:
+            player_command: Команда игрока на естественном языке
 
         Returns:
-            {
-                "action": str,
-                "weapon": str,
-                "body_part": str,
-                "target": str,
-                "modifier": str,
-                "confidence": float
-            }
+            Dict с полями:
+            - intent: тип намерения (COMBAT, EXPLORATION, и т.д.)
+            - complexity_type: уровень сложности (CODE_ONLY, SIMPLE_LLM, COMPLEX_TOOL_CALL)
+
+        Пример:
+            >>> service.recognize_intent("посмотреть инвентарь")
+            {"intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY"}
         """
-        # Шаг 1: Нормализация (лемматизация)
-        normalized_words = self._normalize_command(command)
+        # 1. Векторный поиск ближайшего примера
+        results = self.intent_collection.query(
+            query_texts=[player_command.lower()],
+            n_results=1
+        )
 
-        # Шаг 2: Извлечение через правила
-        details = self._extract_with_rules(normalized_words, command.lower())
+        if not results['metadatas'] or not results['metadatas'][0]:
+            print(f"[WARN] No intent found for command: '{player_command}', using fallback")
+            return {"intent": "UNKNOWN", "complexity_type": "SIMPLE_LLM"}
 
-        # Шаг 3: Разрешение конфликтов
-        details = self._resolve_conflicts(details, normalized_words)
+        metadata = results['metadatas'][0][0]
+        intent = metadata.get("intent", "UNKNOWN")
+        complexity_type = metadata.get("complexity_type", "SIMPLE_LLM")
 
-        # Шаг 4: Оценка уверенности
-        confidence = self._calculate_confidence(details)
-        details["confidence"] = confidence
+        # 2. Применяем эвристические правила (второй слой защиты)
+        complexity_type = self._apply_heuristics(player_command, complexity_type)
 
-        # Шаг 5: Fallback на LLM если низкая уверенность
-        if confidence < 0.5:
-            print(f"[WARN] Low confidence ({confidence:.2f}), requesting LLM...")
-            llm_details = self._extract_with_llm(command)
+        # 3. Валидация complexity_type
+        if complexity_type not in self.VALID_COMPLEXITY_TYPES:
+            print(f"[WARN] Unknown complexity_type '{complexity_type}', falling back to SIMPLE_LLM")
+            complexity_type = "SIMPLE_LLM"
 
-            # Валидация ответа LLM
-            validated_details = self._validate_llm_response(llm_details)
+        return {
+            "intent": intent,
+            "complexity_type": complexity_type
+        }
 
-            if validated_details:
-                return validated_details
-            else:
-                print("[WARN] LLM did not provide valid response, using rule-based result")
+    def _apply_heuristics(self, command: str, base_classification: str) -> str:
+        """
+        Применяет эвристические правила для корректировки классификации.
 
-        return details
+        Это второй слой защиты от ошибок векторной классификации.
+        """
+        command_lower = command.lower()
+
+        # Ключевые слова для COMPLEX_TOOL_CALL
+        complex_keywords = [
+            'опрокинуть', 'бросить на', 'использовать окружение',
+            'подпереть', 'кинуть', 'перерубить', 'толкнуть',
+            'поджечь', 'отвлечь', 'ослепить', 'притвориться',
+            'выманить', 'залезть', 'разбить', 'скомбинировать',
+            'заморозить', 'запугать', 'срезать', ', чтобы'
+        ]
+
+        if any(keyword in command_lower for keyword in complex_keywords):
+            return "COMPLEX_TOOL_CALL"
+
+        # Ключевые слова для CODE_ONLY
+        code_only_keywords = [
+            'инвентарь', 'статистика', 'посмотреть на себя',
+            'характеристики', 'в сумке', 'раны', 'здоровье',
+            'сохранить', 'загрузить', 'карта', 'журнал', 'меню'
+        ]
+
+        if any(keyword in command_lower for keyword in code_only_keywords):
+            return "CODE_ONLY"
+
+        # Используем базовую классификацию
+        return base_classification

@@ -1,0 +1,149 @@
+
+[TEST] Pytest configured for AI-Driven RPG
+[INFO] Project root: E:\neuro_rpg
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0 -- C:\Python313\python.exe
+rootdir: E:\neuro_rpg
+configfile: pytest.ini
+plugins: anyio-4.11.0, asyncio-1.2.0, cov-7.0.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 76 items
+
+tests/test_combat/test_body_system_skeleton.py::test_wound_imports PASSED [  1%]
+tests/test_combat/test_body_system_skeleton.py::test_create_basic_wound PASSED [  2%]
+tests/test_combat/test_body_system_skeleton.py::test_critical_wound PASSED [  3%]
+tests/test_combat/test_body_system_skeleton.py::test_wound_tick PASSED   [  5%]
+tests/test_combat/test_body_system_skeleton.py::test_status_effect_imports PASSED [  6%]
+tests/test_combat/test_body_system_skeleton.py::test_create_status_effect PASSED [  7%]
+tests/test_combat/test_body_system_skeleton.py::test_status_effect_expiration PASSED [  9%]
+tests/test_combat/test_body_system_skeleton.py::test_body_system_imports PASSED [ 10%]
+tests/test_combat/test_body_system_skeleton.py::test_create_body_system PASSED [ 11%]
+tests/test_combat/test_body_system_skeleton.py::test_body_part_creation PASSED [ 13%]
+tests/test_combat/test_body_system_skeleton.py::test_add_wound_to_body PASSED [ 14%]
+tests/test_combat/test_body_system_skeleton.py::test_body_blood_loss PASSED [ 15%]
+tests/test_combat/test_body_system_skeleton.py::test_unconsciousness_from_blood_loss PASSED [ 17%]
+tests/test_combat/test_body_system_skeleton.py::test_death_from_blood_loss PASSED [ 18%]
+tests/test_combat/test_body_system_skeleton.py::test_death_from_head_trauma PASSED [ 19%]
+tests/test_combat/test_body_system_skeleton.py::test_character_with_body_system PASSED [ 21%]
+tests/test_combat/test_body_system_skeleton.py::test_character_backward_compatibility PASSED [ 22%]
+tests/test_combat/test_body_system_skeleton.py::test_character_death_detection PASSED [ 23%]
+tests/test_combat/test_body_system_skeleton.py::test_serialization PASSED [ 25%]
+tests/test_combat/test_body_system_skeleton.py::test_full_combat_scenario_stub PASSED [ 26%]
+tests/test_combat/test_body_system_skeleton.py::test_complex_wound_interactions SKIPPED [ 27%]
+tests/test_combat/test_body_system_skeleton.py::test_shock_calculation SKIPPED [ 28%]
+tests/test_combat/test_body_system_skeleton.py::test_healing_mechanics SKIPPED [ 30%]
+tests/test_services/test_intent_service_extended.py::test_extract_simple_strike PASSED [ 31%]
+tests/test_services/test_intent_service_extended.py::test_extract_full_command PASSED [ 32%]
+tests/test_services/test_intent_service_extended.py::test_extract_shoot_arrow FAILED [ 34%]
+tests/test_services/test_intent_service_extended.py::test_extract_stab_dagger PASSED [ 35%]
+tests/test_services/test_intent_service_extended.py::test_extract_slash_axe PASSED [ 36%]
+tests/test_services/test_intent_service_extended.py::test_morphology_variations PASSED [ 38%]
+tests/test_services/test_intent_service_extended.py::test_lemmatization_works PASSED [ 39%]
+tests/test_services/test_intent_service_extended.py::test_conflict_resolution_hand_as_weapon PASSED [ 40%]
+tests/test_services/test_intent_service_extended.py::test_conflict_resolution_hand_as_target PASSED [ 42%]
+tests/test_services/test_intent_service_extended.py::test_ambiguous_command_with_fist PASSED [ 43%]
+tests/test_services/test_intent_service_extended.py::test_low_confidence_structure PASSED [ 44%]
+tests/test_services/test_intent_service_extended.py::test_llm_json_cleaning PASSED [ 46%]
+tests/test_services/test_intent_service_extended.py::test_llm_json_cleaning_without_markdown PASSED [ 47%]
+tests/test_services/test_intent_service_extended.py::test_llm_validation_rejects_invalid PASSED [ 48%]
+tests/test_services/test_intent_service_extended.py::test_llm_validation_accepts_valid PASSED [ 50%]
+tests/test_services/test_intent_service_extended.py::test_llm_validation_handles_null_values PASSED [ 51%]
+tests/test_services/test_intent_service_extended.py::test_extract_with_modifier FAILED [ 52%]
+tests/test_services/test_intent_service_extended.py::test_extract_modifier_from_side PASSED [ 53%]
+tests/test_services/test_intent_service_extended.py::test_extract_modifier_quickly PASSED [ 55%]
+tests/test_services/test_intent_service_extended.py::test_extract_modifier_carefully PASSED [ 56%]
+tests/test_services/test_intent_service_extended.py::test_extract_dodge PASSED [ 57%]
+tests/test_services/test_intent_service_extended.py::test_extract_block PASSED [ 59%]
+tests/test_services/test_intent_service_extended.py::test_extract_cast PASSED [ 60%]
+tests/test_services/test_intent_service_extended.py::test_extract_target_goblin PASSED [ 61%]
+tests/test_services/test_intent_service_extended.py::test_extract_target_orc PASSED [ 63%]
+tests/test_services/test_intent_service_extended.py::test_extract_target_skeleton PASSED [ 64%]
+tests/test_services/test_intent_service_extended.py::test_empty_command PASSED [ 65%]
+tests/test_services/test_intent_service_extended.py::test_single_word_command PASSED [ 67%]
+tests/test_services/test_intent_service_extended.py::test_only_target_no_action FAILED [ 68%]
+tests/test_services/test_intent_service_extended.py::test_unknown_words PASSED [ 69%]
+tests/test_services/test_intent_service_extended.py::test_confidence_calculation_full PASSED [ 71%]
+tests/test_services/test_intent_service_extended.py::test_confidence_calculation_partial PASSED [ 72%]
+tests/test_services/test_intent_service_extended.py::test_confidence_calculation_action_only PASSED [ 73%]
+tests/test_services/test_intent_service_extended.py::test_normalize_and_extract_pipeline PASSED [ 75%]
+tests/test_smoke_new_features.py::test_config_loads_successfully PASSED  [ 76%]
+tests/test_smoke_new_features.py::test_config_has_defaults FAILED        [ 77%]
+tests/test_smoke_new_features.py::test_event_classes_exist PASSED        [ 78%]
+tests/test_smoke_new_features.py::test_event_store_can_create PASSED     [ 80%]
+tests/test_smoke_new_features.py::test_event_store_append_and_retrieve PASSED [ 81%]
+tests/test_smoke_new_features.py::test_game_has_event_sourcing_methods PASSED [ 82%]
+tests/test_smoke_new_features.py::test_physical_simulator_exists PASSED  [ 84%]
+tests/test_smoke_new_features.py::test_physical_result_dataclass PASSED  [ 85%]
+tests/test_smoke_new_features.py::test_physical_simulator_simulate_attack PASSED [ 86%]
+tests/test_smoke_new_features.py::test_context_builder_exists PASSED     [ 88%]
+tests/test_smoke_new_features.py::test_director_has_simulators PASSED    [ 89%]
+tests/test_smoke_new_features.py::test_hexy_imports PASSED               [ 90%]
+tests/test_smoke_new_features.py::test_hex_grid_service_creates PASSED   [ 92%]
+tests/test_smoke_new_features.py::test_hex_grid_initialize PASSED        [ 93%]
+tests/test_smoke_new_features.py::test_hex_grid_basic_operations PASSED  [ 94%]
+tests/test_smoke_new_features.py::test_hex_grid_pathfinding PASSED       [ 96%]
+tests/test_smoke_new_features.py::test_location_has_hex_grid PASSED      [ 97%]
+tests/test_smoke_new_features.py::test_location_hex_grid_lazy_init PASSED [ 98%]
+tests/test_smoke_new_features.py::test_all_new_modules_import PASSED     [100%]
+
+================================== FAILURES ===================================
+__________________________ test_extract_shoot_arrow ___________________________
+tests\test_services\test_intent_service_extended.py:34: in test_extract_shoot_arrow
+    assert details["weapon"] == "bow"
+           ^^^^^^^^^^^^^^^^^
+E   KeyError: 'weapon'
+---------------------------- Captured stdout setup ----------------------------
+[INIT] Initializing Intent Recognition Service...
+[INFO] Clearing old intents collection ('intent_recognition_collection')...
+[OK] Intents vector database loaded (54 examples).
+[INIT] Initializing morphological analyzer...
+_________________________ test_extract_with_modifier __________________________
+tests\test_services\test_intent_service_extended.py:191: in test_extract_with_modifier
+    assert details.get("modifier") in ["from_above", "with_force"]
+E   AssertionError: assert None in ['from_above', 'with_force']
+E    +  where None = <built-in method get of dict object at 0x0000025CB3BFC6C0>('modifier')
+E    +    where <built-in method get of dict object at 0x0000025CB3BFC6C0> = {'confidence': 1.0, 'action': 'slash', 'weapon': 'axe'}.get
+---------------------------- Captured stdout setup ----------------------------
+[INIT] Initializing Intent Recognition Service...
+[INFO] Clearing old intents collection ('intent_recognition_collection')...
+[OK] Intents vector database loaded (54 examples).
+[INIT] Initializing morphological analyzer...
+---------------------------- Captured stdout call -----------------------------
+[WARN] Low confidence (0.20), requesting LLM...
+...Отправка запроса в Gemini...
+[WARN] LLM returned invalid value: modifier=from_above|with_force
+_________________________ test_only_target_no_action __________________________
+tests\test_services\test_intent_service_extended.py:271: in test_only_target_no_action
+    assert details["confidence"] < 0.7  # Низкая уверенность без action
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert 1.0 < 0.7
+---------------------------- Captured stdout setup ----------------------------
+[INIT] Initializing Intent Recognition Service...
+[INFO] Clearing old intents collection ('intent_recognition_collection')...
+[OK] Intents vector database loaded (54 examples).
+[INIT] Initializing morphological analyzer...
+---------------------------- Captured stdout call -----------------------------
+[WARN] Low confidence (0.15), requesting LLM...
+...Отправка запроса в Gemini...
+__________________________ test_config_has_defaults ___________________________
+tests\test_smoke_new_features.py:35: in test_config_has_defaults
+    assert settings.llm_model == "gemini-1.5-flash"
+E   AssertionError: assert 'gemini-2.0-flash-exp' == 'gemini-1.5-flash'
+E     
+E     - gemini-1.5-flash
+E     ?        ^ ^
+E     + gemini-2.0-flash-exp
+E     ?        ^ ^      ++++
+=========================== short test summary info ===========================
+FAILED tests/test_services/test_intent_service_extended.py::test_extract_shoot_arrow - KeyError: 'weapon'
+FAILED tests/test_services/test_intent_service_extended.py::test_extract_with_modifier - AssertionError: assert None in ['from_above', 'with_force']
+ +  where None = <built-in method get of dict object at 0x0000025CB3BFC6C0>('modifier')
+ +    where <built-in method get of dict object at 0x0000025CB3BFC6C0> = {'confidence': 1.0, 'action': 'slash', 'weapon': 'axe'}.get
+FAILED tests/test_services/test_intent_service_extended.py::test_only_target_no_action - assert 1.0 < 0.7
+FAILED tests/test_smoke_new_features.py::test_config_has_defaults - AssertionError: assert 'gemini-2.0-flash-exp' == 'gemini-1.5-flash'
+  
+  - gemini-1.5-flash
+  ?        ^ ^
+  + gemini-2.0-flash-exp
+  ?        ^ ^      ++++
+======== 4 failed, 69 passed, 3 skipped, 1 warning in 94.32s (0:01:34) ========

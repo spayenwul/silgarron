@@ -15,7 +15,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 import json
 from services.config_loader import WorldGenerationConfig
-
+from services.compatibility_service import CompatibilityService
 # ==================== МАТЕМАТИКА ГЕКСОВ (Без изменений) ====================
 
 @dataclass
@@ -124,10 +124,11 @@ class BiomeData:
 
 # ==================== ГЛАВНЫЙ СЕРВИС ====================
 class HexWorldService:
-    def __init__(self, session_id: str, world_data_service, tag_registry, config: WorldGenerationConfig = None):
+    def __init__(self, session_id: str, world_data_service, tag_registry, compatibility_service: CompatibilityService, config: WorldGenerationConfig = None):
         self.session_id = session_id
         self.world_data = world_data_service
         self.tag_registry = tag_registry
+        self.compatibility = compatibility_service
         self.config = config or WorldGenerationConfig.from_yaml()
         self.regions: Dict[str, RegionData] = {}
         self.biomes: Dict[str, BiomeData] = {}
@@ -153,14 +154,44 @@ class HexWorldService:
         return RegionData(id=region_id, hex_coord=hex_coord, region_type=region_type_data['id'], name=region_type_data['name'], description=region_type_data.get('description', ''), tags=region_type_data.get('base_tags', []), biome_ids=[])
     
     def discover_region(self, region_id: str) -> List[str]:
-        region = self.regions[region_id]
-        if region.discovered: return region.biome_ids
+        """
+        Генерация биомов внутри региона с использованием CompatibilityService.
+        """
+        region = self.regions.get(region_id)
+        if not region or region.discovered:
+            return region.biome_ids if region else []
+
         region.discovered = True
         target_biome_count = random.randint(self.config.min_biomes_per_region, self.config.max_biomes_per_region)
-        allowed_biome_ids = self.world_data.get_location_types_for_region(region.region_type)
-        if not allowed_biome_ids: return []
+        
+        # Получаем список всех возможных биомов для этого типа региона
+        allowed_biome_candidates = self.world_data.get_all_biome_data_for_region(region.region_type)
+        if not allowed_biome_candidates:
+            return []
 
         biome_coords = self._generate_local_biome_layout(target_biome_count)
+        placed_biomes_map: Dict[HexCoord, Dict] = {}
+
+        for coord in biome_coords:
+            # Находим соседей, которые уже размещены
+            neighbor_coords = coord.neighbors()
+            placed_neighbors_data = [placed_biomes_map[nc] for nc in neighbor_coords if nc in placed_biomes_map]
+
+            # --- ОСНОВНАЯ ЛОГИКА ---
+            # Просим сервис совместимости найти лучший биом, учитывая соседей
+            best_biome_data = self.compatibility.find_best_biome_for_region(
+                allowed_biome_candidates,
+                placed_neighbors_data
+            )
+            # ---------------------
+
+            if best_biome_data:
+                biome = self._create_biome(region, best_biome_data['id'], coord)
+                self.biomes[biome.id] = biome
+                region.biome_ids.append(biome.id)
+                placed_biomes_map[coord] = self.world_data.get_biome_data(biome.biome_type)
+
+        return region.biome_ids
 
         created_biomes = []
         if self.config.guarantee_settlement and "kith_settlement" in allowed_biome_ids and biome_coords:

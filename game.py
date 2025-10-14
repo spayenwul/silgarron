@@ -224,8 +224,8 @@ class Game:
             action_details={}
         ))
 
-        # 1. Получаем сырой ответ от LLM через Режиссёра
-        raw_response = self.director.decide_llm_action(self, command)
+        # 1. Получаем сырой ответ через Режиссёра (Strategy Pattern)
+        raw_response = self.director.process_command(self, command)
 
         try:
             # Шаг 1: Используем надежный парсер для извлечения JSON

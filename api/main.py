@@ -130,7 +130,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             raw_message = await websocket.receive_text()
 
             try:
-                message = eval(raw_message)  # или json.loads(raw_message)
+                message = json.loads(raw_message)
 
                 if message.get("type") == "command":
                     # Обработать команду игрока

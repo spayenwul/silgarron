@@ -1,9 +1,9 @@
 # Technical Design Document: AI-Driven RPG with Physical Simulation
 
 **Project:** Silgarron - Physics-Based Text RPG
-**Version:** 2.2
-**Date:** 2025-01-10
-**Status:** Alpha (Phase 1-2 Complete, Production-Ready Skeleton)
+**Version:** 3.0
+**Date:** 2025-10-14
+**Status:** Alpha (Phase 1-2 Complete, Sprint 1 In Progress)
 **Document Type:** Technical Architecture & Implementation Roadmap
 
 ---
@@ -52,6 +52,9 @@
 |Компонент|Статус|Готовность|
 |---|---|---|
 |**Базовая архитектура**|✅ Реализовано|75%|
+|**Command Routing System**|🟡 В разработке|60%|
+|**Strategy Pattern**|🟡 Sprint 1|40%|
+|**Function Calling**|🔴 Запланировано|0%|
 |**Генерация мира**|🟡 Частично|40%|
 |**Боевая система**|🟡 Intent extraction|35%|
 |**AI интеграция**|🟡 Базовая + Detail extraction|45%|
@@ -108,6 +111,16 @@ AI:     Описывает результат
 - Каждое важное действие = LLM запрос
 - Это фича, не баг
 
+**P5: Оптимизация по сложности**
+
+Не все действия требуют полной мощи LLM:
+
+- Простые действия → код (бесплатно, <10ms)
+- Средние → 1 вызов LLM (~0.001₽, 500ms)
+- Сложные → Function Calling (~0.002₽, 1500ms)
+
+Трёхуровневая маршрутизация обеспечивает баланс между интеллектом и эффективностью.
+
 ---
 
 ## 3. ARCHITECTURE OVERVIEW
@@ -117,17 +130,11 @@ AI:     Описывает результат
 ```
 ┌─────────────────────────────────────────────────┐
 │              FRONTEND (Browser)                 │
-│  • Hex Map Renderer (D3.js)                     │
-│  • UI (Vanilla JS)                              │
-│  • WebSocket client                             │
 └─────────────────┬───────────────────────────────┘
                   │ HTTP/WS
                   ↓
 ┌─────────────────────────────────────────────────┐
 │           API LAYER (FastAPI)                   │
-│  • REST endpoints                               │
-│  • Session management                           │
-│  • WebSocket handler                            │
 └─────────────────┬───────────────────────────────┘
                   │
                   ↓
@@ -135,37 +142,72 @@ AI:     Описывает результат
 │            GAME LOGIC CORE                      │
 │                                                 │
 │  ┌──────────────────────────────────────────┐  │
-│  │  Intent Service (AllMiniLM)              │  │
-│  │  "бью мечом" → COMBAT + details          │  │
-│  └──────────────────────────────────────────┘  │
-│                     ↓                           │
+│  │  1. FAST ROUTER (IntentService)          │  │
+│  │  all-mini + pymorphy3 (<50ms)            │  │
+│  │  "бью мечом" → SIMPLE_LLM                │  │
+│  └──────────────┬───────────────────────────┘  │
+│                 ↓                               │
 │  ┌──────────────────────────────────────────┐  │
-│  │  Physical Context Builder                │  │
-│  │  Собирает физические параметры           │  │
-│  └──────────────────────────────────────────┘  │
-│                     ↓                           │
-│  ┌──────────────────────────────────────────┐  │
-│  │  AI Physics Simulator (Gemini)           │  │
-│  │  Симулирует реальную физику              │  │
-│  └──────────────────────────────────────────┘  │
-│                     ↓                           │
-│  ┌──────────────────────────────────────────┐  │
-│  │  Effect Applicator                       │  │
-│  │  Применяет физ. результаты → Entity      │  │
-│  └──────────────────────────────────────────┘  │
-│                     ↓                           │
-│  ┌──────────────────────────────────────────┐  │
-│  │  Narrative Generator (Gemini)            │  │
-│  │  Описывает для игрока                    │  │
-│  └──────────────────────────────────────────┘  │
+│  │  2. DIRECTOR (Orchestrator)              │  │
+│  │  Выбор стратегии по complexity_type      │  │
+│  └──────┬───────┬───────┬────────────────────┘  │
+│         ↓       ↓       ↓                       │
+│  ┌──────┴───┐ ┌┴──────┐ ┌┴────────────────┐   │
+│  │CODE_ONLY │ │SIMPLE │ │COMPLEX_TOOL_CALL│   │
+│  │(no AI)   │ │ LLM   │ │(Function Call)  │   │
+│  │<10ms     │ │1 call │ │2 calls          │   │
+│  └──────────┘ └───────┘ └─────────────────┘   │
 └─────────────────────────────────────────────────┘
 ```
 
-### 3.2 Модульная структура
+### 3.2 Command Processing Flow
+
+**Жизненный цикл команды игрока:**
+
+```
+1. PARSING
+   Player: "опрокинуть стол на врага"
+      ↓
+   IntentService.recognize_intent()
+      ↓
+   Result: {
+     "intent": "COMBAT",
+     "complexity_type": "COMPLEX_TOOL_CALL"
+   }
+
+2. ROUTING
+   Director получает complexity_type
+      ↓
+   Выбирает Strategy: FunctionCallingStrategy
+      ↓
+
+3. EXECUTION (для COMPLEX_TOOL_CALL)
+
+   Step 3.1: First LLM Call
+   ├─ Gemini получает команду + контекст
+   └─ Возвращает: JSON с tool_call
+      {
+        "function": "calculate_physics",
+        "args": {"object": "table", "action": "push"}
+      }
+
+   Step 3.2: Code Execution
+   ├─ PhysicalSimulator.calculate_physics()
+   └─ Возвращает: результаты расчётов
+
+   Step 3.3: Second LLM Call
+   ├─ Gemini получает результаты
+   └─ Возвращает: красивый нарратив
+
+4. RESPONSE
+   Нарратив → Player
+```
+
+### 3.3 Модульная структура
 
 ```
 rpg-project/
-├── core/                    # ❌ НЕ СУЩЕСТВУЕТ (нужно создать)
+├── core/                    # 🟡 СУЩЕСТВУЕТ (минимальный)
 ├── data/                    # ✅ СУЩЕСТВУЕТ (лор, правила)
 ├── generators/              # ✅ СУЩЕСТВУЕТ (генерация мира)
 ├── logic/                   # ✅ СУЩЕСТВУЕТ (игровая логика)
@@ -175,9 +217,9 @@ rpg-project/
 ├── frontend/                # ✅ СУЩЕСТВУЕТ (UI)
 ├── prompts/                 # ✅ СУЩЕСТВУЕТ (промпты LLM)
 ├── utils/                   # ✅ СУЩЕСТВУЕТ (утилиты)
-├── combat/                  # ❌ НЕ СУЩЕСТВУЕТ (нужно создать)
-├── simulation/              # ❌ НЕ СУЩЕСТВУЕТ (нужно создать)
-└── tests/                   # ❌ НЕ СУЩЕСТВУЕТ
+├── combat/                  # 🟡 СУЩЕСТВУЕТ (Фаза 1 skeleton)
+├── simulation/              # 🟡 СУЩЕСТВУЕТ (со структурой level1/level2/level3)
+└── tests/                   # 🟡 СУЩЕСТВУЕТ (частично)
 ```
 
 ---
@@ -188,37 +230,41 @@ rpg-project/
 
 #### ✅ `models/character.py`
 
-**Статус:** Реализовано, требует доработки  
+**Статус:** ✅ УЖЕ ОБНОВЛЕНО (Фаза 1 Complete)
 **Текущая функциональность:**
 
 ```python
 class Character:
     name: str
-    max_hp: int = 20  # ⚠️ ПРОБЛЕМА: абстрактный HP
+
+    # LEGACY SYSTEM (backward compatible, temporary)
+    max_hp: int = 20  # ⚠️ TODO: Remove in Phase 3
     hp: int = 20
-    stats: Dict[str, int] = {"сила": 10, "ловкость": 10, "интеллект": 10}
+
+    # NEW BODY SYSTEM (Phase 1+) ✅
+    body: Optional[BodySystem] = None  # Initialized if BODY_SYSTEM_AVAILABLE
+    # body.blood_volume: float
+    # body.parts: Dict[str, BodyPart]
+    # body.status_effects: List[StatusEffect]
+
+    # NEW PHYSICAL STATS (Phase 1+) ✅
+    physical_stats: Dict = {
+        "strength_kg": 50.0,
+        "endurance_sec": 120.0,
+        "agility": 1.0
+    }
+    skills: Dict = {"sword": 0.5, "bow": 0.3, "dodge": 0.4}
+
     inventory: Inventory
 ```
 
-**Проблемы:**
+**Оценка:**
 
-- ❌ Использует абстрактные HP (противоречит концепции)
-- ❌ Нет физического представления тела
-- ❌ Нет системы ран и кровотечений
-
-**Требуемые изменения:**
-
-```python
-class Character:
-    name: str
-    body: BodySystem  # Новый класс!
-    # body.blood_volume: float
-    # body.parts: Dict[str, BodyPart]
-    physical_state: PhysicalState
-    # .fatigue, .pain, .shock
-    stats: PhysicalStats
-    # .strength, .endurance (физические, не абстрактные)
-```
+- ✅ Dual HP/Body system реализован (backward compatible)
+- ✅ BodySystem интегрирован (Фаза 1)
+- ✅ Физические характеристики добавлены
+- ✅ Тесты покрывают интеграцию (test_character_with_body_system)
+- ⚠️ Legacy HP будет удалён в Фазе 3 после полной миграции
 
 ---
 
@@ -347,9 +393,11 @@ class Director:
 **Оценка:**
 
 - ✅ Правильно использует `IntentService`
-- ✅ Разделяет логику по намерениям
-- ❌ НЕТ physical simulation - отправляет сразу в LLM для нарратива
-- ❌ Промпты для "старой" механики (HP/урон)
+- 🟡 Рефакторинг на Strategy Pattern (Sprint 1)
+- 🟡 Три стратегии обработки в разработке
+- ❌ Function Calling ожидает Sprint 2
+
+**Текущий статус:** Рефакторинг в процессе (Sprint 1)
 
 **Требуемые изменения:**
 
@@ -387,12 +435,14 @@ class GameState(Enum):
 
 #### ✅ `logic/constants.py`
 
-**Статус:** Константы для JSON ответов LLM  
+**Статус:** Константы для JSON ответов LLM
 **Оценка:** ✅ Готов, но может потребоваться расширение для физики
 
 ---
 
 ### 4.3 Services
+
+**Примечание:** `logic/strategies/` - НЕ СОЗДАНО ЕЩЁ. Планируется реализация в Sprint 1. См. [ARCHITECTURE_DECISION.md](./ARCHITECTURE_DECISION.md) (ADR-003) для деталей трёхуровневой маршрутизации.
 
 #### ✅ `services/intent_service.py` ⭐ КЛЮЧЕВОЙ ФАЙЛ
 
@@ -570,29 +620,6 @@ class TagRegistry:
 ```
 
 **Оценка:** ✅ Работает, используется в генерации
-
----
-
-#### ✅ `services/world_graph_service.py`
-
-**Статус:** Реализовано  
-**Технология:** NetworkX (граф связей между локациями)
-
-```python
-class WorldGraph:
-    def __init__(self, session_id: str):
-        self.graph = nx.DiGraph()
-    
-    def add_location(self, location_id: str, location_data: dict)
-    def connect_locations(self, from_id: str, to_id: str, distance: float)
-    def get_neighbors(self, location_id: str) -> List[Dict]
-```
-
-**Оценка:** ✅ Хорошая реализация для навигации
-
-**Проблема:**
-
-- ⚠️ Не связан с гекс-картами (две системы координат?)
 
 ---
 
@@ -1068,9 +1095,9 @@ combat/
 ├── ✅ body_system.py           # Skeleton готов (Фаза 1)
 ├── ✅ status_effects.py        # Skeleton готов (Фаза 1)
 ├── ✅ wounds.py                # Skeleton готов (Фаза 1)
-├── ❌ combat_manager.py        # Не существует
-├── ❌ physical_simulator.py   # Не существует (КРИТИЧЕСКИЙ)
-└── ❌ context_builder.py      # Не существует (КРИТИЧЕСКИЙ)
+├── ✅ physical_simulator.py   # STUB (заглушка, возвращает тестовые данные)
+├── ✅ context_builder.py      # STUB (заглушка, делегирует команде боевой системы)
+└── ❌ combat_manager.py        # Не существует (КРИТИЧЕСКИЙ для Фазы 3)
 ```
 
 **Что нужно доделать (Фаза 3):**
@@ -1088,18 +1115,25 @@ combat/
 
 ---
 
-#### ❌ `simulation/` - Трехуровневая симуляция
+#### 🟡 `simulation/` - Трехуровневая симуляция
 
 **Приоритет:** 🟡 ВЫСОКИЙ
+**Статус:** 🟡 Структура создана, реализация - нет
 
-**Что нужно:**
+**Что есть:**
 
 ```
 simulation/
-├── level1_macro/              # Континенты, войны, эпидемии
-├── level2_meso/               # Биомы, миграции, торговля
-└── level3_micro/              # Локации, детальная симуляция
+├── level1_macro/              # ✅ ДИРЕКТОРИЯ СОЗДАНА (пустая)
+├── level2_meso/               # ✅ ДИРЕКТОРИЯ СОЗДАНА (пустая)
+└── level3_micro/              # ✅ ДИРЕКТОРИЯ СОЗДАНА (пустая)
 ```
+
+**Что нужно реализовать:**
+
+- level1_macro: Континенты, войны, эпидемии (Фаза 6)
+- level2_meso: Биомы, миграции, торговля (Фаза 6)
+- level3_micro: Локации, детальная симуляция (Фаза 6)
 
 **Зачем:**
 
@@ -1869,16 +1903,16 @@ rpg-project/
 │   ├── main.py                      ✅ REST endpoints
 │   └── game_session.py              ✅ Session management
 │
-├── combat/                          🟡 ЧАСТИЧНО (Фаза 1 skeleton)
+├── combat/                          🟡 ЧАСТИЧНО (Фаза 1 skeleton + stubs)
 │   ├── __init__.py                 ✅ Создан
 │   ├── body_system.py              ✅ Skeleton (Фаза 1)
 │   ├── wounds.py                   ✅ Skeleton (Фаза 1)
 │   ├── status_effects.py           ✅ Skeleton (Фаза 1)
-│   ├── physical_simulator.py       ❌ CRITICAL (Фаза 3)
-│   ├── context_builder.py          ❌ CRITICAL (Фаза 3)
+│   ├── physical_simulator.py       ⚠️ STUB (заглушка, требует реализации в Фазе 3)
+│   ├── context_builder.py          ⚠️ STUB (заглушка, требует реализации в Фазе 3)
 │   └── combat_manager.py           ❌ NEEDED (Фаза 3)
 │
-├── core/                            ❌ MISSING
+├── core/                            🟡 СУЩЕСТВУЕТ (минимальный)
 │   ├── world_state.py               ❌ Needed
 │   ├── time_manager.py              ❌ Needed
 │   └── event_bus.py                 ⚠️ Optional
@@ -1941,10 +1975,10 @@ rpg-project/
 │   ├── world_graph_service.py       ✅
 │   └── persistence_service.py       ✅
 │
-├── simulation/                      ❌ MISSING
-│   ├── level1_macro/                ❌
-│   ├── level2_meso/                 ❌
-│   └── level3_micro/                ❌
+├── simulation/                      🟡 Структура создана (без реализации)
+│   ├── level1_macro/                ⚠️ Создано (пустое, Фаза 6)
+│   ├── level2_meso/                 ⚠️ Создано (пустое, Фаза 6)
+│   └── level3_micro/                ⚠️ Создано (пустое, Фаза 6)
 │
 ├── utils/                           ✅ Utilities
 │   ├── logger.py                    ✅
@@ -2025,8 +2059,8 @@ rpg-project/
 ---
 
 **Документ подготовлен:** 2025-01-10
-**Последнее обновление:** 2025-01-10 (Фазы 1-2 завершены)
-**Версия:** 2.2 (обновлена с Phase 1 skeleton + Phase 2 details)
-**Следующий review:** После завершения Фазы 3 (Physical Simulation)
+**Последнее обновление:** 2025-10-14 (Sprint 1: Command Routing в процессе)
+**Версия:** 3.0 (трёхуровневая маршрутизация команд)
+**Следующий review:** 21 октября 2025 (после Sprint 1)
 
 ---
