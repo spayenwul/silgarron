@@ -1,61 +1,5 @@
 [
   {
-    "text": "Сохранить игру",
-    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Сделай сохранение",
-    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Загрузить последнее сохранение",
-    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Выйти из игры",
-    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Открыть меню настроек",
-    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Покажи мне карту",
-    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Открыть журнал заданий",
-    "metadata": { "intent": "META_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Посмотреть инвентарь",
-    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Что у меня в сумке?",
-    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Проверить свои раны",
-    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Оценить свое здоровье",
-    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Сколько у меня маны?",
-    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Посмотреть на свои характеристики",
-    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
-    "text": "Что на мне сейчас надето?",
-    "metadata": { "intent": "SELF_ACTION_CODE_ONLY", "complexity_type": "CODE_ONLY" }
-  },
-  {
     "text": "Осмотреться вокруг",
     "metadata": { "intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM" }
   },
@@ -93,43 +37,43 @@
   },
   {
     "text": "Атаковать врага мечом",
-    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "COMPLEX_TOOL_CALL" }
   },
   {
     "text": "Бью мечом по шее гоблина",
-    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "COMPLEX_TOOL_CALL" }
   },
   {
     "text": "Ударить орка по ногам",
-    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "COMPLEX_TOOL_CALL" }
   },
   {
     "text": "Выстрелить из лука в скелета",
-    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "COMPLEX_TOOL_CALL" }
   },
   {
     "text": "Метнуть кинжал в разбойника",
-    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "COMPLEX_TOOL_CALL" }
   },
   {
     "text": "Уклоняюсь от удара",
-    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "COMPLEX_TOOL_CALL" }
   },
   {
     "text": "Отпрыгнуть в сторону от летящей стрелы",
-    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "COMPLEX_TOOL_CALL" }
   },
   {
     "text": "Блокирую атаку щитом",
-    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "COMPLEX_TOOL_CALL" }
   },
   {
     "text": "Поставить блок мечом",
-    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "COMPLEX_TOOL_CALL" }
   },
   {
     "text": "Применить заклинание огненного шара",
-    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "SIMPLE_LLM" }
+    "metadata": { "intent": "DIRECT_COMBAT_LLM", "complexity_type": "COMPLEX_TOOL_CALL" }
   },
   {
     "text": "Попробовать подпереть дверь столом, чтобы ее не выломали",
@@ -210,5 +154,29 @@
   {
     "text": "Срезать кошелек с пояса зазевавшегося купца",
     "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "опрокинуть стол на приближающегося врага",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "я пытаюсь опрокинуть тяжелую статую",
+    "metadata": { "intent": "COMPLEX_INTERACTION_TOOL_CALL", "complexity_type": "COMPLEX_TOOL_CALL" }
+  },
+  {
+    "text": "Подумать о случившемся",
+   "metadata": {"intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM"}
+  },
+  {
+    "text": "Вспомнить дорогу домой",
+   "metadata": {"intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM"}
+  },
+  {
+    "text": "Попытаться понять мотивы торговца",
+   "metadata": {"intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM"}
+  },
+  {
+    "text": "Прислушаться к звукам в лесу",
+   "metadata": {"intent": "SIMPLE_INTERACTION_LLM", "complexity_type": "SIMPLE_LLM"}
   }
 ]

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "sprints/DONE.md",
+                "file": "sprints/ALL_SPRINTS_OVERVIEW.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "DONE"
+              "title": "ALL_SPRINTS_OVERVIEW"
             }
           }
         ]
@@ -171,9 +171,9 @@
   },
   "active": "8e4a3630864c78f6",
   "lastOpenFiles": [
+    "sprints/DONE.md",
     "sprints/SPRINT_2_PLAN.md",
     "sprints/CURRENT_SPRINT.md",
-    "sprints/DONE.md",
     "Technical_Design_Document.md",
     "archive/tdd_update_checklist.md",
     "archive/implementation_report_frontend_api_body.md",

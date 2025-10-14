@@ -24,8 +24,7 @@ class Director:
     Использует Pattern Strategy для выбора метода обработки команды на основе
     её сложности (complexity_type), определённой IntentService.
 
-    Три уровня сложности:
-    - CODE_ONLY: Мгновенные действия без AI (<10ms)
+    Два уровня сложности:
     - SIMPLE_LLM: Простые действия с 1 вызовом LLM (500-1000ms)
     - COMPLEX_TOOL_CALL: Сложные действия с Function Calling (1000-2000ms, STUB)
     """
@@ -40,7 +39,6 @@ class Director:
 
         # НОВОЕ: Strategy Pattern - словарь стратегий по complexity_type
         self.strategies = {
-            "CODE_ONLY": CodeOnlyStrategy(),
             "SIMPLE_LLM": SimpleLLMStrategy(),
             "COMPLEX_TOOL_CALL": FunctionCallingStrategy()
         }
@@ -79,13 +77,8 @@ class Director:
             print(f"[Director] ⚠️ Unknown complexity_type '{complexity_type}', falling back to SIMPLE_LLM")
             complexity_type = "SIMPLE_LLM"
 
-        # 3. Извлечь детали (если не CODE_ONLY)
+        # 3. Извлечь детали
         details = {"intent": intent, "complexity_type": complexity_type}
-
-        if complexity_type != "CODE_ONLY":
-            # Для SIMPLE_LLM и COMPLEX мы можем извлечь дополнительные детали
-            # Пока просто передаём intent, детальный парсинг будет позже
-            pass
 
         # 4. Выбрать стратегию
         strategy = self.strategies[complexity_type]
