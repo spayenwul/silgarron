@@ -55,7 +55,7 @@
 |**Command Routing System**|🟡 В разработке|60%|
 |**Strategy Pattern**|🟡 Sprint 1|40%|
 |**Function Calling**|🔴 Запланировано|0%|
-|**Генерация мира**|🟡 Частично|40%|
+|**Генерация мира**|✅ Совместимость биомов|50%|
 |**Боевая система**|🟡 Intent extraction|35%|
 |**AI интеграция**|🟡 Базовая + Detail extraction|45%|
 |**Frontend**|🟡 Прототип|50%|
@@ -618,8 +618,126 @@ class TagRegistry:
 
 #### ✅ `services/persistence_service.py`
 
-**Статус:** Реализовано (абстракция для сохранения)  
+**Статус:** Реализовано (абстракция для сохранения)
 **Оценка:** ✅ Хорошая архитектура (поддержка разных backend: файлы/Redis)
+
+---
+
+#### ✅ `services/compatibility_service.py` ⭐ НОВЫЙ (Sprint 3)
+
+**Статус:** ✅ ПОЛНОСТЬЮ РЕАЛИЗОВАНО (15 октября 2025)
+**Назначение:** Централизованная система оценки совместимости биомов и рас
+
+```python
+class CompatibilityService:
+    def __init__(self, tags_registry: Dict):
+        self.tags_registry = tags_registry
+        self._compatibility_cache = {}
+
+    def calculate_biome_compatibility(
+        self,
+        biome_tags: List[str],
+        neighbor_tags_list: List[List[str]]
+    ) -> Dict:
+        """
+        Оценивает совместимость биома с соседями
+
+        Returns:
+        {
+            "score": float,  # 0.0 (несовместим) - 5.0+ (очень совместим)
+            "breakdown": {
+                "base_score": 1.0,
+                "synergies": [...],
+                "conflicts": [...],
+                "forbidden": [...]
+            }
+        }
+        """
+        # 1. Проверка forbidden_combinations → score = 0
+        # 2. Базовый score = 1.0
+        # 3. Применение synergies (увеличивают score)
+        # 4. Применение conflicts (уменьшают score)
+
+    def find_best_biome_for_region(
+        self,
+        candidate_biomes: List[str],
+        neighbor_biomes: List[str],
+        location_data: Dict
+    ) -> Optional[str]:
+        """
+        Выбирает оптимальный биом из кандидатов
+
+        Учитывает:
+        - Совместимость с соседями
+        - Совместимость с расой (если указана)
+        - Сортировку по score
+        """
+
+    def calculate_race_biome_score(
+        self,
+        race_tags: List[str],
+        biome_tags: List[str],
+        race_config: Dict,
+        biome_config: Dict
+    ) -> float:
+        """
+        Оценивает пригодность биома для расы
+
+        Учитывает:
+        - Forbidden combinations (tags_registry)
+        - Preferred/avoided biomes (локальные правила расы)
+        - Глобальные synergies/conflicts
+        """
+```
+
+**Оценка:**
+
+- ✅ Единая точка истины для всех правил совместимости
+- ✅ Кэширование результатов (повышает производительность)
+- ✅ Детальный breakdown для отладки
+- ✅ Поддержка расового фактора
+- ✅ Независимость от генераторов (можно тестировать отдельно)
+- ✅ 19 unit-тестов (100% pass rate)
+
+**Интеграция:**
+
+```python
+# api/game_session.py
+class GameSession:
+    def __init__(self, ...):
+        self.compatibility_service = CompatibilityService(
+            tags_registry=world_data.get_tags_registry()
+        )
+
+# services/hex_world_service.py
+class HexWorldService:
+    @classmethod
+    def from_dict(cls, data: Dict, compatibility_service: CompatibilityService):
+        return cls(data, compatibility_service)
+```
+
+**Реализованные тесты (Sprint 3):**
+
+```python
+# tests/test_services/test_compatibility_service.py (19 тестов)
+
+def test_forbidden_combinations_return_zero_score():
+    # ["terrain:aquatic", "terrain:subterranean"] → score = 0
+
+def test_synergies_increase_score():
+    # ["surface:stable", "lifestyle:sedentary"] → score > 1.0
+
+def test_conflicts_decrease_score():
+    # ["surface:unstable", "lifestyle:sedentary"] → score < 1.0
+
+def test_find_best_biome_for_region():
+    # Выбирает биом с лучшей синергией
+
+def test_calculate_race_biome_score():
+    # Учитывает forbidden tags и synergies
+```
+
+**Архитектурное решение:** См. [ADR-009](./architecture_decision.md)
 
 ---
 

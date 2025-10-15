@@ -303,6 +303,117 @@ class BodySystem:
 
 ---
 
+## ADR-009: Централизованная Система Совместимости Биомов (15 октября 2025)
+
+### Контекст
+
+В проекте используется процедурная генерация мира с системой тегов и правилами совместимости биомов. Изначально эти правила были разбросаны по нескольким местам:
+- `location_compatibility.yaml` содержал локальные правила `can_border`/`cannot_border` для каждого типа локации
+- `tags_registry.yaml` содержал глобальные правила синергий и конфликтов между тегами
+- Логика обработки была размазана между `SpatialLocationGenerator` и `HexWorldService`
+
+Это приводило к дублированию логики и усложняло добавление новых правил совместимости.
+
+### Проблема
+
+1. **Дублирование данных**: Одни и те же несовместимости приходилось описывать в обоих файлах
+2. **Сложность расширения**: Добавление нового правила требовало изменений в 3+ местах
+3. **Отсутствие единого источника правды**: Не было ясно, какая система имеет приоритет
+4. **Нет поддержки расового фактора**: Правила не учитывали, какая раса населяет локацию
+
+### Решение
+
+**Создать централизованный `CompatibilityService` как единую точку для всех проверок совместимости.**
+
+#### Архитектура
+
+```python
+class CompatibilityService:
+    def __init__(self, tags_registry: Dict):
+        self.tags_registry = tags_registry  # Единый источник правил
+        self._compatibility_cache = {}      # Кэширование результатов
+
+    def calculate_biome_compatibility(
+        self,
+        biome_tags: List[str],
+        neighbor_tags_list: List[List[str]]
+    ) -> Dict:
+        """Оценивает совместимость биома с его соседями"""
+        # 1. Проверяет forbidden_combinations
+        # 2. Вычисляет базовый score = 1.0
+        # 3. Применяет synergies (увеличивают score)
+        # 4. Применяет conflicts (уменьшают score)
+        # 5. Возвращает score + детальный breakdown
+
+    def find_best_biome_for_region(
+        self,
+        candidate_biomes: List[str],
+        neighbor_biomes: List[str]
+    ) -> Optional[str]:
+        """Выбирает оптимальный биом из кандидатов"""
+        # Сортирует по compatibility score, возвращает лучший
+
+    def calculate_race_biome_score(
+        self,
+        race_tags: List[str],
+        biome_tags: List[str]
+    ) -> float:
+        """Оценивает, насколько раса подходит для биома"""
+        # Учитывает локальные preferred/forbidden расы
+        # Применяет глобальные synergies/conflicts
+```
+
+#### Интеграция
+
+```python
+# api/game_session.py
+class GameSession:
+    def __init__(self, ...):
+        # Сервис создаётся с YAML данными
+        self.compatibility_service = CompatibilityService(
+            tags_registry=world_data.get_tags_registry()
+        )
+
+# services/hex_world_service.py
+class HexWorldService:
+    @classmethod
+    def from_dict(cls, data: Dict, compatibility_service: CompatibilityService):
+        # Использует переданный сервис для проверок
+        return cls(data, compatibility_service)
+```
+
+#### Приоритет данных
+
+1. **Forbidden combinations** (tags_registry) → score = 0 (абсолютный запрет)
+2. **Synergies** (tags_registry) → увеличивают score
+3. **Conflicts** (tags_registry) → уменьшают score
+4. **Local rules** (location_compatibility) → опциональный модификатор
+
+### Последствия
+
+**Плюсы:**
+- ✅ **Единая точка истины**: Все правила в `tags_registry.yaml`
+- ✅ **Кэширование**: Повторные проверки мгновенны
+- ✅ **Тестируемость**: Можно тестировать изолированно от генерации
+- ✅ **Расширяемость**: Легко добавлять новые типы правил
+- ✅ **Прозрачность**: Детальный `breakdown` показывает, почему биом выбран
+- ✅ **Модульность**: Сервис можно использовать отдельно от генерации
+
+**Минусы:**
+- ⚠️ **Рефакторинг**: Требуется обновить все места, где проверяется совместимость
+- ⚠️ **Миграция данных**: Правила из `location_compatibility` нужно перенести в `tags_registry`
+
+**Результаты:**
+- ✅ Реализовано 3 ключевых метода
+- ✅ 19 unit-тестов (100% pass rate)
+- ✅ Интеграция с `GameSession` и `HexWorldService`
+- ✅ Все существующие тесты прошли (98/102)
+
+### Статус
+✅ Принято и реализовано (Sprint 3)
+
+---
+
 ## Template для Новых ADR
 
 ```markdown
