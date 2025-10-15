@@ -11,7 +11,7 @@ from collections import defaultdict
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 TAG_REGISTRY_FILE = DATA_DIR / "tags_registry.yaml"
-LOCATION_COMPAT_FILE = DATA_DIR / "location_compatibility.yaml"
+LOCATION_COMPAT_FILE = DATA_DIR / "generation_rules.yaml"
 
 
 def load_tags_registry() -> Dict:
@@ -101,95 +101,91 @@ def print_forbidden_combinations():
 
 
 def print_biome_compatibility_matrix():
-    """Выводит матрицу совместимости биомов (can_border/cannot_border)"""
+    """Выводит статистику из generation_rules.yaml"""
     print("\n" + "=" * 80)
-    print("МАТРИЦА СОВМЕСТИМОСТИ БИОМОВ")
+    print("СТАТИСТИКА ИЗ GENERATION_RULES")
     print("=" * 80)
 
-    loc_compat = load_location_compatibility()
-    location_types = loc_compat.get("location_types", {})
+    gen_rules = load_location_compatibility()
 
-    if not location_types:
-        print("Типы локаций не найдены.")
-        return
+    # Показываем race_terrain_affinity
+    race_affinity = gen_rules.get("global_modifiers", {}).get("race_terrain_affinity", {})
 
-    # Собираем статистику
-    can_border_count = defaultdict(int)
-    cannot_border_count = defaultdict(int)
+    if race_affinity:
+        # Убираем description из списка
+        races = [k for k in race_affinity.keys() if k != "description"]
+        print("\nРАСОВЫЕ ПРЕДПОЧТЕНИЯ МЕСТНОСТИ:")
+        print(f"Найдено рас: {len(races)}")
+        for race_name in races[:5]:  # Показываем первые 5
+            print(f"  - {race_name}")
+        if len(races) > 5:
+            print(f"  ... и ещё {len(races) - 5}")
 
-    for loc_type, rules in location_types.items():
-        can_border_count[loc_type] = len(rules.get("can_border", []))
-        cannot_border_count[loc_type] = len(rules.get("cannot_border", []))
+    # Показываем border rules
+    border_rules = gen_rules.get("biome_border_rules", {})
+    smooth = border_rules.get("smooth_transitions", [])
+    sharp = border_rules.get("sharp_transitions", [])
+    buffers = border_rules.get("mandatory_buffers", [])
 
-    # Сортируем по количеству связей
-    sorted_types = sorted(
-        location_types.keys(),
-        key=lambda x: can_border_count[x],
-        reverse=True
-    )
+    print(f"\nПРАВИЛА ГРАНИЦ БИОМОВ:")
+    print(f"  Плавные переходы: {len(smooth)}")
+    print(f"  Резкие границы: {len(sharp)}")
+    print(f"  Обязательные буферы: {len(buffers)}")
 
-    print(f"\n{'Тип локации':<30} {'Может граничить':<20} {'Не может граничить':<20}")
-    print("-" * 80)
+    # Показываем region presets
+    presets = gen_rules.get("region_presets", {})
+    if presets:
+        # Убираем description из списка
+        preset_items = [(k, v) for k, v in presets.items() if k != "description" and isinstance(v, dict)]
+        print(f"\nПРЕСЕТЫ РЕГИОНОВ: {len(preset_items)}")
+        for preset_id, preset_data in preset_items[:3]:
+            name = preset_data.get("name", preset_id)
+            region_type = preset_data.get("region_type", "unknown")
+            print(f"  - {name} ({region_type})")
 
-    for loc_type in sorted_types:
-        can = can_border_count[loc_type]
-        cannot = cannot_border_count[loc_type]
-        print(f"{loc_type:<30} {can:<20} {cannot:<20}")
 
-    print(f"\nВсего типов локаций: {len(location_types)}")
-
-
-def analyze_biome(biome_name: str):
-    """Детальный анализ совместимости конкретного биома"""
+def analyze_race_affinity(race_name: str):
+    """Детальный анализ предпочтений расы"""
     print("\n" + "=" * 80)
-    print(f"АНАЛИЗ БИОМА: {biome_name}")
+    print(f"АНАЛИЗ РАСЫ: {race_name}")
     print("=" * 80)
 
-    loc_compat = load_location_compatibility()
-    location_types = loc_compat.get("location_types", {})
+    gen_rules = load_location_compatibility()
+    race_affinity = gen_rules.get("global_modifiers", {}).get("race_terrain_affinity", {})
 
-    if biome_name not in location_types:
-        print(f"Биом '{biome_name}' не найден в location_compatibility.yaml")
+    if race_name not in race_affinity:
+        print(f"Раса '{race_name}' не найдена в generation_rules.yaml")
+        available = list(race_affinity.keys())[:10]
+        print(f"\nДоступные расы: {', '.join(available)}")
+        if len(race_affinity) > 10:
+            print(f"... и ещё {len(race_affinity) - 10}")
         return
 
-    rules = location_types[biome_name]
+    preferences = race_affinity[race_name]
 
-    print(f"\nСвойства биома:")
-    print(f"  Spawn Weight: {rules.get('spawn_weight', 'не указан')}")
+    print(f"\nПРЕДПОЧТЕНИЯ МЕСТНОСТИ:")
 
-    can_border = rules.get("can_border", [])
-    cannot_border = rules.get("cannot_border", [])
+    # Сортируем по значению модификатора
+    sorted_prefs = sorted(preferences.items(), key=lambda x: x[1], reverse=True)
 
-    print(f"\nМОЖЕТ ГРАНИЧИТЬ С ({len(can_border)} типов):")
-    for neighbor in sorted(can_border):
-        print(f"  - {neighbor}")
+    print(f"\n{'Тег':<40} {'Модификатор':<15}")
+    print("-" * 55)
 
-    print(f"\nНЕ МОЖЕТ ГРАНИЧИТЬ С ({len(cannot_border)} типов):")
-    for neighbor in sorted(cannot_border):
-        print(f"  - {neighbor}")
+    for tag, modifier in sorted_prefs:
+        if modifier >= 2.0:
+            status = "Очень любит"
+        elif modifier >= 1.5:
+            status = "Предпочитает"
+        elif modifier >= 1.0:
+            status = "Нейтрально"
+        elif modifier >= 0.5:
+            status = "Избегает"
+        else:
+            status = "Непригодно"
 
-    # Проверяем обратную совместимость
-    print(f"\nПРОВЕРКА ОБРАТНОЙ СОВМЕСТИМОСТИ:")
-    inconsistencies = []
+        print(f"{tag:<40} {modifier:<8.1f} ({status})")
 
-    for neighbor in can_border:
-        if neighbor in location_types:
-            neighbor_can_border = location_types[neighbor].get("can_border", [])
-            if biome_name not in neighbor_can_border:
-                inconsistencies.append((neighbor, "can_border", "отсутствует обратная связь"))
-
-    for neighbor in cannot_border:
-        if neighbor in location_types:
-            neighbor_cannot_border = location_types[neighbor].get("cannot_border", [])
-            if biome_name not in neighbor_cannot_border:
-                inconsistencies.append((neighbor, "cannot_border", "отсутствует обратная связь"))
-
-    if inconsistencies:
-        print("  ПРЕДУПРЕЖДЕНИЯ:")
-        for neighbor, rule_type, reason in inconsistencies:
-            print(f"    - {neighbor} ({rule_type}): {reason}")
-    else:
-        print("  Все связи симметричны")
+    print(f"\nВсего предпочтений: {len(preferences)}")
 
 
 def main():
@@ -208,9 +204,9 @@ def main():
     print("ПРИМЕРЫ ДЕТАЛЬНОГО АНАЛИЗА")
     print("=" * 80)
 
-    # Анализируем несколько ключевых биомов
-    analyze_biome("kith_settlement")
-    analyze_biome("toxic_swamp")
+    # Анализируем несколько ключевых рас
+    analyze_race_affinity("kith")
+    analyze_race_affinity("fen-kin")
 
 
 if __name__ == "__main__":

@@ -107,10 +107,10 @@ def run_validation():
     except Exception as e:
         print(f"  [!] Не удалось проверить forbidden_combinations: {e}")
 
-    # 5. Валидация location_compatibility.yaml
-    print("\n--- Проверка location_compatibility.yaml ---")
+    # 5. Валидация generation_rules.yaml
+    print("\n--- Проверка generation_rules.yaml ---")
     try:
-        loc_compat_file = DATA_DIR / "location_compatibility.yaml"
+        loc_compat_file = DATA_DIR / "generation_rules.yaml"
         with open(loc_compat_file, 'r', encoding='utf-8') as f:
             loc_compat = yaml.safe_load(f)
 
@@ -129,7 +129,7 @@ def run_validation():
         print(f"  [OK] Проверено типов локаций: {len(location_types)}")
 
     except Exception as e:
-        print(f"  [!] Не удалось проверить location_compatibility.yaml: {e}")
+        print(f"  [!] Не удалось проверить generation_rules.yaml: {e}")
 
     print("\n--- Валидация завершена ---")
 
