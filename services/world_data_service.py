@@ -4,9 +4,8 @@ import random
 from typing import Dict, List, Optional, Any
 
 class WorldDataService:
-    def __init__(self):
-        self.data_path = Path("data")
-        
+    def __init__(self, project_root_path: Path):
+        self.data_path = project_root_path / "data"
         self._world_continents = self._load_yaml("world_anatomy.yaml")
         self._anatomy = self._load_yaml("data_tables/anatomy.yaml")
         self._location_templates = self._load_yaml("data_tables/location_templates.yaml")

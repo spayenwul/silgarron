@@ -4,9 +4,12 @@ from game import Game
 from services.hex_world_service import HexWorldService
 from services.config_loader import WorldGenerationConfig
 from services.persistence_service import PersistenceService
+from services.compatibility_service import CompatibilityService
 from models.location import Location
 from models.character import Character
 from services.llm_service import generate_location_description
+import yaml
+from pathlib import Path
 
 class GameSession:
     def __init__(
@@ -80,11 +83,22 @@ class GameSession:
         continent_data = self.world_data.get_continent_data(starting_continent)
         if not continent_data:
             raise ValueError(f"Континент '{starting_continent}' не найден")
-        
+
         self.game = Game(self.world_data, self.tag_registry, self.memory)
         self.game.player = Character(name=player_name)
-        
-        self.hex_world = HexWorldService(self.session_id, self.world_data, self.tag_registry, self.config)
+
+        # Создаем CompatibilityService с tags_registry и generation_rules
+        generation_rules = self._load_generation_rules()
+        tags_registry_data = self._load_tags_registry()
+        compatibility_service = CompatibilityService(generation_rules, tags_registry_data)
+
+        self.hex_world = HexWorldService(
+            self.session_id,
+            self.world_data,
+            self.tag_registry,
+            compatibility_service,
+            self.config
+        )
         center_region_id = self.hex_world.generate_continent(starting_continent, radius=self.config.default_continent_radius)
         
         center_region = self.hex_world.regions[center_region_id]
@@ -133,12 +147,25 @@ class GameSession:
     @classmethod
     def load_session(cls, session_id: str, persistence: PersistenceService, world_data, tag_registry, memory, config: WorldGenerationConfig = None):
         session_data = persistence.load_game_state(session_id)
-        if not session_data: return None
+        if not session_data:
+            return None
+
         instance = cls(session_id, persistence, world_data, tag_registry, memory, config)
         instance.current_biome_id = session_data["current_biome_id"]
         instance.game = Game(world_data, tag_registry, memory)
         instance.game.load_from_dict(session_data["game_state"])
-        instance.hex_world = HexWorldService.from_dict(session_data["hex_world_state"], world_data, tag_registry)
+
+        # Создаем CompatibilityService для загруженной сессии
+        generation_rules = instance._load_generation_rules()
+        tags_registry_data = instance._load_tags_registry()
+        compatibility_service = CompatibilityService(generation_rules, tags_registry_data)
+
+        instance.hex_world = HexWorldService.from_dict(
+            session_data["hex_world_state"],
+            world_data,
+            tag_registry,
+            compatibility_service
+        )
         return instance
     
     def _validate_biome_exists(self, biome_id: str) -> bool:
@@ -192,10 +219,22 @@ class GameSession:
         try:
             context = self.game._get_layered_context(f"описание {biome_data.name}")
             description = generate_location_description(
-                tags=biome_data.tags, 
+                tags=biome_data.tags,
                 context=context
             )
             return description
         except Exception as e:
             print(f"⚠️ Ошибка генерации описания: {e}")
             return f"Вы находитесь в биоме '{biome_data.name}'. Здесь царит атмосфера {', '.join(biome_data.tags[:3])}."
+
+    def _load_generation_rules(self) -> Dict:
+        """Загружает generation_rules.yaml"""
+        rules_path = Path(__file__).parent.parent / "data" / "generation_rules.yaml"
+        with open(rules_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f)
+
+    def _load_tags_registry(self) -> Dict:
+        """Загружает tags_registry.yaml"""
+        tags_path = Path(__file__).parent.parent / "data" / "tags_registry.yaml"
+        with open(tags_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f)

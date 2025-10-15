@@ -367,12 +367,18 @@ class HexWorldService:
         }
     
     @classmethod
-    def from_dict(cls, data: dict, world_data_service, tag_registry):
+    def from_dict(cls, data: dict, world_data_service, tag_registry, compatibility_service: CompatibilityService):
         config = WorldGenerationConfig(**data.get("config", {})) if "config" in data else None
-        instance = cls(data["session_id"], world_data_service, tag_registry, config)
-        
+        instance = cls(
+            data["session_id"],
+            world_data_service,
+            tag_registry,
+            compatibility_service,
+            config
+        )
+
         instance.regions = {rid: RegionData.from_dict(rdata) for rid, rdata in data["regions"].items()}
         instance.biomes = {bid: BiomeData.from_dict(bdata) for bid, bdata in data["biomes"].items()}
         instance.hex_to_region = {HexCoord.from_string(h_str): r_id for h_str, r_id in data["hex_to_region"].items()}
-        
+
         return instance
