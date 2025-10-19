@@ -592,7 +592,7 @@ class MemoryService:
 class WorldDataService:
     def __init__(self):
         self._world_continents = self._load_yaml("world_anatomy.yaml")
-        self._location_compatibility = self._load_yaml("location_compatibility.yaml")
+        self._generation_rules = self._load_yaml("generation_rules.yaml")  # ⚠️ ПЕРЕИМЕНОВАНО (был location_compatibility.yaml)
         self._anatomy = self._load_yaml("data_tables/anatomy.yaml")
         self._location_templates = self._load_yaml("data_tables/location_templates.yaml")
 ```
@@ -625,68 +625,91 @@ class TagRegistry:
 
 #### ✅ `services/compatibility_service.py` ⭐ НОВЫЙ (Sprint 3)
 
-**Статус:** ✅ ПОЛНОСТЬЮ РЕАЛИЗОВАНО (15 октября 2025)
+**Статус:** ✅ ПОЛНОСТЬЮ РЕАЛИЗОВАНО (15 октября 2025) + **HYBRID FORMULA** (недокументировано)
 **Назначение:** Централизованная система оценки совместимости биомов и рас
 
 ```python
+class CompatibilityLevel(Enum):
+    """Уровни совместимости (добавлено после Sprint 3)"""
+    INCOMPATIBLE = 0      # Абсолютно несовместимо
+    POOR = 1              # Плохая совместимость (0.1 - 0.4)
+    MODERATE = 2          # Умеренная (0.4 - 0.8)
+    GOOD = 3              # Хорошая (0.8 - 1.5)
+    EXCELLENT = 4         # Отличная (> 1.5)
+
+@dataclass
+class CompatibilityScore:
+    """Структурированный результат совместимости (добавлено после Sprint 3)"""
+    raw_score: float
+    level: CompatibilityLevel
+    breakdown: Dict[str, float] = field(default_factory=dict)
+    blocking_factors: List[str] = field(default_factory=list)
+
+    @property
+    def is_compatible(self) -> bool:
+        return self.raw_score > 0.1  # Порог совместимости
+
 class CompatibilityService:
-    def __init__(self, tags_registry: Dict):
+    def __init__(self, generation_rules: Dict, tags_registry: Dict):
+        # ⚠️ ИЗМЕНЕНИЕ: Теперь принимает generation_rules + tags_registry
+        self.rules = generation_rules
         self.tags_registry = tags_registry
         self._compatibility_cache = {}
 
+        # Извлекаем правила совместимости
+        compat_rules = self.tags_registry.get('global_compatibility_rules', {})
+        self.synergies = compat_rules.get('synergies', [])
+        self.conflicts = compat_rules.get('conflicts', [])
+        self.forbidden_combinations = self.tags_registry.get('validation_rules', {}).get('forbidden_combinations', [])
+
+    def calculate_race_biome_score(
+        self,
+        race_data: Dict[str, Any],
+        biome_data: Dict[str, Any]
+    ) -> CompatibilityScore:
+        """
+        ⚠️ НОВАЯ HYBRID FORMULA (недокументировано до сих пор):
+
+        Formula = (base_affinity + situational_bonus + penalty + synergy - conflict) * multiplier
+
+        Где:
+        - base_affinity: Аддитивная база из локальных правил расы
+        - situational_bonus: Контекстные бонусы (аддитивно)
+        - penalty: Штрафы (аддитивно, отрицательные)
+        - multiplier: Мультипликативный модификатор для ключевых синергий
+        - synergy_bonus: Глобальные синергии из tags_registry
+        - conflict_penalty: Глобальные конфликты из tags_registry
+
+        Legacy support: Если новые ключи отсутствуют, использует старую
+        мультипликативную формулу (preferred/avoided weights)
+        """
+
     def calculate_biome_compatibility(
         self,
-        biome_tags: List[str],
-        neighbor_tags_list: List[List[str]]
-    ) -> Dict:
+        candidate_biome_tags: Set[str],
+        neighbor_biomes_tags: List[Set[str]]
+    ) -> CompatibilityScore:
         """
         Оценивает совместимость биома с соседями
 
         Returns:
-        {
-            "score": float,  # 0.0 (несовместим) - 5.0+ (очень совместим)
-            "breakdown": {
-                "base_score": 1.0,
-                "synergies": [...],
-                "conflicts": [...],
-                "forbidden": [...]
-            }
-        }
+            CompatibilityScore с детальной информацией:
+            - raw_score: 0.0 (несовместим) - 5.0+ (очень совместим)
+            - level: INCOMPATIBLE/POOR/MODERATE/GOOD/EXCELLENT
+            - breakdown: детальная разбивка score
+            - blocking_factors: причины блокировки
         """
-        # 1. Проверка forbidden_combinations → score = 0
-        # 2. Базовый score = 1.0
-        # 3. Применение synergies (увеличивают score)
-        # 4. Применение conflicts (уменьшают score)
 
     def find_best_biome_for_region(
         self,
-        candidate_biomes: List[str],
-        neighbor_biomes: List[str],
-        location_data: Dict
-    ) -> Optional[str]:
+        candidate_biomes: List[Dict[str, Any]],
+        placed_neighbors: List[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
         """
         Выбирает оптимальный биом из кандидатов
 
-        Учитывает:
-        - Совместимость с соседями
-        - Совместимость с расой (если указана)
-        - Сортировку по score
-        """
-
-    def calculate_race_biome_score(
-        self,
-        race_tags: List[str],
-        biome_tags: List[str],
-        race_config: Dict,
-        biome_config: Dict
-    ) -> float:
-        """
-        Оценивает пригодность биома для расы
-
-        Учитывает:
-        - Forbidden combinations (tags_registry)
-        - Preferred/avoided biomes (локальные правила расы)
-        - Глобальные synergies/conflicts
+        Returns:
+            Словарь с данными лучшего биома или None
         """
 ```
 
@@ -715,6 +738,73 @@ class HexWorldService:
     def from_dict(cls, data: Dict, compatibility_service: CompatibilityService):
         return cls(data, compatibility_service)
 ```
+
+**⚠️ ДВУХУРОВНЕВАЯ АРХИТЕКТУРА HEX-СЕТКИ (недокументировано):**
+
+HexWorldService использует двухуровневую гексагональную систему:
+
+1. **World Level (регионы)**: Макро-карта мира из регионов на гекс-сетке
+2. **Local Level (биомы)**: Каждый регион содержит несколько биомов на локальной гекс-сетке
+
+```python
+# Ключевые изменения в архитектуре:
+
+@dataclass
+class BiomeData:
+    """ИЗМЕНЕНО: Биом теперь имеет hex_coord вместо pixel_position"""
+    id: str
+    parent_region_id: str
+    hex_coord: HexCoord  # <-- Координата на локальной карте региона
+    biome_type: str
+    tags: Set[str]
+    # pixel_position: удалено
+
+class HexWorldService:
+    def get_world_map_for_ui(self) -> Dict:
+        """Возвращает граф регионов для отображения на макро-карте"""
+
+    def get_local_map_for_ui(self, region_id: str) -> Dict:
+        """Возвращает граф биомов внутри конкретного региона"""
+
+    def _generate_local_biome_layout(self, count: int) -> List[HexCoord]:
+        """
+        КОМПАКТНЫЙ КЛАСТЕРНЫЙ АЛГОРИТМ размещения биомов.
+
+        Генерирует компактный кластер гексов, а не линию.
+        Начинает с центра (0,0) и расширяется в стороны.
+
+        Алгоритм:
+        1. Начинаем с центра (0, 0)
+        2. Поддерживаем список boundary (граница кластера)
+        3. На каждой итерации:
+           - Выбираем случайный гекс из boundary
+           - Находим его свободных соседей
+           - Добавляем случайного соседа в кластер
+           - Если у гекса нет свободных соседей, убираем из boundary
+        """
+
+    def find_best_biome_for_region(
+        self,
+        candidate_biomes: List[Dict],
+        placed_neighbors: List[Dict]
+    ) -> Optional[Dict]:
+        """
+        ИНТЕГРАЦИЯ С COMPATIBILITYSERVICE.
+
+        Выбирает оптимальный биом из кандидатов с учетом:
+        - Совместимости с уже размещенными соседями
+        - Тегов биома
+        - Правил генерации
+
+        Returns:
+            Лучший биом или None если все несовместимы
+        """
+```
+
+**Архитектурное решение:** Двухуровневая система позволяет:
+- Отдельно рендерить макро-карту (регионы) и детальную карту (биомы региона)
+- Генерировать компактные кластеры биомов вместо линейных структур
+- Использовать CompatibilityService для умного размещения биомов
 
 **Реализованные тесты (Sprint 3):**
 
@@ -929,24 +1019,46 @@ world_continents:
 
 ---
 
-#### ✅ `data/location_compatibility.yaml`
+#### ✅ `data/generation_rules.yaml` ⚠️ ПЕРЕИМЕНОВАНО
 
-**Статус:** ПРАВИЛА ГЕНЕРАЦИИ  
-**Содержание:** Правила совместимости биомов
+**Статус:** ПРАВИЛА ГЕНЕРАЦИИ ⚠️ (был `location_compatibility.yaml`, теперь `generation_rules.yaml`)
+**Содержание:** Расширенные правила процедурной генерации мира (660 строк)
 
 ```yaml
-location_types:
-  kith_settlement:
-    can_border: [pulsating_plains, spore_savanna, ...]
-    cannot_border: [toxic_swamp, blood_clot_thicket, ...]
-    spawn_weight: 15
+meta:
+  schema_version: "2.0.0"
+  last_updated: "2025-10-05"
 
-biome_rules:
-  dermal_plateau:
-    allowed_types: [kith_settlement, pulsating_plains, ...]
+global_modifiers:
+  race_terrain_affinity:
+    kith:
+      terrain:flat: 2.5
+      surface:stable: 3.0
+      ecology:fertile: 1.8
+
+  resource_settlement_bonus:
+    resource:bone_chitin: 2.0
+    resource:pure_lymph: 2.5
+
+biome_border_rules:
+  smooth_transitions: [...]
+  sharp_transitions: [...]
+  mandatory_buffers: [...]
+
+poi_placement_rules:
+  poi_types:
+    village:
+      required_tags: [surface:stable, ecology:fertile]
+      forbidden_tags: [danger_level > 6]
+
+compatibility_formulas:
+  race_biome_score:
+    formula: "score = base_compatibility * tag_synergy_product * global_modifier"
 ```
 
-**Оценка:** ✅ Критически важный файл, работает отлично
+**Оценка:** ✅ Критически важный файл, значительно расширен (10 разделов)
+
+**⚠️ ВАЖНОЕ ИЗМЕНЕНИЕ:** Файл переименован из `location_compatibility.yaml` в `generation_rules.yaml` после Sprint 3. Документация обновлена.
 
 ---
 
@@ -2024,7 +2136,7 @@ rpg-project/
 │
 ├── data/                            ✅ World lore & rules
 │   ├── world_anatomy.yaml           ✅ Continents
-│   ├── location_compatibility.yaml ✅ Generation rules
+│   ├── generation_rules.yaml        ✅ Generation rules (⚠️ ПЕРЕИМЕНОВАНО из location_compatibility.yaml)
 │   ├── intents.json                 ✅ Training data
 │   ├── tags_registry.yaml           ⚠️ Incomplete
 │   └── data_tables/                 ✅ Detailed lore

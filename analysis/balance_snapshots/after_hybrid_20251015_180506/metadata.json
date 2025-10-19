@@ -1,0 +1,12 @@
+{
+  "name": "after_hybrid",
+  "timestamp": "20251015_180506",
+  "datetime": "2025-10-15T18:05:06.636177",
+  "directory": "E:\\neuro_rpg\\analysis\\balance_snapshots\\after_hybrid_20251015_180506",
+  "graphs": [
+    "compatibility_distribution.png",
+    "race_specialization.png",
+    "biome_frequency.png",
+    "adjacency_matrix.png"
+  ]
+}

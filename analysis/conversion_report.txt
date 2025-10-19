@@ -1,0 +1,31 @@
+================================================================================
+ОТЧЕТ О КОНВЕРТАЦИИ В ГИБРИДНУЮ ФОРМУЛУ
+================================================================================
+
+Дата: 2025-10-15 18:07:07
+Бэкап: E:\neuro_rpg\data\backups\inhabitants_backup_20251015_180707.yaml
+Конвертировано: 8
+Пропущено: 2
+
+--------------------------------------------------------------------------------
+ДЕТАЛИ КОНВЕРТАЦИИ:
+--------------------------------------------------------------------------------
+
+[OK] kith: converted
+     base_affinity: 2, multipliers: 3, situational: 1, penalties: 3
+[OK] pulsars: converted
+     base_affinity: 2, multipliers: 2, situational: 0, penalties: 3
+[SKIP] fen-kin: уже в гибридном формате
+[SKIP] ursines: уже в гибридном формате
+[OK] synaptics: converted
+     base_affinity: 0, multipliers: 4, situational: 1, penalties: 3
+[OK] geodes: converted
+     base_affinity: 1, multipliers: 2, situational: 1, penalties: 3
+[OK] dorsals: converted
+     base_affinity: 2, multipliers: 2, situational: 0, penalties: 3
+[OK] silt_weavers: converted
+     base_affinity: 4, multipliers: 0, situational: 0, penalties: 3
+[OK] saprophytes: converted
+     base_affinity: 3, multipliers: 1, situational: 1, penalties: 2
+[OK] chimerics: converted
+     base_affinity: 0, multipliers: 4, situational: 0, penalties: 2

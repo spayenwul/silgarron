@@ -1,0 +1,12 @@
+{
+  "name": "after_full_conversion",
+  "timestamp": "20251015_180721",
+  "datetime": "2025-10-15T18:07:21.934916",
+  "directory": "E:\\neuro_rpg\\analysis\\balance_snapshots\\after_full_conversion_20251015_180721",
+  "graphs": [
+    "compatibility_distribution.png",
+    "race_specialization.png",
+    "biome_frequency.png",
+    "adjacency_matrix.png"
+  ]
+}

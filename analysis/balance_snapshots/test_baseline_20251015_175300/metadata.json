@@ -1,0 +1,12 @@
+{
+  "name": "test_baseline",
+  "timestamp": "20251015_175300",
+  "datetime": "2025-10-15T17:53:00.385923",
+  "directory": "E:\\neuro_rpg\\analysis\\balance_snapshots\\test_baseline_20251015_175300",
+  "graphs": [
+    "compatibility_distribution.png",
+    "race_specialization.png",
+    "biome_frequency.png",
+    "adjacency_matrix.png"
+  ]
+}
