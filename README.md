@@ -29,9 +29,34 @@ python api/main.py
 Контент лора (`docs/lore/`) находится в **приватном Git Submodule**:
 - Репозиторий: `silgarron-lore` (private)
 - Доступ: только для core team
-- Подробная инструкция: [`docs/GIT_SUBMODULE_SETUP.md`](docs/GIT_SUBMODULE_SETUP.md)
 
 **Для доступа к лору** нужны права на приватный репозиторий `silgarron-lore`.
+
+#### Основные команды для работы с submodules:
+
+```bash
+# Клонировать проект с submodules
+git clone --recurse-submodules <url>
+
+# Инициализировать submodules (если забыли при clone)
+git submodule init
+git submodule update
+
+# Обновить submodules до последних коммитов
+git submodule update --remote
+
+# Работа с лором (это отдельный git репозиторий)
+cd docs/lore
+git pull origin main  # получить обновления
+# внести изменения...
+git add .
+git commit -m "lore: Update content"
+git push origin main
+cd ../..
+git add docs/lore
+git commit -m "chore: Update lore submodule"
+git push
+```
 
 ## 📚 Документация
 
