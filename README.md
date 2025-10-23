@@ -5,8 +5,10 @@ Physics-based text RPG где AI — это физический движок.
 ## 🚀 Быстрый Старт
 
 ```bash
-# 1. Клонировать репозиторий
-git clone <repo-url>
+# 1. Клонировать репозиторий с submodules
+git clone --recurse-submodules <repo-url>
+# Если уже клонировали без --recurse-submodules:
+# git submodule init && git submodule update
 
 # 2. Установить зависимости
 pip install -r requirements.txt
@@ -21,6 +23,15 @@ python main.py
 # 5. Или запустить API сервер
 python api/main.py
 ```
+
+### 🔐 Работа с приватным контентом (Lore)
+
+Контент лора (`docs/lore/`) находится в **приватном Git Submodule**:
+- Репозиторий: `silgarron-lore` (private)
+- Доступ: только для core team
+- Подробная инструкция: [`docs/GIT_SUBMODULE_SETUP.md`](docs/GIT_SUBMODULE_SETUP.md)
+
+**Для доступа к лору** нужны права на приватный репозиторий `silgarron-lore`.
 
 ## 📚 Документация
 
