@@ -1,7 +1,101 @@
 # 📦 BACKLOG - Очередь Задач
 
-**Проект:** Silgarron RPG  
+**Проект:** Silgarron RPG
 **Документ:** Бэклог будущих спринтов и идей
+
+---
+
+## ⚠️ АРХИТЕКТУРНОЕ РЕШЕНИЕ: Изменение приоритетов после Sprint 1
+
+**Дата:** 20 октября 2025
+**Статус:** Принято (см. ADR-011, ADR-012)
+
+### Контекст
+
+После завершения базовой двухуровневой системы hex-генерации (Region→Biome) и анализа текущей архитектуры выявлено несоответствие между реализованной системой и изначальным видением проекта.
+
+**Текущая система:**
+- Region-container подход (регионы содержат биомы)
+- Pixel-based позиционирование → hex-based координаты (частично мигрировано)
+- Компактный кластерный алгоритм для биомов
+- Отсутствие глобальной карты
+
+**Целевая система (NEW):**
+- Flat hex grid 256×256 (Global Map)
+- Seed-based generation (Perlin noise)
+- Delta-based saves (95% экономия места)
+- 20×20 детализация каждого гекса (Local Map)
+- POI placement rules (деревни, подземелья, драконы)
+
+### Архитектурное решение
+
+**НОВЫЙ ПРИОРИТЕТ 1:** Global Map Generator (WorldGenerator)
+
+Реализация глобальной карты мира с seed-based генерацией становится приоритетом №1 для дальнейшей разработки, выше чем Function Calling (Sprint 2).
+
+**Обоснование:**
+1. **Философия "нарративной плотности"**: Компактный мир 256×256 vs бесконечная процедурная карта
+2. **Технический долг**: Текущая система Region→Biome не масштабируется для полноценной игры
+3. **Воспроизводимость**: Seed-based generation критичен для тестирования и мультиплеера
+4. **Экономия ресурсов**: Delta-saves снижают размер сохранений с 327MB до ~50KB
+
+### Последствия для бэклога
+
+**Изменения в порядке спринтов:**
+
+```
+СТАРЫЙ ПОРЯДОК:
+Sprint 1 → Sprint 2 (Function Calling) → Sprint 3 (World Gen) → Sprint 4 (Physics)
+
+НОВЫЙ ПОРЯДОК:
+Sprint 1 → Sprint 3.5 (Global Map Generator) → Sprint 2 (Function Calling) → Sprint 4 (Physics)
+       └──────────────┬──────────────┘
+                  Приоритет №1
+```
+
+**Sprint 3.5: Global Map Generator** (NEW)
+- **Время:** 1-2 недели (40 часов)
+- **Приоритет:** 🔴 Критический
+- **Компоненты:**
+  - `core/world_generator.py` - seed-based генератор
+  - `models/global_map_data.py` - модель глобальной карты
+  - `services/poi_placement_service.py` - размещение POI
+  - `services/delta_tracker.py` - отслеживание изменений
+  - Рефакторинг `HexWorldService` (legacy → new system)
+
+**Устаревшие компоненты (Deprecation List):**
+- `HexWorldService.generate_continent()` - заменить на `WorldGenerator.generate_global_hex()`
+- `RegionData` model - удалить после миграции
+- `SpatialLocationGenerator` - переработать для новой архитектуры
+
+**Feature flag strategy:**
+```yaml
+# config/world_generation.yaml
+world_generation:
+  use_new_system: false  # Постепенная миграция
+  new_system:
+    global_map_size: 256
+    local_map_size: 20
+    seed: null  # auto-generate
+```
+
+### Обновления документации
+
+- ✅ `docs/Technical_Design_Document.md` - Добавлена секция 3.7 (Архитектура генерации мира)
+- ✅ `docs/Technical_Design_Document.md` - Добавлена секция 4.12 (Статус компонентов генерации)
+- ✅ `docs/Technical_Design_Document.md` - Добавлена секция 4.13 (Устаревшие компоненты)
+- ✅ **`docs/GLOBAL_MAP_IMPLEMENTATION_GUIDE.md`** - Полное руководство по реализации (READ THIS FIRST!)
+- ✅ `docs/architecture_decision.md` - ADR-011 (Global Map Architecture) + ADR-012 (Размер карты)
+- ✅ `docs/sprints/SPRINT_3.5_GLOBAL_MAP.md` - Детальный план создан (версия 2.1)
+
+### Временная линия миграции
+
+- **Ноябрь 2025**: Реализация WorldGenerator + feature flag
+- **Декабрь 2025**: Тестирование обеих систем параллельно
+- **Январь 2026**: Переход на новую систему по умолчанию
+- **Февраль 2026**: Удаление legacy кода (cleanup)
+
+**Примечание:** Старые сохранения НЕ совместимы с новой системой. Добавить версионирование: `save_version: "2.0"`.
 
 ---
 
