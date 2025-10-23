@@ -458,35 +458,35 @@ def _calculate_flow_accumulation(self, structure_map: np.ndarray, sources: list)
 **Время:** 5-6 часов (самая сложная задача)
 
 **Концепция:**
-**"Вдох"** — ключевая механика Сильгаррона:
-- Воздух втягивается в Альвеолярные каверны (подземные "лёгкие")
-- Создаёт **воздушные потоки** от поверхности вниз
-- **Высушивает** территории на пути
+**"Выдох"** — ключевая механика Сильгаррона (фаза позднего Выдоха):
+- Альвеолярные каверны **источают** биоактивные газы и споры из недр мира
+- Создаёт **зоны биологической активности** вокруг каверн
+- **Насыщает атмосферу** спорами, создавая туманы (Биолюм)
 
 ```python
 def _generate_respiratory_system(self, structure_map: np.ndarray) -> dict:
     """
-    Генерирует дыхательную систему мира.
+    Генерирует дыхательную систему мира (фаза Выдоха).
 
-    Альвеолярные каверны втягивают воздух, создавая:
-    - Воздушные потоки (airflow)
-    - Зоны высушивания (низкая влажность)
-    - "Ветровые коридоры"
+    Альвеолярные каверны источают биоактивные вещества, создавая:
+    - Концентрацию выброса (exhalation_influence)
+    - Зоны насыщения спорами (высокая биоактивность)
+    - "Споровые коридоры" (туманы Биолюм)
     """
 
-    # 1. Разместить Альвеолярные каверны
+    # 1. Разместить Альвеолярные каверны (источники выброса)
     caverns = self._place_alveolar_caverns(structure_map)
 
-    # 2. BFS для расчёта воздушных потоков
-    airflow_map = self._calculate_airflow_to_caverns(caverns)
+    # 2. BFS для расчёта концентрации выдыхаемых веществ
+    exhalation_map = self._calculate_exhalation_influence(caverns)
 
-    # 3. Рассчитать влияние на влажность
-    desiccation_map = self._calculate_desiccation_effect(airflow_map)
+    # 3. Рассчитать насыщенность биоактивными веществами
+    bioactive_map = self._calculate_bioactive_effect(exhalation_map)
 
     return {
-        'caverns': caverns,              # List[Tuple[int, int]]
-        'airflow_intensity': airflow_map, # float[height, width] (0-1)
-        'desiccation': desiccation_map   # float[height, width] (0-1)
+        'caverns': caverns,                      # List[Tuple[int, int]]
+        'exhalation_influence': exhalation_map,  # float[height, width] (0-1)
+        'bioactive_saturation': bioactive_map    # float[height, width] (0-1)
     }
 
 def _place_alveolar_caverns(self, structure_map: np.ndarray) -> list:
@@ -628,34 +628,34 @@ def _poisson_disk_sampling(self, candidates: list, n: int) -> list:
 
     return selected
 
-def _calculate_airflow_to_caverns(self, caverns: list) -> np.ndarray:
+def _calculate_exhalation_influence(self, caverns: list) -> np.ndarray:
     """
-    BFS для расчёта интенсивности воздушного потока к кавернам.
+    BFS для расчёта концентрации выдыхаемых веществ от каверн.
 
-    Чем ближе к каверне, тем сильнее "тяга".
+    Чем ближе к каверне, тем выше концентрация спор и биоактивных газов.
     """
     from collections import deque
 
-    airflow_map = np.zeros((self.height, self.width))
+    exhalation_map = np.zeros((self.height, self.width))
     visited = np.zeros((self.height, self.width), dtype=bool)
     queue = deque()
 
-    # Инициализация: каверны = максимальная тяга
+    # Инициализация: каверны = максимальная концентрация (источники)
     for x, y in caverns:
-        airflow_map[y, x] = 1.0
+        exhalation_map[y, x] = 1.0
         visited[y, x] = True
         queue.append((x, y, 1.0))
 
-    # BFS с затуханием
+    # BFS с затуханием концентрации
     directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 
     while queue:
         x, y, intensity = queue.popleft()
 
-        # Затухание с расстоянием
+        # Затухание концентрации с расстоянием
         new_intensity = intensity * 0.95  # 5% затухание на каждый шаг
 
-        if new_intensity < 0.01:  # Слишком слабо
+        if new_intensity < 0.01:  # Концентрация слишком мала
             continue
 
         for dx, dy in directions:
@@ -664,27 +664,31 @@ def _calculate_airflow_to_caverns(self, caverns: list) -> np.ndarray:
             if 0 <= nx < self.width and 0 <= ny < self.height:
                 if not visited[ny, nx]:
                     visited[ny, nx] = True
-                    airflow_map[ny, nx] = new_intensity
+                    exhalation_map[ny, nx] = new_intensity
                     queue.append((nx, ny, new_intensity))
 
-    return airflow_map
+    return exhalation_map
 
-def _calculate_desiccation_effect(self, airflow_map: np.ndarray) -> np.ndarray:
+def _calculate_bioactive_effect(self, exhalation_map: np.ndarray) -> np.ndarray:
     """
-    Рассчитывает эффект высушивания от воздушных потоков.
+    Рассчитывает насыщенность биоактивными веществами.
 
-    Сильный воздушный поток → низкая влажность.
+    Высокая концентрация выдоха → высокая биоактивность:
+    - Токсичность
+    - Споровые туманы
+    - Мутагенные зоны
     """
-    # Прямая зависимость: airflow 1.0 → desiccation 1.0
-    desiccation_map = airflow_map.copy()
+    # Прямая зависимость: exhalation 1.0 → bioactive 1.0
+    bioactive_map = exhalation_map.copy()
 
-    return desiccation_map
+    return bioactive_map
 ```
 
 **Критерии завершения:**
-- ✅ Видны зоны высокой интенсивности airflow вокруг каверн
-- ✅ Визуализация показывает "воронки" притяжения
-- ✅ Тест: гексы рядом с кавернами имеют high airflow
+- ✅ Видны зоны высокой концентрации exhalation_influence вокруг каверн
+- ✅ Визуализация показывает "ореолы" излучения от источников
+- ✅ Тест: гексы рядом с кавернами имеют high exhalation_influence
+- ✅ Градиент концентрации затухает естественно (organic falloff)
 
 ---
 
@@ -795,7 +799,7 @@ tissues:
     structural_elevation: [0.3, 0.6]
     metabolic_temp: [15, 30]
     fluid_saturation: [0.4, 0.8]
-    airflow_intensity: [0.6, 1.0]  # Высокая активность вдоха
+    exhalation_influence: [0.6, 1.0]  # Высокая концентрация выдоха
 
     color: "#E8B4B8"  # Розовый (живая ткань)
     tags: [surface:dynamic, ecology:moderate, breathing:active]
@@ -809,7 +813,7 @@ tissues:
     structural_elevation: [0.45, 0.65]
     metabolic_temp: [18, 35]  # Мышцы тёплые
     fluid_saturation: [0.5, 0.95]  # Высокая васкуляризация
-    airflow_intensity: [0.0, 0.4]
+    exhalation_influence: [0.0, 0.4]
 
     color: "#8B1A1A"  # Тёмно-красный (мышцы)
     tags: [surface:stable, ecology:dense_vegetation, terrain:rough]
@@ -837,7 +841,7 @@ tissues:
     structural_elevation: [0.5, 0.75]
     metabolic_temp: [0, 15]  # Холодные (мёртвая защита)
     fluid_saturation: [0.0, 0.3]
-    airflow_intensity: [0.0, 0.3]
+    exhalation_influence: [0.0, 0.3]
 
     color: "#2F4F4F"  # Тёмно-серый (хитин)
     tags: [surface:stable, ecology:barren, terrain:elevated]
@@ -851,38 +855,50 @@ tissues:
     structural_elevation: [0.7, 1.0]
     metabolic_temp: [-20, 10]  # Очень холодный (мёртвая кость)
     fluid_saturation: [0.0, 0.2]
-    airflow_intensity: [0.0, 0.2]
+    exhalation_influence: [0.0, 0.2]
 
     color: "#E8E8D0"  # Костяной белый
     tags: [surface:stable, terrain:elevated, resource:bone_chitin, danger_level:5]
 
-  # --- ВЫСОХШИЕ ТКАНИ ---
-  desiccated_tissue:
-    name: "Высохшая ткань"
-    description: "Зоны, высушенные воздушными потоками"
+  # --- ТКАНИ ФАЗ ВЫДОХА (споровые зоны) ---
+  necrotic_swamps:
+    name: "Некротические топи"
+    description: "Застойные болота с ядовитыми испарениями в зонах высокого выдоха"
+    priority: 25
+
+    structural_elevation: [0.0, 0.35]
+    metabolic_temp: [15, 30]
+    fluid_saturation: [0.6, 1.0]  # Влажные
+    exhalation_influence: [0.7, 1.0]  # Высокая концентрация спор
+
+    color: "#4A5D23"  # Болотно-зелёный (токсичный)
+    tags: [surface:unstable, ecology:toxic, danger:disease, breathing:spore_clouds]
+
+  spore_choked_thicket:
+    name: "Споровые заросли"
+    description: "Плотные туманы спор, странная биолюминесцентная растительность"
     priority: 20
 
-    structural_elevation: [0.45, 0.65]
-    metabolic_temp: [25, 50]  # Жаркие (от ветра)
-    fluid_saturation: [0.0, 0.2]  # Сухо!
-    airflow_intensity: [0.7, 1.0]  # Сильный вдох
+    structural_elevation: [0.3, 0.55]
+    metabolic_temp: [18, 35]
+    fluid_saturation: [0.4, 0.7]
+    exhalation_influence: [0.5, 0.8]  # Средне-высокая концентрация
 
-    color: "#C19A6B"  # Коричневый (сухая кожа)
-    tags: [surface:unstable, ecology:barren, climate:arid]
+    color: "#8B7355"  # Тёмно-бежевый с зеленоватым оттенком
+    tags: [surface:dynamic, ecology:mutated, breathing:spore_clouds, visibility:low]
 
-  # --- ТОКСИЧНЫЕ ТКАНИ ---
-  necrotic_tissue:
-    name: "Некротическая ткань"
-    description: "Гниющие, токсичные участки (дельты, болота)"
-    priority: 15
+  mutated_dermis:
+    name: "Мутировавшая дерма"
+    description: "Участки кожи, изменённые долгим воздействием биоактивных веществ"
+    priority: 18
 
-    structural_elevation: [0.0, 0.25]
-    metabolic_temp: [15, 35]
-    fluid_saturation: [0.8, 1.0]
-    toxicity: [0.7, 1.0]  # Специальный слой (добавить)
+    structural_elevation: [0.4, 0.6]
+    metabolic_temp: [20, 40]  # Высокая активность
+    fluid_saturation: [0.5, 0.9]
+    exhalation_influence: [0.6, 0.9]  # Высокая концентрация
 
-    color: "#2C5F2D"  # Болотно-зелёный
-    tags: [surface:unstable, ecology:toxic, danger:disease]
+    color: "#B8860B"  # Тёмное золото (мутации)
+    tags: [surface:unstable, ecology:mutated, breathing:active, danger:mutation]
 
   # --- АЛЬВЕОЛЯРНЫЕ КАВЕРНЫ ---
   alveolar_vent:
@@ -927,8 +943,8 @@ def _assign_tissue_types(self, structure_map, lymph_network,
 
     lymph_network_map = lymph_network['network_map']
     lymph_intensity = lymph_network['intensity']
-    airflow_map = respiratory_data['airflow_intensity']
-    desiccation = respiratory_data['desiccation']
+    exhalation_map = respiratory_data['exhalation_influence']
+    bioactive = respiratory_data['bioactive_saturation']
     caverns = respiratory_data['caverns']
 
     for y in range(self.height):
@@ -937,7 +953,7 @@ def _assign_tissue_types(self, structure_map, lymph_network,
             elevation = structure_map[y, x]
             temp = metabolism_map[y, x]
             fluid_sat = lymph_intensity[y, x]
-            airflow = airflow_map[y, x]
+            exhalation = exhalation_map[y, x]
 
             # Специальные условия
             is_lymph = lymph_network_map[y, x]
@@ -945,7 +961,7 @@ def _assign_tissue_types(self, structure_map, lymph_network,
 
             # Выбор ткани
             tissue_type = self._select_tissue(
-                elevation, temp, fluid_sat, airflow,
+                elevation, temp, fluid_sat, exhalation,
                 is_lymph, is_cavern, tissue_rules
             )
 
@@ -959,9 +975,9 @@ def _assign_tissue_types(self, structure_map, lymph_network,
 
                 # НОВЫЕ ПОЛЯ для биопанка:
                 metabolic_heat=temp,
-                airflow_intensity=airflow,
+                exhalation_influence=exhalation,
                 is_lymph_channel=is_lymph,
-                vent_attractor_coord=self._find_nearest_cavern(x, y, caverns) if airflow > 0.3 else None,
+                nearest_cavern_coord=self._find_nearest_cavern(x, y, caverns) if exhalation > 0.3 else None,
 
                 tags=tissue_rules[tissue_type]['tags']
             )
@@ -970,7 +986,7 @@ def _assign_tissue_types(self, structure_map, lymph_network,
 
     return sectors
 
-def _select_tissue(self, elev, temp, fluid_sat, airflow,
+def _select_tissue(self, elev, temp, fluid_sat, exhalation,
                   is_lymph, is_cavern, rules) -> str:
     """
     Выбирает ткань с учётом приоритетов.
@@ -1090,11 +1106,11 @@ class GlobalSector:
 
     # === АНАТОМИЧЕСКИЕ ОСОБЕННОСТИ (NEW!) ===
 
-    # Интенсивность воздушного потока (Дыхание)
-    airflow_intensity: float = 0.0  # 0.0-1.0 (нет → сильный вдох)
+    # Интенсивность выдоха (концентрация выдыхаемых спор/газов)
+    exhalation_influence: float = 0.0  # 0.0-1.0 (нет → максимальная концентрация)
 
-    # Координаты каверны, к которой тянется воздух
-    vent_attractor_coord: Optional[Tuple[int, int]] = None
+    # Координаты ближайшей альвеолярной каверны (источника выброса)
+    nearest_cavern_coord: Optional[Tuple[int, int]] = None
 
     # Является ли частью лимфатической сети
     is_lymph_channel: bool = False
@@ -1124,8 +1140,8 @@ class GlobalSector:
             "metabolic_heat": self.metabolic_heat,
             "moisture": self.moisture,
             "biome_type": self.biome_type,
-            "airflow_intensity": self.airflow_intensity,
-            "vent_attractor_coord": self.vent_attractor_coord,
+            "exhalation_influence": self.exhalation_influence,
+            "nearest_cavern_coord": self.nearest_cavern_coord,
             "is_lymph_channel": self.is_lymph_channel,
             "has_river": self.has_river,
             "poi_type": self.poi_type,
@@ -1191,7 +1207,7 @@ def visualize_anatomical_map(map_data: GlobalMapData, output_path: str):
     2. Tissue Morphology (типы тканей)
     3. Metabolic Heatmap (активность)
     4. Fluid Saturation (лимфа)
-    5. Airflow Map (дыхание)
+    5. Exhalation Intensity / Spore Density (дыхание — фаза Выдоха)
     """
 
     fig, axes = plt.subplots(2, 3, figsize=(24, 16))
@@ -1212,9 +1228,9 @@ def visualize_anatomical_map(map_data: GlobalMapData, output_path: str):
     plot_fluid_saturation(axes[1, 0], map_data)
     axes[1, 0].set_title('Fluid Saturation (Lymph)', fontsize=16, fontweight='bold')
 
-    # Слой 5: Карта воздушных потоков
-    plot_airflow_map(axes[1, 1], map_data)
-    axes[1, 1].set_title('Airflow Map (Breathing)', fontsize=16, fontweight='bold')
+    # Слой 5: Карта выдоха / концентрации спор
+    plot_exhalation_map(axes[1, 1], map_data)
+    axes[1, 1].set_title('Exhalation Intensity / Spore Density', fontsize=16, fontweight='bold')
 
     # Слой 6: Composite (все слои)
     plot_composite_scan(axes[1, 2], map_data)
@@ -1279,36 +1295,36 @@ def plot_fluid_saturation(ax, map_data):
     im = ax.imshow(fluids, cmap='viridis', origin='lower', vmin=0, vmax=1)
     plt.colorbar(im, ax=ax, label='Lymph Saturation (0=dry, 1=saturated)')
 
-def plot_airflow_map(ax, map_data):
-    """Отображает интенсивность воздушных потоков"""
-    airflow = np.zeros((map_data.height, map_data.width))
+def plot_exhalation_map(ax, map_data):
+    """Отображает концентрацию выдыхаемых спор и биоактивных газов"""
+    exhalation = np.zeros((map_data.height, map_data.width))
 
     for (q, r), sector in map_data.sectors.items():
-        airflow[r, q] = sector.airflow_intensity
+        exhalation[r, q] = sector.exhalation_influence
 
-    # Цветовая карта: cool (воздух)
-    im = ax.imshow(airflow, cmap='cool', origin='lower', vmin=0, vmax=1)
-    plt.colorbar(im, ax=ax, label='Airflow Intensity (0=still, 1=strong intake)')
+    # Цветовая карта: autumn (тёплые тона для споровых туманов)
+    im = ax.imshow(exhalation, cmap='autumn', origin='lower', vmin=0, vmax=1)
+    plt.colorbar(im, ax=ax, label='Exhalation Intensity (0=clear, 1=dense spore clouds)')
 
-    # Отметить каверны
+    # Отметить каверны (источники выброса)
     for (q, r), sector in map_data.sectors.items():
         if 'alveolar_vent' in sector.biome_type:
-            ax.plot(q, r, 'r*', markersize=10)
+            ax.plot(q, r, 'r*', markersize=10, label='Cavern (source)')
 
 def plot_composite_scan(ax, map_data):
     """Комбинированное изображение"""
-    # RGB: R=метаболизм, G=лимфа, B=воздух
+    # RGB: R=метаболизм, G=лимфа, B=выдох (споры)
     image = np.zeros((map_data.height, map_data.width, 3))
 
     for (q, r), sector in map_data.sectors.items():
         r_val = (sector.metabolic_heat + 20) / 70  # Нормализация temp
         g_val = sector.moisture
-        b_val = sector.airflow_intensity
+        b_val = sector.exhalation_influence
 
         image[r, q] = [r_val, g_val, b_val]
 
     ax.imshow(image, origin='lower')
-    ax.set_xlabel('Composite: R=Heat, G=Lymph, B=Airflow')
+    ax.set_xlabel('Composite: R=Heat, G=Lymph, B=Exhalation (Spores)')
 ```
 
 **Критерии завершения:**
