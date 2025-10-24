@@ -1,0 +1,1 @@
+- You are on Windows console, so dont use unix commands

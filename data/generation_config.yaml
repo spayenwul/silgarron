@@ -1,0 +1,352 @@
+# =============================================================================
+# GENERATION CONFIGURATION - Параметры генератора мира Сильгаррон
+# =============================================================================
+# Версия: 1.0.0
+# Дата: 24 октября 2025
+# Описание: Настраиваемые параметры для WorldGenerator
+#
+# ИСПОЛЬЗОВАНИЕ:
+#   from core.world_generator import WorldGenerator
+#   gen = WorldGenerator(seed="my_world", config_path="data/generation_config.yaml")
+#   result = gen.generate()
+#
+# ПРИМЕЧАНИЕ: Этот файл содержит ВСЕ настраиваемые параметры генератора.
+# Можно создавать копии для разных типов миров (равнины, горы, океаны и т.д.)
+# =============================================================================
+
+meta:
+  schema_version: "1.0.0"
+  description: "Параметры процедурной генерации глобальной карты 256×256"
+  compatible_with:
+    - world_generator.py v0.1.0
+    - tissue_rules.yaml v1.0.0
+
+# =============================================================================
+# 1. БАЗОВЫЕ ПАРАМЕТРЫ
+# =============================================================================
+
+world:
+  width: 256          # Ширина карты в гексах
+  height: 256         # Высота карты в гексах
+
+  # Название и описание (для метаданных)
+  name: "Сильгаррон - Живой Мир"
+  description: "Анатомическая процедурная карта мира как живого организма"
+
+# =============================================================================
+# 2. SKELETAL STRUCTURE (Phase 1.2) - Скелетная структура
+# =============================================================================
+# Управляет генерацией рельефа, хребта и рёбер
+
+skeletal:
+  # --- Perlin Noise Parameters ---
+  perlin:
+    scale: 100.0      # Масштаб шума (меньше = крупнее детали)
+    octaves: 4        # Количество октав (больше = больше деталей)
+    persistence: 0.5  # Влияние каждой октавы (0.5 = стандарт)
+    lacunarity: 2.0   # Частота между октавами (2.0 = стандарт)
+
+    # Примеры настроек для разных типов миров:
+    # - Равнины: scale=150, octaves=3, persistence=0.3
+    # - Горы: scale=80, octaves=5, persistence=0.6
+    # - Холмы: scale=100, octaves=4, persistence=0.5 (default)
+
+  # --- Ridge Mask Parameters ---
+  ridge:
+    center_x: 0.5     # Центр хребта по X [0.0-1.0] (0.5 = центр)
+    width: 0.15       # Ширина хребта [0.0-1.0] (0.15 = узкий)
+    intensity: 1.0    # Интенсивность хребта [0.0-2.0] (1.0 = нормальная)
+
+    # Примеры:
+    # - Широкий хребет: width=0.25, intensity=0.8
+    # - Узкий острый: width=0.10, intensity=1.2
+    # - Без хребта: width=0.0, intensity=0.0
+
+  # --- Rib Mask Parameters ---
+  ribs:
+    count: 8          # Количество рёбер с каждой стороны (8 = стандарт)
+    spacing: 25.0     # Расстояние между рёбрами в гексах
+    thickness: 8.0    # Толщина рёбер в гексах
+    intensity: 1.0    # Интенсивность рёбер [0.0-2.0]
+
+    # Примеры:
+    # - Больше рёбер: count=12, spacing=20
+    # - Толстые рёбра: thickness=12
+    # - Без рёбер: count=0
+
+  # --- Mixing Weights ---
+  weights:
+    base: 0.6         # Вес базового Perlin (60%)
+    ridge: 0.3        # Вес хребта (30%)
+    ribs: 0.1         # Вес рёбер (10%)
+    # Сумма должна быть 1.0
+
+# =============================================================================
+# 3. LYMPHATIC SYSTEM (Phase 1.3) - Лимфатическая система
+# =============================================================================
+# Управляет генерацией лимфатических каналов (циркуляция)
+
+lymphatic:
+  # --- Flow Accumulation Parameters ---
+  flow:
+    min_accumulation_for_source: 100  # Минимальный поток для истока (100 = стандарт)
+    channel_threshold: 0.02           # Порог для канала [0.0-1.0] (0.02 = узкие каналы)
+
+    # Примеры:
+    # - Больше истоков: min_accumulation_for_source=50
+    # - Широкие каналы: channel_threshold=0.05
+    # - Узкие каналы: channel_threshold=0.01
+
+  # --- Flat Area Resolution ---
+  flat_resolution:
+    noise_scale: 500.0    # Масштаб шума для плоских зон (500 = мелкий)
+    noise_strength: 0.001 # Сила шума [0.0-0.01] (0.001 = слабый)
+
+    # Примечание: Разрешает плоские области, добавляя микро-рельеф
+
+  # --- Source Detection ---
+  sources:
+    max_sources: 20       # Максимальное количество истоков (20 = стандарт)
+    min_distance: 30      # Минимальное расстояние между истоками (гексы)
+
+# =============================================================================
+# 4. RESPIRATORY SYSTEM (Phase 1.4) - Дыхательная система
+# =============================================================================
+# Управляет генерацией альвеолярных каверн и выдохом спор
+
+respiratory:
+  # --- Poisson Disk Sampling (Caverns) ---
+  caverns:
+    min_distance: 30.0        # Минимальное расстояние между кавернами (гексы)
+    max_caverns: 100          # Максимальное количество каверн
+    k_attempts: 30            # Попыток размещения на точку (30 = стандарт)
+
+    # Elevation range для размещения каверн
+    elevation_min: 0.2        # Не размещать ниже 0.2 (избегаем жидкости)
+    elevation_max: 0.7        # Не размещать выше 0.7 (избегаем кости)
+
+    # Примеры:
+    # - Больше каверн: max_caverns=150, min_distance=25
+    # - Меньше каверн: max_caverns=50, min_distance=40
+    # - В горах: elevation_min=0.4, elevation_max=0.8
+
+  # --- BFS Exhalation Spread ---
+  exhalation:
+    decay_rate: 0.92          # Сохранение интенсивности на шаг [0.0-1.0]
+    min_threshold: 0.01       # Остановка распространения при <1%
+    elevation_penalty: 0.1    # Штраф за подъём в гору [0.0-0.5]
+
+    # Примеры:
+    # - Дальше распространение: decay_rate=0.95, elevation_penalty=0.05
+    # - Ближе распространение: decay_rate=0.88, elevation_penalty=0.2
+
+  # --- Bioactive Saturation ---
+  bioactive:
+    threshold: 0.3            # Порог для активной зоны [0.0-1.0]
+
+    # Примечание: Выше порога = биоактивная зона
+
+# =============================================================================
+# 5. METABOLIC ACTIVITY (Phase 1.5) - Метаболическая активность
+# =============================================================================
+# Управляет синтезом температуры тканей
+
+metabolic:
+  # --- Base Temperature ---
+  base_temperature: 0.5       # Базовая температура [0.0-1.0] (0.5 = умеренная)
+
+  # --- Component Contributions ---
+  contributions:
+    bone_penalty: 0.4         # Штраф температуры на хребте [0.0-1.0]
+    lymph_bonus: 0.3          # Бонус от лимфы [0.0-1.0]
+    bioactive_bonus: 0.25     # Бонус от биоактивности [0.0-1.0]
+    lowland_bonus: 0.2        # Бонус для низин [0.0-1.0]
+
+  # --- Thresholds ---
+  thresholds:
+    bone_ridge: 0.7           # Порог хребта для холода [0.0-1.0]
+    lowland_elevation: 0.4    # Порог низин для тепла [0.0-1.0]
+
+  # Примеры:
+  # - Холодный мир: base_temperature=0.3, bone_penalty=0.6
+  # - Тёплый мир: base_temperature=0.7, lymph_bonus=0.5
+
+# =============================================================================
+# 6. TISSUE ASSIGNMENT (Phase 2) - Назначение тканей
+# =============================================================================
+# Управляет правилами назначения типов тканей
+
+tissues:
+  rules_path: "data/tissue_rules.yaml"  # Путь к файлу с правилами
+
+  # --- Override Settings (optional) ---
+  # Можно переопределить приоритеты или criteria для специфических миров
+  overrides: {}
+
+  # Пример переопределения:
+  # overrides:
+  #   scleritus_bone:
+  #     priority: 100  # Повысить приоритет кости
+  #   primordial_fluid:
+  #     criteria:
+  #       elevation: [0.0, 0.25]  # Больше жидкости
+
+# =============================================================================
+# 7. PERFORMANCE SETTINGS - Настройки производительности
+# =============================================================================
+
+performance:
+  # --- Memory Management ---
+  use_float32: true           # Использовать float32 вместо float64 (экономия памяти)
+
+  # --- Parallel Processing (future) ---
+  enable_multiprocessing: false  # Пока не реализовано
+  num_workers: 4                 # Количество процессов (если включено)
+
+# =============================================================================
+# 8. DEBUG & VISUALIZATION - Отладка и визуализация
+# =============================================================================
+
+debug:
+  # --- Logging ---
+  verbose: true               # Подробный вывод в консоль
+  print_statistics: true      # Печатать статистику после генерации
+
+  # --- Validation ---
+  validate_ranges: true       # Проверять диапазоны значений [0, 1]
+  check_determinism: false    # Проверять детерминизм (медленно)
+
+visualization:
+  # --- Default Color Schemes ---
+  colormaps:
+    elevation: "terrain"      # Matplotlib colormap для elevation
+    temperature: "RdYlBu_r"   # Для температуры (red-yellow-blue)
+    lymph: "YlOrRd"           # Для лимфы (yellow-orange-red)
+    bioactive: "Purples"      # Для биоактивности
+
+  # --- Export Settings ---
+  default_dpi: 200            # DPI для стандартных изображений
+  hires_dpi: 300              # DPI для high-res (4K)
+
+# =============================================================================
+# 9. PRESETS - Готовые настройки для разных типов миров
+# =============================================================================
+# Раскомментируйте нужный пресет или создайте свой
+
+presets:
+  # --- DEFAULT (Balanced) ---
+  default:
+    description: "Сбалансированный мир с равнинами и горами"
+    active: true
+
+  # --- MOUNTAINOUS (Горный мир) ---
+  mountainous:
+    description: "Преобладают горы и хребты"
+    active: false
+    changes:
+      skeletal.perlin.scale: 80
+      skeletal.perlin.octaves: 5
+      skeletal.ridge.width: 0.20
+      respiratory.caverns.elevation_min: 0.4
+
+  # --- PLAINS (Равнинный мир) ---
+  plains:
+    description: "Плоские равнины с редкими холмами"
+    active: false
+    changes:
+      skeletal.perlin.scale: 150
+      skeletal.perlin.octaves: 3
+      skeletal.ridge.width: 0.10
+      lymphatic.flow.channel_threshold: 0.05
+
+  # --- OCEANIC (Океанический) ---
+  oceanic:
+    description: "Много первичной жидкости, мало суши"
+    active: false
+    changes:
+      skeletal.perlin.scale: 120
+      skeletal.weights.base: 0.8
+      skeletal.weights.ridge: 0.15
+      skeletal.weights.ribs: 0.05
+
+  # --- VOLCANIC (Вулканический) ---
+  volcanic:
+    description: "Высокая температура, много каверн"
+    active: false
+    changes:
+      metabolic.base_temperature: 0.7
+      metabolic.contributions.bioactive_bonus: 0.4
+      respiratory.caverns.max_caverns: 150
+      respiratory.exhalation.decay_rate: 0.95
+
+# =============================================================================
+# 10. USAGE EXAMPLES - Примеры использования
+# =============================================================================
+
+usage_examples:
+  basic: |
+    # Базовое использование с дефолтными настройками:
+    from core.world_generator import WorldGenerator
+
+    gen = WorldGenerator(seed="my_world")
+    result = gen.generate()
+    print(result['world_map'])
+
+  custom_config: |
+    # Использование с кастомным конфигом:
+    gen = WorldGenerator(
+        seed="custom_world",
+        config_path="data/my_custom_config.yaml"
+    )
+    result = gen.generate()
+
+  override_params: |
+    # Переопределение параметров напрямую (будущая функция):
+    gen = WorldGenerator(seed="test")
+    gen.config['skeletal']['ridge']['width'] = 0.25
+    result = gen.generate()
+
+  export: |
+    # Генерация и экспорт:
+    from core.world_generator import WorldGenerator
+
+    gen = WorldGenerator(seed="export_test")
+    result = gen.generate()
+
+    # Экспорт в JSON
+    world_map = result['world_map']
+    world_map.export_json("output/my_world.json", include_all_sectors=True)
+
+  visualization: |
+    # Генерация и визуализация:
+    import subprocess
+
+    # 1. Сгенерировать мир (автоматически при визуализации)
+    # 2. Визуализировать
+    subprocess.run([
+        "python", "tools/visualize_complete_world.py", "my_seed"
+    ])
+
+# =============================================================================
+# ПРИМЕЧАНИЯ ДЛЯ РАЗРАБОТЧИКОВ
+# =============================================================================
+
+developer_notes: |
+  1. Этот файл пока НЕ используется WorldGenerator напрямую (Task 5.1)
+  2. Для реализации нужно:
+     - Добавить загрузку YAML в WorldGenerator.__init__()
+     - Применить параметры в соответствующих методах
+     - Добавить валидацию значений
+
+  3. Приоритет реализации:
+     - [x] Skeletal parameters (частично реализовано через константы)
+     - [x] Lymphatic parameters (частично)
+     - [x] Respiratory parameters (частично)
+     - [x] Metabolic parameters (частично)
+     - [ ] Full YAML loading system
+     - [ ] Parameter validation
+     - [ ] Preset switching
+
+  4. Для использования прямо сейчас:
+     - Параметры можно менять в исходном коде WorldGenerator
+     - Или создать wrapper-функцию для применения конфига

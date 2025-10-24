@@ -1,0 +1,26 @@
+{
+  "seed": "silgarron_export",
+  "width": 256,
+  "height": 256,
+  "total_sectors": 65536,
+  "statistics": {
+    "average_elevation": 0.423,
+    "average_temperature": 0.48,
+    "lymph_channels": 3295,
+    "caverns": 50,
+    "tissue_distribution": {
+      "lymph_channels": 5.02,
+      "lowland_tissue": 38.81,
+      "pulsating_dermis": 3.39,
+      "alveolar_cavern": 0.08,
+      "spore_savanna": 3.45,
+      "membranous_plains": 11.01,
+      "moderate_tissue": 20.99,
+      "chitinous_expanse": 14.87,
+      "inert_zone": 1.45,
+      "scleritus_bone": 0.78,
+      "lymph_springhead": 0.01,
+      "primordial_fluid": 0.15
+    }
+  }
+}

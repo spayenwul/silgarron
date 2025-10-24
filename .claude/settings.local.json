@@ -9,7 +9,14 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nPhase 2: Intent Detail Extraction with lemmatization and LLM fallback\n\nImplemented comprehensive action detail extraction system:\n- Added pymorphy3 for Russian morphological analysis and lemmatization\n- Rule-based extraction for 5 parameter categories (action, weapon, body_part, target, modifier)\n- Conflict resolution for ambiguous keywords (e.g., \"рука\" as weapon vs body part)\n- Confidence scoring with weighted parameters\n- LLM fallback (Gemini) for low-confidence cases with validation\n- 54 expanded intent examples in intents.json\n- 34 comprehensive unit tests (91% pass rate)\n\nKey features:\n- Handles various Russian word forms through lemmatization\n- Smart threshold-based LLM integration (confidence < 0.5)\n- Validates LLM responses against allowed value lists\n- Cleans markdown formatting from LLM JSON responses\n\nTechnical improvements:\n- Upgraded to pymorphy3 (Python 3.13 compatible)\n- Fixed pytest.ini comment parsing issues\n- Removed emoji characters for better Windows console compatibility\n- Created intent_extraction.txt prompt template\n\nTest coverage includes: morphology variations, conflict resolution, \nLLM validation, modifiers, edge cases, and full integration pipeline.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Read(//e/**)",
       "Bash(dir)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(git reflog:*)",
+      "Bash(git gc:*)",
+      "Bash(git update-ref:*)",
+      "Bash(git prune:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(PYTHONPATH=/e/neuro_rpg python:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,505 @@
+# =============================================================================
+# TISSUE RULES - Правила назначения типов тканей (биомов)
+# =============================================================================
+# Версия: 1.0.0
+# Дата: 24 октября 2025
+# Описание: Rule-based система для proc-gen генератора мира 256×256
+#
+# Этот файл определяет, как физиологические параметры (elevation, lymph,
+# bioactive, temperature) преобразуются в типы тканей (tissue types).
+#
+# Примечание: Это упрощённая версия для глобальной карты. Детальные
+# биомы определяются в data_tables/anatomy.yaml для локальных регионов.
+# =============================================================================
+
+meta:
+  schema_version: "1.0.0"
+  description: "Tissue type assignment rules for global map generation"
+  compatible_with:
+    - world_anatomy.yaml
+    - data_tables/anatomy.yaml
+    - generation_rules.yaml
+
+
+# =============================================================================
+# 1. БАЗОВЫЕ ТИПЫ ТКАНЕЙ (Tissue Types)
+# =============================================================================
+# Приоритет определяет порядок проверки (higher priority = checked first)
+# Каждое правило проверяется по порядку, первое совпадение = tissue type
+
+tissues:
+
+  # --- ПРОТОПЛАЗМЕННАЯ ЖИДКОСТЬ (Primordial Fluid) ---
+  primordial_fluid:
+    name: "Первичная жидкость"
+    description: "Окружающая мир протоплазма, аналог океана"
+    priority: 100
+
+    # Критерии (все должны быть выполнены)
+    criteria:
+      elevation: [0.0, 0.15]          # Очень низкая высота
+      temperature: [0.3, 0.8]         # Умеренная температура
+      lymph_intensity: [0.0, 1.0]     # Любая лимфа (это жидкость)
+
+    # Визуализация
+    color: "#1A0F2E"  # Тёмно-фиолетовый
+
+    # Теги совместимости
+    tags:
+      - surface:fluid
+      - terrain:aquatic
+      - danger_level:5
+
+    # Связь с детальными биомами (для будущего расширения)
+    related_biomes:
+      - primordial_ocean
+      - deep_fluid
+
+
+  # --- КОСТНАЯ ТКАНЬ (Scleritus Bone) ---
+  scleritus_bone:
+    name: "Склеритовая кость"
+    description: "Твёрдый костехитиновый хребет, основа мира"
+    priority: 95
+
+    criteria:
+      elevation: [0.7, 1.0]           # Высокие пики
+      temperature: [0.0, 0.35]        # Очень холодная (мёртвая кость)
+      ridge_mask: [0.7, 1.0]          # Только на хребте
+
+    color: "#E8E8E8"  # Светло-серый (кость)
+
+    tags:
+      - terrain:elevated
+      - surface:stable
+      - ecology:barren
+      - resource:bone_chitin
+      - danger:environmental
+
+    related_biomes:
+      - bone_needles
+      - ruined_spires
+
+
+  # --- ХИТИНОВЫЕ ПОКРОВЫ (Chitinous Surface) ---
+  chitinous_expanse:
+    name: "Хитиновая поверхность"
+    description: "Твёрдые защитные покровы, холодные и неактивные"
+    priority: 85
+
+    criteria:
+      elevation: [0.5, 0.75]          # Возвышенности
+      temperature: [0.0, 0.4]         # Холодная
+      bioactive_saturation: [0.0, 0.3]  # Низкая биоактивность
+
+    color: "#2F4F4F"  # Тёмно-серый (хитин)
+
+    tags:
+      - terrain:elevated
+      - surface:stable
+      - ecology:barren
+      - resource:bone_chitin
+
+    related_biomes:
+      - litho-lichen_slopes
+      - broken_lands
+
+
+  # --- ЛИМФАТИЧЕСКИЕ КАНАЛЫ (Lymph Channels) ---
+  lymph_channels:
+    name: "Лимфатические каналы"
+    description: "Видимые русла лимфотоков, золотые артерии мира"
+    priority: 90
+
+    criteria:
+      is_lymph_channel: true          # Специальный флаг
+      temperature: [0.5, 1.0]         # Тёплая (активная циркуляция)
+
+    color: "#FFD700"  # Золотой
+
+    tags:
+      - resource:pure_lymph
+      - location:trade_route
+      - ecology:fertile
+      - surface:fluid
+
+    related_biomes:
+      - lymph_valley
+      - springheads
+
+
+  # --- ПУЛЬСИРУЮЩАЯ ДЕРМА (Pulsating Dermis) ---
+  pulsating_dermis:
+    name: "Пульсирующая дерма"
+    description: "Живая кожа с высоким дыханием, розовая и активная"
+    priority: 80
+
+    criteria:
+      elevation: [0.3, 0.6]           # Равнины
+      temperature: [0.5, 0.8]         # Тёплая
+      bioactive_saturation: [0.6, 1.0]  # Высокая биоактивность (дыхание!)
+
+    color: "#E8B4B8"  # Розовый (живая ткань)
+
+    tags:
+      - surface:dynamic
+      - ecology:moderate
+      - breathing:active
+      - location:accessible
+
+    related_biomes:
+      - pulsating_plains
+      - membranous_dermis
+
+
+  # --- МЕМБРАННЫЕ РАВНИНЫ (Membranous Plains) ---
+  membranous_plains:
+    name: "Мембранные равнины"
+    description: "Эластичная кожа мира, участвующая в Дыхании"
+    priority: 70
+
+    criteria:
+      elevation: [0.4, 0.6]           # Равнины/холмы
+      temperature: [0.4, 0.7]         # Умеренно-тёплая
+      bioactive_saturation: [0.2, 0.6]  # Умеренная биоактивность
+
+    color: "#D4A59A"  # Бледно-розовый
+
+    tags:
+      - terrain:flat
+      - surface:elastic
+      - ecology:moderate
+      - location:accessible
+
+    related_biomes:
+      - dermal_plateau
+      - rolling_hills
+
+
+  # --- ВОЛОКНИСТЫЕ ЗАРОСЛИ (Fibrous Thicket) ---
+  fibrous_thicket:
+    name: "Волокнистые заросли"
+    description: "Плотные мышечные волокна, похожие на лес"
+    priority: 75
+
+    criteria:
+      elevation: [0.45, 0.65]         # Холмы
+      temperature: [0.5, 0.85]        # Тёплая (мышцы активны)
+      lymph_intensity: [0.3, 1.0]     # Высокая васкуляризация
+
+    color: "#8B1A1A"  # Тёмно-красный (мышцы)
+
+    tags:
+      - terrain:rough
+      - surface:stable
+      - ecology:dense_vegetation
+      - resource:organic_matter
+
+    related_biomes:
+      - blood_clot_thicket
+      - muscle_fiber_forest
+
+
+  # --- БИОЛЮМИНЕСЦЕНТНЫЙ ЛЕС (Biolume Forest) ---
+  biolume_forest:
+    name: "Биолюминесцентный лес"
+    description: "Светящиеся грибные леса в зонах лимфотоков"
+    priority: 82
+
+    criteria:
+      elevation: [0.2, 0.5]           # Низины/равнины
+      temperature: [0.5, 0.9]         # Тёплая
+      lymph_intensity: [0.4, 1.0]     # Высокая влажность (лимфа)
+      bioactive_saturation: [0.3, 1.0]  # Активная
+
+    color: "#3CB371"  # Зелёный с голубым оттенком
+
+    tags:
+      - ecology:fertile
+      - surface:stable
+      - resource:fungi
+      - location:scenic
+
+    related_biomes:
+      - biolume_forest
+      - luminous_fungi_caves
+
+
+  # --- СПОРОВАЯ САВАННА (Spore Savanna) ---
+  spore_savanna:
+    name: "Споровая саванна"
+    description: "Открытые равнины с низкой растительностью и спорами"
+    priority: 65
+
+    criteria:
+      elevation: [0.35, 0.55]         # Равнины
+      temperature: [0.4, 0.7]         # Умеренная
+      bioactive_saturation: [0.3, 0.7]  # Средняя биоактивность
+
+    color: "#DAA520"  # Золотисто-жёлтый
+
+    tags:
+      - terrain:flat
+      - ecology:moderate
+      - surface:stable
+      - resource:spores
+
+    related_biomes:
+      - spore_savanna
+      - megatherium_pastures
+
+
+  # --- НИЗМЕННЫЕ ТКАНИ (Lowland Tissue) ---
+  lowland_tissue:
+    name: "Низменные ткани"
+    description: "Мягкие, влажные ткани в низинах"
+    priority: 60
+
+    criteria:
+      elevation: [0.15, 0.4]          # Низины
+      temperature: [0.5, 0.8]         # Тёплая (мягкие ткани)
+
+    color: "#C19A6B"  # Бежевый
+
+    tags:
+      - terrain:flat
+      - surface:soft
+      - ecology:moderate
+
+    related_biomes:
+      - silt_flats
+      - foothills
+
+
+  # --- ИНЕРТНАЯ ЗОНА (Inert Zone) ---
+  inert_zone:
+    name: "Инертная зона"
+    description: "Холодная, неактивная ткань без метаболизма"
+    priority: 50
+
+    criteria:
+      temperature: [0.0, 0.3]         # Очень холодная
+      bioactive_saturation: [0.0, 0.2]  # Нет биоактивности
+
+    color: "#696969"  # Тёмно-серый
+
+    tags:
+      - ecology:barren
+      - surface:stable
+      - danger_level:2
+
+    related_biomes:
+      - barren_wastes
+      - dead_tissue
+
+
+  # --- FALLBACK: Умеренная ткань (Default Tissue) ---
+  moderate_tissue:
+    name: "Умеренная ткань"
+    description: "Стандартная ткань с базовыми параметрами"
+    priority: 10  # Самый низкий приоритет (fallback)
+
+    criteria:
+      # Нет критериев - принимает все, что не подошло выше
+
+    color: "#A0A0A0"  # Средне-серый
+
+    tags:
+      - ecology:moderate
+      - surface:stable
+
+    related_biomes:
+      - generic_tissue
+
+
+# =============================================================================
+# 2. СПЕЦИАЛЬНЫЕ ПРАВИЛА (Special Rules)
+# =============================================================================
+
+special_rules:
+
+  # Правило для альвеолярных каверн (источники выдоха)
+  alveolar_cavern_override:
+    description: "Гексы с кавернами получают особый тип"
+    condition: is_cavern
+    tissue_type: alveolar_cavern
+    priority: 98
+
+    color: "#8B0000"  # Тёмно-красный
+    tags:
+      - terrain:subterranean
+      - ecology:unique
+      - breathing:source
+      - danger_level:4
+
+  # Правило для истоков лимфотоков
+  lymph_source_override:
+    description: "Истоки лимфы - особые точки"
+    condition: is_lymph_source
+    tissue_type: lymph_springhead
+    priority: 92
+
+    color: "#00CED1"  # Голубой
+    tags:
+      - resource:pure_lymph
+      - ecology:unique
+      - location:sacred
+
+
+# =============================================================================
+# 3. ПАРАМЕТРЫ ПРОВЕРКИ (Validation Parameters)
+# =============================================================================
+
+validation:
+
+  # Минимальный размер зоны для типа ткани
+  min_zone_size:
+    primordial_fluid: 10     # гексов (большие водоёмы)
+    scleritus_bone: 5        # гексов
+    lymph_channels: 3        # гексов
+    others: 1                # гекс (может быть одиночный)
+
+  # Максимальный процент карты для типа
+  max_coverage:
+    primordial_fluid: 0.15   # Не более 15% карты
+    scleritus_bone: 0.30     # Не более 30% (хребет)
+    lymph_channels: 0.10     # Не более 10%
+
+
+# =============================================================================
+# 4. ИНТЕГРАЦИЯ С СУЩЕСТВУЮЩИМИ СИСТЕМАМИ
+# =============================================================================
+
+integration:
+
+  # Маппинг tissue types → region types (для будущего)
+  tissue_to_region_mapping:
+    primordial_fluid:
+      - primordial_ocean
+
+    scleritus_bone:
+      - spine_ridge
+
+    lymph_channels:
+      - lymph_valley
+
+    pulsating_dermis:
+      - dermal_plateau
+
+    membranous_plains:
+      - dermal_plateau
+      - foothills
+
+    fibrous_thicket:
+      - foothills
+      - dermal_plateau
+
+    biolume_forest:
+      - lymph_valley
+      - foothills
+
+    spore_savanna:
+      - dermal_plateau
+
+  # Маппинг tissue types → biomes (детальный уровень)
+  tissue_to_biome_mapping:
+    scleritus_bone:
+      - bone_needles
+      - ruined_spires
+
+    chitinous_expanse:
+      - litho-lichen_slopes
+      - broken_lands
+
+    lymph_channels:
+      - lymph_valley
+      - springheads
+
+    pulsating_dermis:
+      - pulsating_plains
+
+    membranous_plains:
+      - rolling_hills
+
+    fibrous_thicket:
+      - blood_clot_thicket
+
+    biolume_forest:
+      - biolume_forest
+      - luminous_fungi_caves
+
+    spore_savanna:
+      - spore_savanna
+      - megatherium_pastures
+
+
+# =============================================================================
+# 5. ЦВЕТОВАЯ ПАЛИТРА (Color Palette)
+# =============================================================================
+
+color_palette:
+  description: "Анатомическая цветовая схема для визуализации"
+
+  bone_tones:
+    - "#E8E8E8"  # Светлая кость
+    - "#D3D3D3"  # Серая кость
+    - "#C0C0C0"  # Старая кость
+
+  tissue_tones:
+    - "#E8B4B8"  # Розовая дерма
+    - "#D4A59A"  # Бледная кожа
+    - "#C19A6B"  # Бежевая ткань
+
+  muscle_tones:
+    - "#8B1A1A"  # Тёмно-красная мышца
+    - "#A52A2A"  # Коричнево-красная
+
+  lymph_tones:
+    - "#FFD700"  # Золотая лимфа
+    - "#00CED1"  # Голубой исток
+    - "#DAA520"  # Жёлтая лимфа
+
+  vegetation_tones:
+    - "#3CB371"  # Зелёный биолюм
+    - "#228B22"  # Лесная зелень
+    - "#DAA520"  # Жёлто-золотая саванна
+
+  chitin_tones:
+    - "#2F4F4F"  # Тёмно-серый хитин
+    - "#696969"  # Серый хитин
+
+  fluid_tones:
+    - "#1A0F2E"  # Фиолетовая жидкость
+    - "#000080"  # Тёмно-синяя глубина
+
+
+# =============================================================================
+# 6. ПРИМЕЧАНИЯ ДЛЯ РАЗРАБОТЧИКОВ
+# =============================================================================
+
+developer_notes:
+
+  usage: |
+    Этот файл используется в core/world_generator.py методом _assign_tissue_types().
+
+    Алгоритм:
+    1. Для каждого гекса считываем физиологические параметры
+    2. Проверяем special_rules (высокий приоритет)
+    3. Проходим по tissues в порядке priority (от высокого к низкому)
+    4. Первое правило, где все criteria совпадают → tissue type
+    5. Если ничего не подошло → moderate_tissue (fallback)
+
+  extending: |
+    Для добавления нового типа ткани:
+    1. Добавить entry в tissues с уникальным id
+    2. Установить priority (higher = checked first)
+    3. Определить criteria (все должны быть true)
+    4. Добавить color для визуализации
+    5. Связать с existing biomes через related_biomes
+
+  future_work: |
+    - Добавить transition zones между тканями
+    - Реализовать post-processing для сглаживания границ
+    - Добавить специальные текстуры для каждого типа
+    - Интеграция с Manifestation system
+    - Динамическое изменение тканей (healing, corruption)

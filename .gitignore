@@ -5,4 +5,4 @@ __pycache__/
 saves/
 
 # Claude Code settings
-.claude/settings.local.json
+.claude/*
