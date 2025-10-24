@@ -6,3 +6,5 @@ saves/
 
 # Claude Code settings
 .claude/*
+
+.obsidan/

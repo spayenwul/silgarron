@@ -12,8 +12,10 @@ World Generator - Генератор живого мира Сильгаррон 
 """
 
 import hashlib
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
+from pathlib import Path
 import numpy as np
+import yaml
 from core.perlin_noise import PerlinNoise
 from core.flow_accumulation import (
     calculate_flow_direction,
@@ -43,7 +45,7 @@ class WorldGenerator:
         >>> print(f"Generated {len(map_data.sectors)} sectors")
     """
 
-    def __init__(self, seed: str, width: int = 256, height: int = 256):
+    def __init__(self, seed: str, width: int = 256, height: int = 256, config_path: Optional[str] = None):
         """
         Инициализирует генератор мира.
 
@@ -51,11 +53,13 @@ class WorldGenerator:
             seed: Строковый seed для детерминированной генерации
             width: Ширина карты в гексах (по умолчанию 256)
             height: Высота карты в гексах (по умолчанию 256)
+            config_path: Путь к generation_config.yaml (опционально)
 
         Примечания:
             - Seed преобразуется в 64-битное число через SHA-256
             - RNG инициализируется этим числом для воспроизводимости
             - Размер 256×256 фиксирован согласно ADR-012
+            - Если config_path не указан, используются параметры по умолчанию
         """
         self.seed_string = seed
         self.width = width
@@ -66,6 +70,9 @@ class WorldGenerator:
 
         # Инициализируем генератор случайных чисел NumPy
         self.rng = np.random.default_rng(self.seed_int)
+
+        # Загружаем конфигурацию
+        self.config = self._load_config(config_path)
 
     def _hash_seed(self, seed: str) -> int:
         """
@@ -102,6 +109,145 @@ class WorldGenerator:
 
         # Ограничиваем до 2^63-1 (signed int64 для совместимости)
         return seed_int & 0x7FFFFFFFFFFFFFFF
+
+    def _load_config(self, config_path: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Загружает конфигурацию из YAML файла или возвращает дефолтные значения.
+
+        Args:
+            config_path: Путь к generation_config.yaml (опционально)
+
+        Returns:
+            Dictionary с параметрами генерации
+
+        Raises:
+            FileNotFoundError: Если указанный config_path не существует
+            yaml.YAMLError: Если YAML файл некорректен
+        """
+        # Если путь не указан, используем дефолтный
+        if config_path is None:
+            config_path = "data/generation_config.yaml"
+
+        # Проверяем существование файла
+        config_file = Path(config_path)
+        if not config_file.exists():
+            print(f"[WARNING] Config file not found: {config_path}")
+            print("[WARNING] Using default parameters")
+            return self._get_default_config()
+
+        # Загружаем YAML
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            print(f"[OK] Loaded config from: {config_path}")
+            return config
+        except yaml.YAMLError as e:
+            print(f"[ERROR] Failed to parse YAML: {e}")
+            print("[WARNING] Using default parameters")
+            return self._get_default_config()
+
+    def _get_param(self, *keys, default=None):
+        """
+        Безопасно извлекает вложенный параметр из конфигурации.
+
+        Args:
+            *keys: Последовательность ключей для доступа (напр., 'skeletal', 'perlin', 'scale')
+            default: Значение по умолчанию, если ключ не найден
+
+        Returns:
+            Значение параметра или default
+
+        Example:
+            >>> scale = self._get_param('skeletal', 'perlin', 'scale', default=100.0)
+        """
+        value = self.config
+        for key in keys:
+            if isinstance(value, dict) and key in value:
+                value = value[key]
+            else:
+                return default
+        return value
+
+    def _get_default_config(self) -> Dict[str, Any]:
+        """
+        Возвращает дефолтные параметры генерации (hardcoded fallback).
+
+        Returns:
+            Dictionary с дефолтными параметрами (совпадают с generation_config.yaml)
+        """
+        return {
+            'skeletal': {
+                'perlin': {
+                    'scale': 100.0,
+                    'octaves': 4,
+                    'persistence': 0.5,
+                    'lacunarity': 2.0
+                },
+                'ridge': {
+                    'center_x': 0.5,
+                    'width': 0.15,
+                    'intensity': 1.0
+                },
+                'ribs': {
+                    'count': 8,
+                    'spacing': 25.0,
+                    'thickness': 8.0,
+                    'intensity': 1.0
+                },
+                'weights': {
+                    'base': 0.6,
+                    'ridge': 0.3,
+                    'ribs': 0.1
+                }
+            },
+            'lymphatic': {
+                'flow': {
+                    'min_accumulation_for_source': 100,
+                    'channel_threshold': 0.02
+                },
+                'flat_resolution': {
+                    'noise_scale': 500.0,
+                    'noise_strength': 0.001
+                },
+                'sources': {
+                    'max_sources': 20,
+                    'min_distance': 30
+                }
+            },
+            'respiratory': {
+                'caverns': {
+                    'min_distance': 30.0,
+                    'max_caverns': 100,
+                    'k_attempts': 30,
+                    'elevation_min': 0.2,
+                    'elevation_max': 0.7
+                },
+                'exhalation': {
+                    'decay_rate': 0.92,
+                    'min_threshold': 0.01,
+                    'elevation_penalty': 0.1
+                },
+                'bioactive': {
+                    'threshold': 0.3
+                }
+            },
+            'metabolic': {
+                'base_temperature': 0.5,
+                'contributions': {
+                    'bone_penalty': 0.4,
+                    'lymph_bonus': 0.3,
+                    'bioactive_bonus': 0.25,
+                    'lowland_bonus': 0.2
+                },
+                'thresholds': {
+                    'bone_ridge': 0.7,
+                    'lowland_elevation': 0.4
+                }
+            },
+            'tissues': {
+                'rules_path': 'data/tissue_rules.yaml'
+            }
+        }
 
     def generate(self) -> Dict[str, Any]:
         """
@@ -210,11 +356,15 @@ class WorldGenerator:
         print(f"  - Rib mask generated (max: {rib_mask.max():.3f})")
 
         # 4. Комбинируем: базовый шум + хребет + рёбра
-        # Веса по плану спринта: 60% Base + 30% Ridge + 10% Ribs
+        # Веса из конфигурации (по умолчанию: 60% Base + 30% Ridge + 10% Ribs)
+        weight_base = self._get_param('skeletal', 'weights', 'base', default=0.6)
+        weight_ridge = self._get_param('skeletal', 'weights', 'ridge', default=0.3)
+        weight_ribs = self._get_param('skeletal', 'weights', 'ribs', default=0.1)
+
         elevation = (
-            base_elevation * 0.6 +  # 60% базовый шум (основа естественности)
-            ridge_mask * 0.3 +      # 30% хребет (структура)
-            rib_mask * 0.1          # 10% рёбра (детали)
+            base_elevation * weight_base +   # Базовый шум (основа естественности)
+            ridge_mask * weight_ridge +      # Хребет (структура)
+            rib_mask * weight_ribs           # Рёбра (детали)
         )
 
         # Нормализуем в [0, 1]
@@ -240,13 +390,19 @@ class WorldGenerator:
         """
         perlin = PerlinNoise(seed=self.seed_int)
 
+        # Получаем параметры из конфигурации
+        scale = self._get_param('skeletal', 'perlin', 'scale', default=100.0)
+        octaves = self._get_param('skeletal', 'perlin', 'octaves', default=4)
+        persistence = self._get_param('skeletal', 'perlin', 'persistence', default=0.5)
+        lacunarity = self._get_param('skeletal', 'perlin', 'lacunarity', default=2.0)
+
         elevation = perlin.fractal_noise_2d(
             width=self.width,
             height=self.height,
-            scale=8.0,        # 8 "волн" на карту (средний масштаб)
-            octaves=4,        # 4 слоя детализации
-            persistence=0.5,  # Каждый слой вдвое тише
-            lacunarity=2.0    # Каждый слой вдвое чаще
+            scale=scale / self.width * 8.0,  # Масштабируем относительно размера карты
+            octaves=octaves,
+            persistence=persistence,
+            lacunarity=lacunarity
         )
 
         # Преобразуем из [-1, 1] в [0, 1]
@@ -266,7 +422,12 @@ class WorldGenerator:
         """
         ridge = np.zeros((self.height, self.width), dtype=np.float32)
 
-        center_x = self.width // 2  # 128 для карты 256×256
+        # Получаем параметры из конфигурации
+        ridge_center_x = self._get_param('skeletal', 'ridge', 'center_x', default=0.5)
+        ridge_width = self._get_param('skeletal', 'ridge', 'width', default=0.15)
+        ridge_intensity = self._get_param('skeletal', 'ridge', 'intensity', default=1.0)
+
+        center_x = int(self.width * ridge_center_x)  # Центр хребта (по умолчанию: 128 для 256×256)
 
         # Создаём сетки координат
         y_coords = np.arange(self.height)
@@ -294,8 +455,9 @@ class WorldGenerator:
         normalized_dist = distance / (self.width / 2)
 
         # Гауссова функция: e^(-k * dist^2)
-        # k=5 даёт узкий хребет (~20% ширины карты)
-        ridge_strength = np.exp(-5 * normalized_dist**2)
+        # k зависит от ширины хребта (width=0.15 → k≈5)
+        k = 1.0 / (ridge_width ** 2)
+        ridge_strength = np.exp(-k * normalized_dist**2) * ridge_intensity
 
         ridge[:, :] = ridge_strength
 
