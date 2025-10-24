@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "sprint_3.5_implementation/SESSION_LOGS/session_2_task_1.2_complete.md",
+                "file": "sprint_3.5_implementation/USAGE_GUIDE.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "session_2_task_1.2_complete"
+              "title": "USAGE_GUIDE"
             }
           }
         ]
@@ -171,6 +171,7 @@
   },
   "active": "8e4a3630864c78f6",
   "lastOpenFiles": [
+    "sprint_3.5_implementation/SESSION_LOGS/session_2_task_1.2_complete.md",
     "sprint_3.5_implementation/01_DETERMINISTIC_SEED_SYSTEM.md",
     "sprint_3.5_implementation/SESSION_LOGS/session_1_task_1.1_complete.md",
     "sprint_3.5_implementation/SESSION_LOGS/PLAN_COMPLIANCE_CHECK.md",
@@ -200,7 +201,6 @@
     "sprint_3.5_implementation/SESSION_LOGS/session_3_lymphatic_improvement.md",
     "sprint_3.5_implementation/03_D8_FLOW_ACCUMULATION.md",
     "sprint_3.5_implementation/SESSION_LOGS/session_2b_task_1.2_improvements.md",
-    "sprint_3.5_implementation/SESSION_LOGS/session_2_task_1.2_complete.md",
     "sprints/SPRINT_3.5_GLOBAL_MAP.md",
     "architecture_decision.md",
     "sprints/SPRINT_3_PLAN.md",
