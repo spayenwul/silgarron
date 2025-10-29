@@ -1,0 +1,361 @@
+# Конфигурация генерации мира v3.0
+# Sprint 3.6-3.9: Полный анатомический генератор
+# ⚠️ КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ v3.0: Phase 2 (Skeleton) → Phase 3 (Vessels)
+
+metadata:
+  version: "3.0"
+  sprint: "3.6"
+  description: "Anatomical world generator with skeleton-first architecture"
+
+global_settings:
+  # Размер глобальной карты (низкое разрешение)
+  map_size: [512, 512]  # [width, height]
+
+  # Размер детализации (высокое разрешение) - для Sprint 3.9
+  detail_size: [4096, 4096]
+  scale_factor: 8  # 1 global hex = 8×8 detail hexes
+
+  # Текущая фаза мира
+  world_phase: "EXHALE"  # EXHALE | INHALE
+  world_age: "LATE_EXHALE"
+
+# ============================================================================
+# PHASE 0: Seed & Metadata
+# ============================================================================
+# (No configuration needed - uses global_settings)
+
+# ============================================================================
+# PHASE 1a: Spine Creation
+# ============================================================================
+spine_generation:
+  enabled: true  # Set to false for non-spine mode
+
+  # ⭐ МЕТОД ГЕНЕРАЦИИ ⭐
+  # "linear" - классический метод с предсказуемыми S-образными формами
+  # "walker" - 2D-странник, создающий спирали и кольца
+  generation_method: "walker"  # linear | walker
+
+  # Путь позвоночника (север → юг)
+  path:
+    # (НОВОЕ) Количество контрольных точек для кривой Безье
+    # Walker: больше точек = длиннее хребет (15-20 для длинных спиралей)
+    # Linear: 4-7 оптимально
+    num_control_points: 18
+    # (НОВОЕ) Как сильно смещаются контрольные точки. 0=прямая, 1=очень изогнутая.
+    complexity: 0.9
+    # Количество точек для финальной отрисовки кривой
+    num_render_points: 200
+
+    start_fraction: 0.15
+    end_fraction: 0.85
+    vertebrae_focus: 1.5 # Сила "сжатия" позвонков на концах. 1.0 = равномерно, 2.0-3.0 = сильно.
+
+  # ⭐ ПАРАМЕТРЫ ДЛЯ WALKER МЕТОДА ⭐
+  # Создаёт позвоночник как "странника", идущего по полю шума Перлина
+  # Позволяет создавать спирали, кольца и сложные изгибы
+  walker_params:
+    step_length: 30.0          # Длина одного "шага" позвонка (px)
+    turn_strength: 3.5         # Сила поворота (1.0 = плавно, 4.0 = резко, 3.5 = оптимально для колец)
+    noise_scale: 250.0         # Масштаб шума Перлина (больше = плавнее повороты)
+    inertia: 0.7               # Инерция поворота [0-1] (0 = резкие углы, 1 = игнорирует шум)
+
+    # Границы и центрирование
+    boundary_repulsion: 50.0   # Расстояние от границы для отталкивания (px)
+    repulsion_strength: 0.3    # Сила отталкивания от границ [0-1]
+    center_attraction: 0.15    # Сила притяжения к центру [0-1] (0 = нет, 0.2 = сильное)
+    center_attraction_radius: 150.0  # Радиус "комфортной зоны" от центра (px)
+
+    # Контроль длины между точками
+    min_step_distance: 50.0    # Минимальное расстояние между контрольными точками (px)
+    max_step_distance: 120.0   # Максимальное расстояние между контрольными точками (px)
+    # Теоретическая длина хребта: num_control_points * avg_distance
+    # 18 точек * ~85px = ~1530px (в 2.5 раза больше чем было)
+
+  direction:
+    randomize: true
+    angle_rad: 0.0
+
+  smoothing:
+    # Сглаживание B-spline больше не нужно, кривая Безье уже идеальна.
+    # Но мы можем оставить его для легкой постобработки, если захотим.
+    factor: 0
+
+  # Поле влияния
+  influence:
+    max_distance: 200.0  # Радиус влияния хребта (px)
+    falloff_power: 2.0  # Степень затухания (2 = квадратичное)
+
+# ============================================================================
+# PHASE 1b: Continent Growth
+# ============================================================================
+continent_generation:
+  # Базовый heightmap (Perlin Noise)
+  perlin_noise:
+    scale: 150.0  # Очень низкая частота (плавные контуры)
+    octaves: 2
+    persistence: 0.6
+    lacunarity: 2.0
+
+  # Порог суша/океан
+  sea_level: 0.35  # 35% threshold (стандартный режим)
+  sea_level_spine_mode: 0.20  # 20% (когда spine включён)
+
+  # Сглаживание береговой линии
+  smoothing:
+    binary_opening_iterations: 3  # Удаление маленьких островов
+    binary_closing_iterations: 2  # Заполнение маленьких заливов
+    gaussian_sigma: 5.0  # Финальное размытие
+    final_threshold: 0.5  # Порог после Gaussian
+
+# ============================================================================
+# PHASE 1: Organ Placement
+# ============================================================================
+organs:
+  # Metabolic Core (центр масс)
+  metabolic_organ:
+    count: 1
+    placement_method: "center_of_mass"
+    radius: 30
+    temperature: 0.95
+    nutrient_output: 0.9
+
+  # Stomach (южная низина)
+  digestive:
+    count: 1
+    placement_method: "lowland"
+    placement_params:
+      region: "south"  # Южная половина карты
+      min_distance_from_center: 100  # px
+    radius: 25
+    temperature: 0.85
+    acid_level: 0.8
+
+  # Neural Clusters (вдоль major axis)
+  neural_cluster:
+    count: 2  # ganglion_0 (thoracic) и ganglion_1 (abdominal)
+    placement_method: "along_major_axis"
+    placement_params:
+      positions: [0.35, 0.65]  # 35% и 65% по главной оси
+    radius: 15
+    control_strength: 0.7
+    control_decay: 0.1  # Каждый следующий на 0.1 слабее
+
+  # Lymph Node (возвышенность у ганглия)
+  immune_node:
+    count: 1
+    placement_method: "elevated"
+    placement_params:
+      near_organ: "ganglion_0"  # Рядом с грудным ганглием
+      search_radius: 50  # px
+    radius: 10
+    cell_production: 0.9
+
+# ============================================================================
+# PHASE 2: Skeleton Generation ⭐ v3.0 ИЗМЕНЕНИЕ
+# ============================================================================
+skeleton_generation:
+  # Позвонки (vertebrae)
+  vertebrae:
+    spacing: 20  # Расстояние между позвонками (px)
+    radius: 15  # Размер позвонка
+    bone_density: 1.0  # Максимальная плотность
+    elevation_bonus: 0.5  # Вклад в elevation
+
+  # Рёбра (ribs) - L-Systems
+  ribs:
+    num_pairs: 12  # Количество пар рёбер
+    length: 80.0  # Длина ребра (px)
+    angle: 60.0  # Угол ветвления (градусы)
+    lsystem_iterations: 2  # Глубина L-System
+    bone_density: 0.7  # Средняя плотность
+    elevation_bonus: 0.3
+
+  # Фаланги (phalanges)
+  phalanges:
+    count: 5  # Количество фаланг
+    length: 30  # Длина фаланги (px)
+    bone_density: 0.6  # Низкая плотность
+    elevation_bonus: 0.4
+
+  # Композиция elevation map
+  composition:
+    regional_weight: 0.2  # Региональный bias
+    bone_weight: 0.6  # Костная структура (главный фактор!)
+    texture_weight: 0.2  # Perlin Noise (детализация)
+
+  # Параметры bone_density_map
+  bone_density:
+    smoothing_sigma: 2.0  # Сглаживание Gaussian
+
+# ============================================================================
+# PHASE 3: Vessel Network ⭐ v3.0 ИЗМЕНЕНИЕ (теперь ПОСЛЕ Skeleton!)
+# ============================================================================
+vessel_generation:
+  # Space Colonization Algorithm
+  attraction_points_per_organ: 30  # Density attraction points
+  influence_radius: 50.0  # Радиус влияния (px)
+  kill_distance: 10.0  # Расстояние "достижения" (px)
+  segment_length: 5.0  # Длина сегмента сосуда (px)
+  max_iterations: 1000  # Максимум итераций роста
+
+  # ⭐ КЛЮЧЕВОЙ ПАРАМЕТР v3.0: Штраф за плотность костей
+  bone_density_penalty: 3.0  # cost = distance × (1 + bone_density × penalty)
+  # penalty = 3.0 → кости в 4 раза "дороже" для артерий
+
+  # Типизация сосудов
+  arterial:
+    width: 10
+    flow_strength: 1.0
+
+  lymphatic:
+    width: 6
+    flow_strength: 0.6
+
+  # Vein Outlets (для Phase 4)
+  vein_outlets:
+    elevation_threshold: 0.4  # Outlets в низинах (elevation < 0.4)
+
+# ============================================================================
+# PHASE 4: Hydrology
+# ============================================================================
+hydrology:
+  # D8 Flow Accumulation
+  flow_algorithm: "D8"  # D8 | D-infinity
+  min_flow_accumulation: 50  # Минимальный flow для отображения
+  river_threshold: 100  # Порог для "реки" vs "ручей"
+
+  # Источники рек
+  sources:
+    use_vein_outlets: true  # Vein outlets как источники
+    random_sources_ratio: 0.2  # 20% случайных источников
+
+# ============================================================================
+# PHASE 4.5: Hydraulic Erosion ⭐ NEW IN v3.0
+# ============================================================================
+hydraulic_erosion:
+  enabled: true
+
+  # Параметры эрозии
+  iterations: 50  # Количество итераций
+  inertia: 0.3  # Инерция капли (0-1)
+  capacity: 8.0  # Вместимость осадка
+  deposition: 0.1  # Скорость осаждения
+  erosion: 0.3  # Скорость эрозии
+  evaporation: 0.05  # Испарение воды
+  gravity: 3.0  # Гравитация
+
+  # ⭐ Защита костей от эрозии
+  bone_protection_factor: 3.0  # Кости эродируют в 3 раза медленнее
+  bone_threshold: 0.5  # Порог bone_density для защиты
+
+  # Preprocessing (Gaussian blur)
+  preprocessing:
+    enabled: true
+    gaussian_sigma: 2.0  # Размытие для избежания "острых" артефактов
+
+  # Focused erosion sources
+  focused_sources:
+    use_vein_outlets: true  # Фокусировать эрозию вокруг vein outlets
+    random_sources_ratio: 0.2  # 20% случайных источников
+
+# ============================================================================
+# PHASE 5: Climate
+# ============================================================================
+climate:
+  # Температура
+  temperature:
+    base_temperature: 0.5  # Базовая температура [0, 1]
+    elevation_cooling: 0.3  # Вес elevation (выше = холоднее)
+    organ_heating: 0.4  # Вес proximity к метаболическим органам
+    bone_cooling: 0.2  # Вес bone_density (кости = холоднее)
+    organ_influence_radius: 100.0  # Радиус влияния органов (px)
+
+  # Влажность
+  moisture:
+    base_moisture: 0.3  # Базовая влажность
+    ocean_distance_factor: 0.4  # Вес расстояния до океана
+    river_influence: 0.3  # Вес proximity к рекам
+    elevation_penalty: 0.2  # Вес elevation (выше = суше)
+    river_influence_radius: 20.0  # Радиус влияния рек (px)
+
+# ============================================================================
+# PHASE 6: Respiration
+# ============================================================================
+respiration:
+  # Respiratory Potential (вычисляется из climate + organs)
+  potential_calculation:
+    temperature_weight: 0.4
+    moisture_weight: 0.3
+    organ_proximity_weight: 0.3
+
+  # Генерация каверн (Poisson Disk Sampling)
+  cavern_generation:
+    min_respiratory_potential: 0.6  # Минимальный порог для каверны
+    poisson_disk_radius: 80.0  # Минимальное расстояние между кавернами
+    cavern_radius_range: [20, 40]  # Диапазон размеров каверн
+
+  # Exhalation Simulation (BFS)
+  exhalation:
+    simulation_steps: 100  # Количество шагов симуляции
+    diffusion_rate: 0.1  # Скорость диффузии воздуха
+    bone_blocking_threshold: 0.7  # Кости блокируют воздух
+
+# ============================================================================
+# PHASE 7: Tissue Assignment
+# ============================================================================
+tissues:
+  # Порядок приоритета тканей
+  priority_order:
+    - organ_cells      # Highest priority
+    - bone
+    - muscle
+    - blood
+    - lymph
+    - connective
+    - cavern_air       # Lowest priority
+
+  # Пороги proximity для назначения тканей
+  proximity_thresholds:
+    organ_cells: 5   # px - proximity к органам
+    bone: 10         # px - proximity к костям
+    muscle: 15       # px - proximity к костям (диафрагма, и т.д.)
+    blood: 8         # px - proximity к артериям
+    lymph: 10        # px - proximity к лимфатическим сосудам
+
+  # Условия для специальных тканей
+  special_conditions:
+    cavern_air:
+      respiratory_potential_min: 0.6
+    muscle:
+      requires_diaphragm_region: true
+      bone_density_range: [0.3, 0.6]
+
+# ============================================================================
+# Визуализация
+# ============================================================================
+visualization:
+  # Цвета для органов
+  organ_colors:
+    metabolic_organ: "#FF4444"  # Красный
+    digestive: "#FF8844"        # Оранжевый
+    neural_cluster: "#4488FF"   # Синий
+    immune_node: "#44FF88"      # Зелёный
+
+  # Цвета для сосудов
+  vessel_colors:
+    arterial: "#FF0000"         # Красный
+    lymphatic: "#00AAFF"        # Голубой
+
+  # Цвета для тканей
+  tissue_colors:
+    organ_cells: "#FF4444"
+    bone: "#FFFFFF"
+    muscle: "#AA6666"
+    blood: "#CC0000"
+    lymph: "#88CCFF"
+    connective: "#CCAA88"
+    cavern_air: "#222222"
+
+  # Настройки отображения
+  alpha: 0.6  # Прозрачность слоёв
+  line_width: 2  # Толщина линий (сосуды, рёбра)
