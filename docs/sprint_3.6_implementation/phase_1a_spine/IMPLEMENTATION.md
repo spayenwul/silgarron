@@ -246,28 +246,31 @@ rib_generation:
 - Центр карты: (256, 256)
 - **Результат:** Композиция выглядит несбалансированной
 
-### Решение: Post-Generation Translation
+### Решение: Pre-Rib Centering
 
-**Подход:** После генерации хребта и рёбер вычисляем центр масс позвоночника и сдвигаем всю структуру так, чтобы центр масс совпадал с центром карты.
+**Подход:** После генерации хребта (но ПЕРЕД генерацией рёбер) вычисляем центр масс позвоночника и сдвигаем позвоночник + control points так, чтобы центр масс совпадал с центром карты. Затем генерируем рёбра от уже центрированного позвоночника.
 
 **Преимущества:**
 - ✅ Сохраняет математическую элегантность sine-wave
+- ✅ Рёбра автоматически центрируются (генерируются от центрированного позвоночника)
 - ✅ Прозрачна для Phase 1b/2/3/4
-- ✅ Простая реализация (~50 строк)
+- ✅ Простая реализация (~40 строк)
 - ✅ Не ломает детерминизм (seed даёт тот же хребет, просто сдвинутый)
 - ✅ Можно включать/выключать через config
 
 ### Реализация
 
-**Файл:** `core/world_generator_v3.py` lines 578-629
+**Файл:** `core/world_generator_v3.py` lines 591-632
 
 ```python
-def _center_spine_on_map(self, spine: np.ndarray, control_points: np.ndarray,
-                         ribs: List[RibData]) -> Tuple[np.ndarray, np.ndarray, List[RibData]]:
+def _center_spine_before_ribs(self, spine: np.ndarray, control_points: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Центрирует позвоночник, контрольные точки и рёбра относительно центра карты.
+    Центрирует позвоночник и контрольные точки относительно центра карты.
+
+    ВАЖНО: Этот метод вызывается ПЕРЕД генерацией рёбер, чтобы рёбра создавались
+    от уже центрированного позвоночника.
     """
-    # Центр масс позвоночника
+    # Вычисляем центр масс позвоночника
     spine_center = np.mean(spine, axis=0)
 
     # Центр карты
@@ -280,17 +283,6 @@ def _center_spine_on_map(self, spine: np.ndarray, control_points: np.ndarray,
     centered_spine = spine + offset
     centered_control_points = control_points + offset
 
-    # Сдвигаем все рёбра
-    centered_ribs = []
-    for rib in ribs:
-        centered_rib = RibData(
-            side=rib.side,
-            vertebra_index=rib.vertebra_index,
-            path=rib.path + offset,  # Сдвигаем path рёбра
-            length=rib.length
-        )
-        centered_ribs.append(centered_rib)
-
     # Проверка границ (warning если выходит за карту)
     min_x, min_y = centered_spine.min(axis=0)
     max_x, max_y = centered_spine.max(axis=0)
@@ -298,18 +290,27 @@ def _center_spine_on_map(self, spine: np.ndarray, control_points: np.ndarray,
     if min_x < 0 or min_y < 0 or max_x >= self.global_size[0] or max_y >= self.global_size[1]:
         print(f"  > [WARNING] Centered spine extends beyond map bounds")
 
-    return centered_spine, centered_control_points, centered_ribs
+    return centered_spine, centered_control_points
 ```
 
 ### Интеграция в Pipeline
 
-**Файл:** `core/world_generator_v3.py` lines 78-88
+**Файл:** `core/world_generator_v3.py` lines 68-89
+
+**Порядок операций:**
+1. Generate spine (sine-wave)
+2. **Center spine** (ПЕРЕД рёбрами!)
+3. Generate ribs (от центрированного позвоночника)
 
 ```python
+# Phase 1a: Spine Creation
+spine_path, spine_influence, control_points = self._generate_spine(seed)
+print(f"  > Phase 1a: Spine created ({len(spine_path)} points)")
+
 # Phase 1a: Center Spine on Map (NEW!)
 if self.config.get('center_spine_on_map', True):
-    spine_path, control_points, ribs = self._center_spine_on_map(
-        spine_path, control_points, ribs
+    spine_path, control_points = self._center_spine_before_ribs(
+        spine_path, control_points
     )
 
     # Пересоздаём influence mask с новыми координатами
@@ -319,9 +320,18 @@ if self.config.get('center_spine_on_map', True):
         max_influence=influence_config['max_distance']
     )
     print(f"  > Phase 1a: Spine centered (CoM = map center)")
+
+# Phase 1a: Rib Generation (NEW!)
+# Рёбра генерируются от уже центрированного позвоночника
+rib_config = self.config.get('rib_generation', {})
+rib_seed = self._hash_seed(seed, "ribs")
+ribs = self._generate_ribs(spine_path, rib_config, rib_seed)
+print(f"  > Phase 1a: {len(ribs)} ribs generated")
 ```
 
-**Важно:** После сдвига нужно пересоздать `spine_influence` mask, так как координаты позвоночника изменились.
+**Важно:**
+- После сдвига нужно пересоздать `spine_influence` mask, так как координаты позвоночника изменились
+- Рёбра автоматически центрируются, так как генерируются от уже центрированного позвоночника
 
 ### Параметры конфигурации
 
@@ -350,8 +360,9 @@ spine_generation:
 - Сбалансированная композиция даже при сильных изгибах
 
 **Тестовые seeds:**
-- `centered_test_01`: S-образный хребет, идеально центрирован
-- `centered_curved_02`: Вертикальный хребет с синусоидой, центрирован по вертикали
+- `centered_before_ribs_01`: Хребет с рёбрами, центрирован перед генерацией рёбер
+- `reordered_test_02`: Вертикальный хребет, рёбра автоматически центрированы
+- `centered_test_01`: Legacy тест (старый порядок, для сравнения)
 
 ### Граничные случаи
 

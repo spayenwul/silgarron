@@ -69,15 +69,9 @@ class WorldGeneratorV3:
         spine_path, spine_influence, control_points = self._generate_spine(seed)
         print(f"  > Phase 1a: Spine created ({len(spine_path)} points from {len(control_points)} control points)")
 
-        # Phase 1a: Rib Generation (NEW!)
-        rib_config = self.config.get('rib_generation', {})
-        rib_seed = self._hash_seed(seed, "ribs")
-        ribs = self._generate_ribs(spine_path, rib_config, rib_seed)
-        print(f"  > Phase 1a: {len(ribs)} ribs generated")
-
         # Phase 1a: Center Spine on Map (NEW!)
         if self.config.get('center_spine_on_map', True):
-            spine_path, control_points, ribs = self._center_spine_on_map(spine_path, control_points, ribs)
+            spine_path, control_points = self._center_spine_before_ribs(spine_path, control_points)
 
             # Пересоздаём influence mask с новыми координатами
             influence_config = self.config['spine_generation']['influence']
@@ -86,6 +80,13 @@ class WorldGeneratorV3:
                 max_influence=influence_config['max_distance']
             )
             print(f"  > Phase 1a: Spine centered (CoM = map center)")
+
+        # Phase 1a: Rib Generation (NEW!)
+        # Рёбра генерируются от уже центрированного позвоночника
+        rib_config = self.config.get('rib_generation', {})
+        rib_seed = self._hash_seed(seed, "ribs")
+        ribs = self._generate_ribs(spine_path, rib_config, rib_seed)
+        print(f"  > Phase 1a: {len(ribs)} ribs generated")
 
         # Phase 1b: Continent Growth
         world.continent = self._generate_continent(seed, spine_path, spine_influence, control_points, ribs)
@@ -587,13 +588,15 @@ class WorldGeneratorV3:
 
         return curve
 
-    def _center_spine_on_map(self, spine: np.ndarray, control_points: np.ndarray,
-                             ribs: List[RibData]) -> Tuple[np.ndarray, np.ndarray, List[RibData]]:
+    def _center_spine_before_ribs(self, spine: np.ndarray, control_points: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Центрирует позвоночник, контрольные точки и рёбра относительно центра карты.
+        Центрирует позвоночник и контрольные точки относительно центра карты.
 
-        Вычисляет центр масс позвоночника и сдвигает весь позвоночник + контрольные точки + рёбра
+        Вычисляет центр масс позвоночника и сдвигает позвоночник + контрольные точки
         так, чтобы центр масс совпадал с центром карты (256, 256).
+
+        ВАЖНО: Этот метод вызывается ПЕРЕД генерацией рёбер, чтобы рёбра создавались
+        от уже центрированного позвоночника.
 
         Это обеспечивает визуальную центрированность композиции континента,
         даже при сложных изгибах позвоночника.
@@ -601,10 +604,9 @@ class WorldGeneratorV3:
         Args:
             spine: np.ndarray формы (N, 2) - путь позвоночника
             control_points: np.ndarray формы (M, 2) - контрольные точки
-            ribs: List[RibData] - список рёбер
 
         Returns:
-            Tuple[np.ndarray, np.ndarray, List[RibData]] - центрированный позвоночник, контрольные точки и рёбра
+            Tuple[np.ndarray, np.ndarray] - центрированный позвоночник и контрольные точки
         """
         # Вычисляем центр масс позвоночника
         spine_center = np.mean(spine, axis=0)
@@ -619,17 +621,6 @@ class WorldGeneratorV3:
         centered_spine = spine + offset
         centered_control_points = control_points + offset
 
-        # Сдвигаем все рёбра
-        centered_ribs = []
-        for rib in ribs:
-            centered_rib = RibData(
-                side=rib.side,
-                vertebra_index=rib.vertebra_index,
-                path=rib.path + offset,
-                length=rib.length
-            )
-            centered_ribs.append(centered_rib)
-
         # Опционально: проверка границ (warning если выходит за карту)
         min_x, min_y = centered_spine.min(axis=0)
         max_x, max_y = centered_spine.max(axis=0)
@@ -638,7 +629,7 @@ class WorldGeneratorV3:
             print(f"  > [WARNING] Centered spine extends beyond map bounds: "
                   f"x=[{min_x:.1f}, {max_x:.1f}], y=[{min_y:.1f}, {max_y:.1f}]")
 
-        return centered_spine, centered_control_points, centered_ribs
+        return centered_spine, centered_control_points
 
     def _create_smooth_spline_from_points(self, control_points: np.ndarray, points_per_segment: int = 20) -> np.ndarray:
         """
