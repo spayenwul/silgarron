@@ -1,0 +1,146 @@
+# Конфигурация генерации мира v2.0 (ADR-020)
+# Этап 0: Глобальные Скелеты (512×512)
+
+metadata:
+  version: "2.0"
+  adr: "ADR-020"
+  sprint: "3.6"
+
+global_settings:
+  # Размер глобальной карты (низкое разрешение)
+  global_width: 512
+  global_height: 512
+
+  # Размер детализации (высокое разрешение) - для Sprint 3.9
+  detail_width: 4096
+  detail_height: 4096
+  scale_factor: 8  # 1 global hex = 8×8 detail hexes
+
+  # Текущая фаза мира
+  world_phase: "EXHALE"  # EXHALE | INHALE
+  world_age: "LATE_EXHALE"
+
+# СЛОЙ 0.5: Континент (макро-рельеф)
+continent:
+  perlin_noise:
+    scale: 150  # Очень низкая частота (плавные контуры)
+    octaves: 2
+    persistence: 0.6
+    lacunarity: 2.0
+
+  sea_level: 0.36  # 36% порог (примерно 70-80% суши, баланс между детализацией и связностью)
+
+  # Маска формы (центрирование континента)
+  shape_mask:
+    enabled: false  # Использовать маску формы для центрирования континента
+    type: "spine"  # spine | ellipse | radial
+
+    # Параметры для spine (хребет)
+    spine:
+      num_points: 100  # Количество точек вдоль хребта
+      curvature: 0.3  # Максимальное отклонение от центра (0-1)
+      max_influence: 200.0  # Радиус влияния хребта (в пикселях)
+
+      # Ограничение длины хребта (доли от высоты карты)
+      start_fraction: 0.15  # Начало хребта (15% от верха = "голова")
+      end_fraction: 0.85    # Конец хребта (85% = оставляем 15% на "хвост")
+
+      # Направление роста хребта
+      direction_angle: 0.0  # Угол наклона в радианах (0 = вертикально вниз)
+
+    # Параметры для ellipse/radial (устаревшие, оставлены для совместимости)
+    radius_x: 0.35  # Радиус по X (как доля ширины карты)
+    radius_y: 0.45  # Радиус по Y (как доля высоты карты)
+
+    sea_level_override: 0.20  # Используется вместо обычного sea_level когда shape_mask включена
+
+  # Сглаживание береговой линии
+  smoothing:
+    binary_opening_iterations: 3
+    binary_closing_iterations: 2
+    gaussian_sigma: 3.0
+    final_threshold: 0.5
+
+# СЛОЙ 1: Анатомия (органы)
+organs:
+  # Типы органов и их параметры
+  metabolic_organ:
+    count: 1
+    placement_method: "center_of_continent"
+    radius: 30
+    temperature: 0.95
+    nutrient_output: 0.9
+
+  digestive:
+    count: 1
+    placement_method: "suitable_lowland"
+    placement_params:
+      near: "metabolic_organ"
+      direction: "south"
+      radius_range: [20, 30]
+    radius: 25
+    temperature: 0.85
+    acid_level: 0.8
+
+  neural_cluster:
+    count: 2  # thoracic и abdominal
+    placement_method: "along_axis"
+    placement_params:
+      positions: [0.35, 0.65]  # 35% и 65% по оси континента
+    radius: 15
+    control_strength: 0.7
+    control_decay: 0.1  # Каждый следующий на 0.1 слабее
+
+  immune_node:
+    count: 1
+    placement_method: "elevated_point"
+    placement_params:
+      near: "neural_cluster_0"  # Ближайший ганглий
+    radius: 10
+    cell_production: 0.9
+
+# Региональные характеристики
+regions:
+  THORAX:
+    detection_method: "skeletal_density"  # Определяется по костям (Sprint 3.7)
+    characteristics:
+      elevation_bias: 0.3
+      bone_density: 0.8
+      respiratory_potential: 0.9
+
+  DIAPHRAGM:
+    detection_method: "muscle_layer"  # Мышечная стенка
+    characteristics:
+      muscle_density: 0.9
+      pulsation_strength: 0.7
+      respiratory_potential: 0.4
+
+  ORGANOID:
+    detection_method: "organ_proximity"  # Вокруг метаболических органов
+    characteristics:
+      elevation_bias: -0.2
+      nutrient_richness: 0.9
+      respiratory_potential: 0.1
+
+  GRASPING_LIMB:
+    detection_method: "extremity"  # Край континента
+    characteristics:
+      isolation: 0.8
+      bone_density: 0.6
+      respiratory_potential: 0.2
+
+# Визуализация
+visualization:
+  # Цвета для органов
+  organ_colors:
+    metabolic_organ: "#FF4444"  # Красный
+    digestive: "#FF8844"        # Оранжевый
+    neural_cluster: "#4488FF"   # Синий
+    immune_node: "#44FF88"      # Зелёный
+
+  # Цвета для регионов (с прозрачностью)
+  region_colors:
+    THORAX: "#8888FF80"
+    DIAPHRAGM: "#FF88FF80"
+    ORGANOID: "#FFFF8880"
+    GRASPING_LIMB: "#88FF8880"

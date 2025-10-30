@@ -79,6 +79,14 @@ def visualize_spine_overlay(world: World, output_path: Path):
         spine = world.continent.spine_path
         ax.plot(spine[:, 0], spine[:, 1], 'r-', linewidth=3, label='Spine Path (Bézier Curve)', alpha=0.9)
 
+    # (НОВОЕ) Отрисовка рёбер
+    if world.continent.ribs and len(world.continent.ribs) > 0:
+        for rib in world.continent.ribs:
+            # Рёбра рисуем тонкими голубыми линиями
+            ax.plot(rib.path[:, 0], rib.path[:, 1], 'c-', linewidth=1.5, alpha=0.6)
+        # Добавляем одну легенду для всех рёбер
+        ax.plot([], [], 'c-', linewidth=1.5, alpha=0.6, label=f'Ribs ({len(world.continent.ribs)})')
+
     cx, cy = world.continent.center
     ax.plot(cx, cy, 'y+', markersize=20, markeredgewidth=3, label='Center of Mass')
 

@@ -119,6 +119,37 @@ class PerlinNoise:
 
         return grad_x + grad_y
 
+    def _gradient_1d(self, hash_val: np.ndarray, x: np.ndarray) -> np.ndarray:
+        """
+        Вычисляет 1D градиент. Градиенты - это просто +1 или -1.
+        """
+        # Используем один бит для выбора знака
+        return np.where(hash_val & 1, -x, x)
+
+    def noise_1d(self, x: float) -> float:
+        """
+        Вычисляет значение Perlin Noise в 1D точке (x).
+        """
+        # Найти координаты узлов
+        xi = int(np.floor(x)) & 255
+        
+        # Дробная часть
+        xf = x - np.floor(x)
+
+        # Применить fade function
+        u = self._fade(xf)
+
+        # Хеши для 2 узлов
+        a = self.permutation[xi]
+        b = self.permutation[xi + 1]
+
+        # Градиенты в 2 узлах
+        g1 = self._gradient_1d(a, xf)
+        g2 = self._gradient_1d(b, xf - 1)
+
+        # Линейная интерполяция
+        return self._lerp(g1, g2, u)
+
     def noise_2d(self, x: float, y: float) -> float:
         """
         Вычисляет значение Perlin Noise в точке (x, y).

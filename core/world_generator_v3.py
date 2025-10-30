@@ -16,14 +16,14 @@ Sprint 3.6: WP1 (Основа мира - Phase 0, 1a, 1b)
 
 import numpy as np
 import hashlib
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict, Optional, List
 from dataclasses import dataclass
 from scipy.interpolate import splprep, splev
 from scipy import ndimage
 from scipy.ndimage import binary_opening, binary_closing, gaussian_filter
 
 # Используем существующие модели
-from core.models.world import World, Organ, ContinentData
+from core.models.world import World, Organ, ContinentData, RibData
 from core.perlin_noise import generate_perlin_map
 from core.perlin_noise import PerlinNoise
 
@@ -69,8 +69,14 @@ class WorldGeneratorV3:
         spine_path, spine_influence, control_points = self._generate_spine(seed)
         print(f"  > Phase 1a: Spine created ({len(spine_path)} points from {len(control_points)} control points)")
 
+        # Phase 1a: Rib Generation (NEW!)
+        rib_config = self.config.get('rib_generation', {})
+        rib_seed = self._hash_seed(seed, "ribs")
+        ribs = self._generate_ribs(spine_path, rib_config, rib_seed)
+        print(f"  > Phase 1a: {len(ribs)} ribs generated")
+
         # Phase 1b: Continent Growth
-        world.continent = self._generate_continent(seed, spine_path, spine_influence, control_points)
+        world.continent = self._generate_continent(seed, spine_path, spine_influence, control_points, ribs)
         print(f"  > Phase 1b: Continent generated (land={world.continent.mask.sum() / world.continent.mask.size * 100:.1f}%)")
 
         # Phase 1b: Organ Placement
@@ -175,6 +181,65 @@ class WorldGeneratorV3:
                 curve += np.outer(bernstein_poly, control_points[i])
                 
             return curve
+
+    def _generate_control_points_with_sine(self, seed: int, path_config: dict, sine_config: dict) -> np.ndarray:
+        """
+        Генерирует контрольные точки позвоночника используя sine-wave метод.
+
+        Метод из procedural-spine-visualizer (App.tsx lines 78-89).
+        Использует математические синусоидальные волны для создания плавных,
+        предсказуемых органических форм позвоночника.
+
+        Преимущества по сравнению с Perlin walker:
+        - Детерминированный и предсказуемый
+        - Простой математический контроль
+        - Не требует библиотек шума
+        - 70% меньше кода
+
+        Args:
+            seed: Int seed для генерации
+            path_config: Конфигурация пути (num_control_points)
+            sine_config: Параметры sine-wave (num_vertebrae, vertebra_spacing, spine_curvature)
+
+        Returns:
+            np.ndarray формы (num_vertebrae, 2) с координатами точек позвоночника
+        """
+        map_width, map_height = self.global_size
+
+        # Параметры из config
+        num_vertebrae = sine_config.get('num_vertebrae', 33)
+        vertebra_spacing = sine_config.get('vertebra_spacing', 12.0)
+        spine_curvature = sine_config.get('spine_curvature', 0.1)
+        start_y_fraction = sine_config.get('start_y_fraction', 0.1)
+
+        # Инициализация массива позвонков
+        vertebrae = np.zeros((num_vertebrae, 2))
+
+        # Начальная точка (центр сверху)
+        current_x = map_width / 2
+        current_y = map_height * start_y_fraction
+
+        # Начальный угол (вниз)
+        angle = np.pi / 2
+
+        # Seed для вариативности начального угла
+        angle_seed_hash = self._hash_seed(str(seed), "sine_start_angle")
+        initial_angle_offset = (angle_seed_hash / (2**31 - 1)) * 0.5 - 0.25  # [-0.25, 0.25] rad
+        angle += initial_angle_offset
+
+        # Генерация позвонков
+        for i in range(num_vertebrae):
+            vertebrae[i] = [current_x, current_y]
+
+            # Sine-wave curvature (ключевая формула из visualizer)
+            angle_offset = np.sin(i * 0.2) * spine_curvature
+            angle += angle_offset
+
+            # Шаг в текущем направлении
+            current_x += np.cos(angle) * vertebra_spacing
+            current_y += np.sin(angle) * vertebra_spacing
+
+        return vertebrae
 
     def _generate_control_points_with_walker(self, seed: int, path_config: dict, walker_config: dict) -> np.ndarray:
         """
@@ -328,11 +393,10 @@ class WorldGeneratorV3:
 
     def _generate_bezier_spine(self, seed: int, path_config: dict) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Генерация позвоночника v9 (ГИБРИД): "Анатомический" или "Walker" метод.
+        Генерация позвоночника v10 (SINE-WAVE METHOD).
 
-        Может использовать два метода генерации контрольных точек:
-        1. "linear" - классический метод с предсказуемыми S-образными формами
-        2. "walker" - 2D-странник по полю Перлина для создания колец и спиралей
+        Использует математические sine-wave кривые из procedural-spine-visualizer
+        для создания плавных, предсказуемых органических форм позвоночника.
 
         Args:
             seed: Int seed для генерации
@@ -340,69 +404,176 @@ class WorldGeneratorV3:
 
         Returns:
             Tuple[spine_path, control_points]:
-                - spine_path: (num_render_points, 2) финальная кривая
-                - control_points: (num_control_points, 2) контрольные точки Безье
+                - spine_path: (num_vertebrae, 2) финальный путь позвоночника
+                - control_points: (num_vertebrae, 2) позвонки (используются как контрольные точки)
         """
         spine_config = self.config['spine_generation']
-        method = spine_config.get('generation_method', 'linear')
+        sine_config = spine_config.get('sine_params', {})
         map_width, map_height = self.global_size
 
-        # === БЛОК 1: ВЫБОР МЕТОДА ГЕНЕРАЦИИ КОНТРОЛЬНЫХ ТОЧЕК ===
-        if method == 'walker':
-            walker_config = spine_config.get('walker_params', {})
-            control_points = self._generate_control_points_with_walker(seed, path_config, walker_config)
+        # Генерация позвонков через sine-wave метод
+        vertebrae = self._generate_control_points_with_sine(seed, path_config, sine_config)
 
-        else:  # По умолчанию используем проверенный линейный метод
-            spine_noise_gen = PerlinNoise(seed=seed)
-
-            num_control_points = path_config['num_control_points']
-            complexity = path_config['complexity']
-            focus = path_config.get('vertebrae_focus', 1.0)
-
-            # Создаём линейное пространство с фокусировкой на концах
-            linear_space = np.linspace(0, 1, num_control_points)
-            eased_space = linear_space * linear_space * (3. - 2. * linear_space)
-            if focus > 1.0 and focus != 2.0:
-                eased_space = np.power(eased_space, (focus - 1.0))
-
-            # Распределяем Y-позиции
-            y_start = map_height * path_config['start_fraction']
-            y_end = map_height * path_config['end_fraction']
-            y_positions = y_start + (y_end - y_start) * eased_space
-
-            control_points = np.zeros((num_control_points, 2))
-            control_points[:, 1] = y_positions
-
-            # Смещение по горизонтали через шум
-            center_x = map_width / 2
-            max_displacement = (map_width / 2) * complexity
-            noise_offset = self._hash_seed(str(seed), "bezier_offset") / 1000.0
-
-            for i in range(num_control_points):
-                if i == 0 or i == num_control_points - 1:
-                    displacement_factor = 0.1
-                else:
-                    displacement_factor = 1.0
-
-                noise = spine_noise_gen.noise_1d(noise_offset + i * 0.5)
-                displacement = noise * max_displacement * displacement_factor
-                control_points[i, 0] = center_x + displacement
-
-        # === БЛОК 2: ПОСТРОЕНИЕ ГЛАДКОЙ КРИВОЙ (УНИВЕРСАЛЬНО ДЛЯ ОБОИХ МЕТОДОВ) ===
-        num_segments = len(control_points)
-        points_per_segment = path_config['num_render_points'] // num_segments if num_segments > 0 else 1
-
-        path = self._create_smooth_spline_from_points(
-            control_points,
-            points_per_segment=max(5, points_per_segment)  # Минимум 5 точек на сегмент
-        )
+        # Sine-wave метод генерирует готовый детальный путь,
+        # поэтому vertebrae одновременно являются и spine_path и control_points
+        spine_path = vertebrae
 
         # Clamp к безопасным границам
         safe_margin = map_width * 0.05
-        path[:, 0] = np.clip(path[:, 0], safe_margin, map_width - safe_margin)
-        path[:, 1] = np.clip(path[:, 1], safe_margin, map_height - safe_margin)
+        spine_path[:, 0] = np.clip(spine_path[:, 0], safe_margin, map_width - safe_margin)
+        spine_path[:, 1] = np.clip(spine_path[:, 1], safe_margin, map_height - safe_margin)
 
-        return path, control_points
+        # Возвращаем позвонки как путь и как контрольные точки
+        return spine_path, vertebrae
+
+    def _generate_ribs(self, spine_path: np.ndarray, config: dict, seed: int) -> List[RibData]:
+        """
+        Генерирует рёбра (ribs) перпендикулярно позвоночнику.
+
+        Портировано из procedural-spine-visualizer (App.tsx lines 91-134).
+        Рёбра создают:
+        - Гребни на ландшафте (heightmap influence)
+        - Зоны размещения органов (intercostal zones)
+        - Гидрологические барьеры (watersheds)
+
+        Args:
+            spine_path: (N, 2) array координат позвоночника
+            config: rib_generation секция из YAML
+            seed: int seed для детерминированности
+
+        Returns:
+            List[RibData] - список рёбер с обеих сторон
+        """
+        ribs = []
+
+        if not config.get('enabled', False):
+            return ribs
+
+        # Параметры из config
+        num_rib_pairs = config.get('num_rib_pairs', 12)
+        thoracic_start = config.get('thoracic_start_index', 8)
+        max_rib_length = config.get('max_rib_length', 120.0)
+        rib_curvature = config.get('rib_curvature', 0.7)
+        rib_angle_factor = config.get('rib_angle_factor', 0.4)
+        rib_length_taper = config.get('rib_length_taper', 0.4)
+        rib_stride = config.get('rib_stride', 1)
+        rib_asymmetry = config.get('rib_asymmetry', 0.0)
+
+        # RNG для asymmetry
+        rng = np.random.RandomState(seed)
+
+        # Грудная клетка (thoracic region): от thoracic_start до конца позвоночника
+        thoracic_end = len(spine_path) - 1
+        rib_index = 0
+
+        for i in range(thoracic_start, thoracic_end):
+            # Пропускаем позвонки согласно rib_stride
+            if (i - thoracic_start) % rib_stride != 0:
+                continue
+
+            # Вычисляем касательную к позвоночнику (tangent)
+            if i == 0:
+                tangent_vec = spine_path[i + 1] - spine_path[i]
+            elif i == len(spine_path) - 1:
+                tangent_vec = spine_path[i] - spine_path[i - 1]
+            else:
+                # Центральная разность для плавности
+                tangent_vec = spine_path[i + 1] - spine_path[i - 1]
+
+            tangent_angle = np.arctan2(tangent_vec[1], tangent_vec[0])
+
+            # Normal angle (перпендикуляр к позвоночнику)
+            normal_angle = tangent_angle + np.pi / 2
+
+            # Bell-curve tapering: рёбра длиннее в середине, короче по краям
+            progress = rib_index / (num_rib_pairs - 1) if num_rib_pairs > 1 else 0.5
+            progress = np.clip(progress, 0.0, 1.0)  # Безопасность
+
+            # sin(π * progress) всегда в [0, 1] для progress in [0, 1]
+            sin_value = np.sin(np.pi * progress)
+            sin_value = max(0.0, sin_value)  # Гарантируем неотрицательность
+
+            taper_factor = np.power(sin_value, rib_length_taper)
+            current_length = max_rib_length * taper_factor
+
+            # Пропускаем рёбра с очень малой длиной (< 5px)
+            if current_length < 5.0 or np.isnan(current_length):
+                rib_index += 1
+                continue
+
+            # Генерируем рёбра с обеих сторон
+            for side in [-1, 1]:
+                # Asymmetry: случайно пропускаем некоторые рёбра
+                if rng.random() < rib_asymmetry:
+                    continue
+
+                # Создаём Quadratic Bezier curve для ребра
+                rib_path = self._create_bezier_rib(
+                    start_point=spine_path[i],
+                    normal_angle=normal_angle * side,
+                    tangent_angle=tangent_angle,
+                    length=current_length,
+                    curvature=rib_curvature,
+                    angle_factor=rib_angle_factor,
+                    num_points=20  # Детализация кривой
+                )
+
+                # Создаём RibData
+                rib = RibData(
+                    side=side,
+                    vertebra_index=i,
+                    path=rib_path,
+                    length=current_length
+                )
+                ribs.append(rib)
+
+            rib_index += 1
+
+        return ribs
+
+    def _create_bezier_rib(self, start_point: np.ndarray, normal_angle: float,
+                           tangent_angle: float, length: float, curvature: float,
+                           angle_factor: float, num_points: int = 20) -> np.ndarray:
+        """
+        Создаёт Quadratic Bezier curve для одного ребра.
+
+        Портировано из App.tsx lines 116-126.
+
+        Args:
+            start_point: (2,) точка начала (на позвоночнике)
+            normal_angle: угол нормали (перпендикуляр к позвоночнику)
+            tangent_angle: угол касательной к позвоночнику
+            length: длина ребра
+            curvature: коэффициент изгиба [0.1-1.5]
+            angle_factor: наклон вперёд/назад [-0.5-1.5]
+            num_points: количество точек в кривой
+
+        Returns:
+            np.ndarray формы (num_points, 2) - точки вдоль ребра
+        """
+        # Конечная точка ребра
+        end_x = start_point[0] + np.cos(normal_angle) * length + \
+                np.cos(tangent_angle) * length * angle_factor
+        end_y = start_point[1] + np.sin(normal_angle) * length + \
+                np.sin(tangent_angle) * length * angle_factor
+
+        # Контрольная точка для Bezier (создаёт изгиб)
+        control_x = start_point[0] + np.cos(normal_angle) * length * curvature + \
+                    np.cos(tangent_angle) * length * 0.1
+        control_y = start_point[1] + np.sin(normal_angle) * length * curvature + \
+                    np.sin(tangent_angle) * length * 0.1
+
+        # Quadratic Bezier curve: P(t) = (1-t)^2 * P0 + 2*(1-t)*t * P1 + t^2 * P2
+        # P0 = start, P1 = control, P2 = end
+        t = np.linspace(0, 1, num_points).reshape(-1, 1)
+
+        P0 = start_point
+        P1 = np.array([control_x, control_y])
+        P2 = np.array([end_x, end_y])
+
+        curve = (1 - t)**2 * P0 + 2 * (1 - t) * t * P1 + t**2 * P2
+
+        return curve
 
     def _create_smooth_spline_from_points(self, control_points: np.ndarray, points_per_segment: int = 20) -> np.ndarray:
         """
@@ -508,7 +679,8 @@ class WorldGeneratorV3:
 
     # ========== PHASE 1b: CONTINENT GROWTH ==========
 
-    def _generate_continent(self, seed: str, spine_path: np.ndarray, spine_influence: np.ndarray, control_points: np.ndarray) -> ContinentData:
+    def _generate_continent(self, seed: str, spine_path: np.ndarray, spine_influence: np.ndarray,
+                           control_points: np.ndarray, ribs: List[RibData]) -> ContinentData:
         """
         Phase 1b: Генерация континента
 
@@ -516,9 +688,11 @@ class WorldGeneratorV3:
             seed: Базовый seed мира
             spine_path: Координаты позвоночника
             spine_influence: Поле влияния позвоночника
+            control_points: Контрольные точки позвоночника
+            ribs: Список рёбер (NEW!)
 
         Returns:
-            ContinentData с маской, heightmap, геометрией
+            ContinentData с маской, heightmap, геометрией, рёбрами
         """
         continent_seed = self._hash_seed(seed, "continent")
         config = self.config['continent_generation']
@@ -533,6 +707,11 @@ class WorldGeneratorV3:
             sea_level_override=sea_level_override
         )
 
+        # 2.5. Применение rib influence (NEW!)
+        rib_config = self.config.get('rib_generation', {})
+        if rib_config.get('enabled', False) and len(ribs) > 0:
+            heightmap_masked = self._apply_rib_influence_to_heightmap(heightmap_masked, ribs, rib_config)
+
         # 3. Создание маски континента
         continent_mask = self._create_continent_mask(heightmap_masked, sea_level, config['smoothing'])
 
@@ -545,8 +724,69 @@ class WorldGeneratorV3:
             center=center,
             major_axis=major_axis,
             spine_path=spine_path,
-            control_points=control_points
+            control_points=control_points,
+            ribs=ribs  # NEW: сохраняем рёбра
         )
+
+    def _apply_rib_influence_to_heightmap(self, heightmap: np.ndarray, ribs: List[RibData],
+                                          rib_config: dict) -> np.ndarray:
+        """
+        Применяет влияние рёбер к heightmap, создавая гребни (ridges) вдоль рёбер.
+
+        Рёбра создают возвышенности на ландшафте, формируя горные хребты и водоразделы.
+        Высота уменьшается с расстоянием от ребра (Gaussian falloff).
+
+        Args:
+            heightmap: (512, 512) исходный heightmap
+            ribs: Список рёбер
+            rib_config: Конфигурация рёбер (rib_height_multiplier, rib_influence_radius)
+
+        Returns:
+            (512, 512) heightmap с добавленными рёберными гребнями
+        """
+        if len(ribs) == 0:
+            return heightmap
+
+        height_multiplier = rib_config.get('rib_height_multiplier', 0.3)
+        influence_radius = rib_config.get('rib_influence_radius', 15.0)
+
+        # Создаём копию для модификации
+        modified_heightmap = heightmap.copy()
+
+        # Для каждого ребра
+        for rib in ribs:
+            # Проходим по каждой точке вдоль ребра
+            for i, point in enumerate(rib.path):
+                x, y = int(point[0]), int(point[1])
+
+                # Пропускаем точки вне границ
+                if not (0 <= x < self.global_size[0] and 0 <= y < self.global_size[1]):
+                    continue
+
+                # Высота ребра уменьшается от позвоночника к концу (taper)
+                progress = i / len(rib.path)
+                taper = 1.0 - progress  # Максимум у позвоночника, минимум на конце
+
+                # Добавляем Gaussian bump вокруг точки ребра
+                for dy in range(-int(influence_radius * 2), int(influence_radius * 2) + 1):
+                    for dx in range(-int(influence_radius * 2), int(influence_radius * 2) + 1):
+                        px, py = x + dx, y + dy
+
+                        if not (0 <= px < self.global_size[0] and 0 <= py < self.global_size[1]):
+                            continue
+
+                        # Расстояние от центра ребра
+                        dist = np.sqrt(dx**2 + dy**2)
+
+                        if dist <= influence_radius * 2:
+                            # Gaussian falloff
+                            gaussian = np.exp(-(dist**2) / (2 * influence_radius**2))
+                            height_addition = height_multiplier * gaussian * taper
+
+                            # Добавляем высоту (не заменяем!)
+                            modified_heightmap[py, px] = min(1.0, modified_heightmap[py, px] + height_addition)
+
+        return modified_heightmap
 
     def _generate_heightmap(self, seed: int, perlin_config: dict) -> np.ndarray:
         """

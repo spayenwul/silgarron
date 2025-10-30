@@ -53,6 +53,31 @@ class Region:
 
 
 @dataclass
+class RibData:
+    """
+    Данные одного ребра (rib) в анатомической структуре континента.
+
+    Рёбра генерируются перпендикулярно позвоночнику и создают:
+    - Гребни на ландшафте (heightmap influence)
+    - Зоны размещения органов (intercostal zones)
+    - Гидрологические барьеры (watersheds)
+    """
+    side: int  # -1 (left) or 1 (right)
+    vertebra_index: int  # Индекс позвонка, от которого отходит ребро
+    path: np.ndarray  # (N, 2) array - Bezier curve points вдоль ребра
+    length: float  # Длина ребра в пикселях
+
+    def __post_init__(self):
+        """Валидация после создания"""
+        if self.side not in [-1, 1]:
+            raise ValueError(f"Rib side must be -1 (left) or 1 (right), got {self.side}")
+        if self.path.ndim != 2 or self.path.shape[1] != 2:
+            raise ValueError(f"Rib path must be (N, 2) array, got shape {self.path.shape}")
+        if self.length <= 0:
+            raise ValueError(f"Rib length must be positive, got {self.length}")
+
+
+@dataclass
 class ContinentData:
     """Данные континента"""
     mask: np.ndarray  # (512, 512) boolean - где суша
@@ -61,6 +86,7 @@ class ContinentData:
     major_axis: Tuple[Tuple[int, int], Tuple[int, int]]  # Начало и конец оси
     spine_path: Optional[np.ndarray] = None  # (N, 2) array - позвоночник (если используется spine mask)
     control_points: Optional[np.ndarray] = None
+    ribs: List['RibData'] = field(default_factory=list)  # NEW: список рёбер
 
     def __post_init__(self):
         """Валидация"""

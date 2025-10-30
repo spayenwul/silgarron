@@ -1,0 +1,96 @@
+metadata:
+  version: '2.0'
+  adr: ADR-020
+  sprint: '3.6'
+global_settings:
+  global_width: 512
+  global_height: 512
+  detail_width: 4096
+  detail_height: 4096
+  scale_factor: 8
+  world_phase: EXHALE
+  world_age: LATE_EXHALE
+continent:
+  perlin_noise:
+    scale: 180
+    octaves: 3
+    persistence: 0.6
+    lacunarity: 2.0
+  sea_level: 0.4
+  smoothing:
+    binary_opening_iterations: 3
+    binary_closing_iterations: 2
+    gaussian_sigma: 3.0
+    final_threshold: 0.5
+organs:
+  metabolic_organ:
+    count: 1
+    placement_method: center_of_continent
+    radius: 30
+    temperature: 0.95
+    nutrient_output: 0.9
+  digestive:
+    count: 1
+    placement_method: suitable_lowland
+    placement_params:
+      near: metabolic_organ
+      direction: south
+      radius_range:
+      - 20
+      - 30
+    radius: 25
+    temperature: 0.85
+    acid_level: 0.8
+  neural_cluster:
+    count: 2
+    placement_method: along_axis
+    placement_params:
+      positions:
+      - 0.35
+      - 0.65
+    radius: 15
+    control_strength: 0.7
+    control_decay: 0.1
+  immune_node:
+    count: 1
+    placement_method: elevated_point
+    placement_params:
+      near: neural_cluster_0
+    radius: 10
+    cell_production: 0.9
+regions:
+  THORAX:
+    detection_method: skeletal_density
+    characteristics:
+      elevation_bias: 0.3
+      bone_density: 0.8
+      respiratory_potential: 0.9
+  DIAPHRAGM:
+    detection_method: muscle_layer
+    characteristics:
+      muscle_density: 0.9
+      pulsation_strength: 0.7
+      respiratory_potential: 0.4
+  ORGANOID:
+    detection_method: organ_proximity
+    characteristics:
+      elevation_bias: -0.2
+      nutrient_richness: 0.9
+      respiratory_potential: 0.1
+  GRASPING_LIMB:
+    detection_method: extremity
+    characteristics:
+      isolation: 0.8
+      bone_density: 0.6
+      respiratory_potential: 0.2
+visualization:
+  organ_colors:
+    metabolic_organ: '#FF4444'
+    digestive: '#FF8844'
+    neural_cluster: '#4488FF'
+    immune_node: '#44FF88'
+  region_colors:
+    THORAX: '#8888FF80'
+    DIAPHRAGM: '#FF88FF80'
+    ORGANOID: '#FFFF8880'
+    GRASPING_LIMB: '#88FF8880'
