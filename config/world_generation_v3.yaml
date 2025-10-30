@@ -30,6 +30,9 @@ global_settings:
 spine_generation:
   enabled: true  # Set to false for non-spine mode
 
+  # Центрирование позвоночника на карте (NEW!)
+  center_spine_on_map: true  # Центрирует позвоночник по центру масс
+
   # ⭐ SINE-WAVE METHOD (v10) ⭐
   # Математические синусоидальные волны для создания плавных органических форм
   # Портировано из procedural-spine-visualizer

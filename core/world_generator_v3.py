@@ -75,6 +75,18 @@ class WorldGeneratorV3:
         ribs = self._generate_ribs(spine_path, rib_config, rib_seed)
         print(f"  > Phase 1a: {len(ribs)} ribs generated")
 
+        # Phase 1a: Center Spine on Map (NEW!)
+        if self.config.get('center_spine_on_map', True):
+            spine_path, control_points, ribs = self._center_spine_on_map(spine_path, control_points, ribs)
+
+            # Пересоздаём influence mask с новыми координатами
+            influence_config = self.config['spine_generation']['influence']
+            spine_influence = self._create_spine_influence_mask(
+                spine_path,
+                max_influence=influence_config['max_distance']
+            )
+            print(f"  > Phase 1a: Spine centered (CoM = map center)")
+
         # Phase 1b: Continent Growth
         world.continent = self._generate_continent(seed, spine_path, spine_influence, control_points, ribs)
         print(f"  > Phase 1b: Continent generated (land={world.continent.mask.sum() / world.continent.mask.size * 100:.1f}%)")
@@ -574,6 +586,59 @@ class WorldGeneratorV3:
         curve = (1 - t)**2 * P0 + 2 * (1 - t) * t * P1 + t**2 * P2
 
         return curve
+
+    def _center_spine_on_map(self, spine: np.ndarray, control_points: np.ndarray,
+                             ribs: List[RibData]) -> Tuple[np.ndarray, np.ndarray, List[RibData]]:
+        """
+        Центрирует позвоночник, контрольные точки и рёбра относительно центра карты.
+
+        Вычисляет центр масс позвоночника и сдвигает весь позвоночник + контрольные точки + рёбра
+        так, чтобы центр масс совпадал с центром карты (256, 256).
+
+        Это обеспечивает визуальную центрированность композиции континента,
+        даже при сложных изгибах позвоночника.
+
+        Args:
+            spine: np.ndarray формы (N, 2) - путь позвоночника
+            control_points: np.ndarray формы (M, 2) - контрольные точки
+            ribs: List[RibData] - список рёбер
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray, List[RibData]] - центрированный позвоночник, контрольные точки и рёбра
+        """
+        # Вычисляем центр масс позвоночника
+        spine_center = np.mean(spine, axis=0)
+
+        # Центр карты
+        map_center = np.array([self.global_size[0] / 2, self.global_size[1] / 2])
+
+        # Вектор смещения
+        offset = map_center - spine_center
+
+        # Сдвигаем позвоночник и контрольные точки
+        centered_spine = spine + offset
+        centered_control_points = control_points + offset
+
+        # Сдвигаем все рёбра
+        centered_ribs = []
+        for rib in ribs:
+            centered_rib = RibData(
+                side=rib.side,
+                vertebra_index=rib.vertebra_index,
+                path=rib.path + offset,
+                length=rib.length
+            )
+            centered_ribs.append(centered_rib)
+
+        # Опционально: проверка границ (warning если выходит за карту)
+        min_x, min_y = centered_spine.min(axis=0)
+        max_x, max_y = centered_spine.max(axis=0)
+
+        if min_x < 0 or min_y < 0 or max_x >= self.global_size[0] or max_y >= self.global_size[1]:
+            print(f"  > [WARNING] Centered spine extends beyond map bounds: "
+                  f"x=[{min_x:.1f}, {max_x:.1f}], y=[{min_y:.1f}, {max_y:.1f}]")
+
+        return centered_spine, centered_control_points, centered_ribs
 
     def _create_smooth_spline_from_points(self, control_points: np.ndarray, points_per_segment: int = 20) -> np.ndarray:
         """

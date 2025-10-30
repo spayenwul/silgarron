@@ -21,6 +21,7 @@ Phase 1a генерирует анатомическую структуру ми
 - ✅ **Генерация рёбер** (ранее отсутствовала)
 - ✅ **Влияние рёбер на heightmap** (гребни на ландшафте)
 - ✅ **Anatomical accuracy**: рёбра перпендикулярны позвоночнику
+- ✅ **Spine centering**: автоматическое центрирование по центру масс
 
 ### Что удалено
 - ❌ Walker метод (Perlin noise-based)
@@ -229,6 +230,139 @@ rib_generation:
   rib_height_multiplier: 0.3    # Высота гребней [0-1]
   rib_influence_radius: 15.0    # Радиус влияния (px)
 ```
+
+---
+
+## Алгоритм 3: Spine Centering
+
+### Проблема
+
+После генерации через sine-wave метод позвоночник начинается от верхнего края карты (`start_y_fraction: 0.1`) и идёт вниз с синусоидальными отклонениями. Это приводит к визуальной нецентрированности композиции - позвоночник не проходит через центр карты (256, 256).
+
+**Пример проблемы:**
+- Хребет начинается в (256, 51)
+- Длина: ~396px (33 позвонка × 12px)
+- Центр масс хребта: примерно (240, 220)
+- Центр карты: (256, 256)
+- **Результат:** Композиция выглядит несбалансированной
+
+### Решение: Post-Generation Translation
+
+**Подход:** После генерации хребта и рёбер вычисляем центр масс позвоночника и сдвигаем всю структуру так, чтобы центр масс совпадал с центром карты.
+
+**Преимущества:**
+- ✅ Сохраняет математическую элегантность sine-wave
+- ✅ Прозрачна для Phase 1b/2/3/4
+- ✅ Простая реализация (~50 строк)
+- ✅ Не ломает детерминизм (seed даёт тот же хребет, просто сдвинутый)
+- ✅ Можно включать/выключать через config
+
+### Реализация
+
+**Файл:** `core/world_generator_v3.py` lines 578-629
+
+```python
+def _center_spine_on_map(self, spine: np.ndarray, control_points: np.ndarray,
+                         ribs: List[RibData]) -> Tuple[np.ndarray, np.ndarray, List[RibData]]:
+    """
+    Центрирует позвоночник, контрольные точки и рёбра относительно центра карты.
+    """
+    # Центр масс позвоночника
+    spine_center = np.mean(spine, axis=0)
+
+    # Центр карты
+    map_center = np.array([self.global_size[0] / 2, self.global_size[1] / 2])
+
+    # Вектор смещения
+    offset = map_center - spine_center
+
+    # Сдвигаем позвоночник и контрольные точки
+    centered_spine = spine + offset
+    centered_control_points = control_points + offset
+
+    # Сдвигаем все рёбра
+    centered_ribs = []
+    for rib in ribs:
+        centered_rib = RibData(
+            side=rib.side,
+            vertebra_index=rib.vertebra_index,
+            path=rib.path + offset,  # Сдвигаем path рёбра
+            length=rib.length
+        )
+        centered_ribs.append(centered_rib)
+
+    # Проверка границ (warning если выходит за карту)
+    min_x, min_y = centered_spine.min(axis=0)
+    max_x, max_y = centered_spine.max(axis=0)
+
+    if min_x < 0 or min_y < 0 or max_x >= self.global_size[0] or max_y >= self.global_size[1]:
+        print(f"  > [WARNING] Centered spine extends beyond map bounds")
+
+    return centered_spine, centered_control_points, centered_ribs
+```
+
+### Интеграция в Pipeline
+
+**Файл:** `core/world_generator_v3.py` lines 78-88
+
+```python
+# Phase 1a: Center Spine on Map (NEW!)
+if self.config.get('center_spine_on_map', True):
+    spine_path, control_points, ribs = self._center_spine_on_map(
+        spine_path, control_points, ribs
+    )
+
+    # Пересоздаём influence mask с новыми координатами
+    influence_config = self.config['spine_generation']['influence']
+    spine_influence = self._create_spine_influence_mask(
+        spine_path,
+        max_influence=influence_config['max_distance']
+    )
+    print(f"  > Phase 1a: Spine centered (CoM = map center)")
+```
+
+**Важно:** После сдвига нужно пересоздать `spine_influence` mask, так как координаты позвоночника изменились.
+
+### Параметры конфигурации
+
+**Файл:** `config/world_generation_v3.yaml` lines 33-34
+
+```yaml
+spine_generation:
+  # Центрирование позвоночника на карте
+  center_spine_on_map: true  # Центрирует позвоночник по центру масс
+```
+
+**Управление:**
+- `true` (по умолчанию): Центрирование включено
+- `false`: Хребет генерируется от верхнего края (legacy behaviour)
+
+### Визуальные результаты
+
+**До центрирования:**
+- Хребет начинается у верхнего края
+- Композиция несбалансирована
+- Континент выглядит "сдвинутым"
+
+**После центрирования:**
+- Хребет проходит через визуальный центр континента
+- Центр масс хребта = (256, 256)
+- Сбалансированная композиция даже при сильных изгибах
+
+**Тестовые seeds:**
+- `centered_test_01`: S-образный хребет, идеально центрирован
+- `centered_curved_02`: Вертикальный хребет с синусоидой, центрирован по вертикали
+
+### Граничные случаи
+
+**Что происходит если хребет выходит за границы?**
+- Метод выводит warning: `[WARNING] Centered spine extends beyond map bounds`
+- Генерация продолжается (heightmap обрезается границами)
+- При текущих параметрах (33 позвонка × 12px = 396px) выход за границы маловероятен
+
+**Рекомендации:**
+- При увеличении `num_vertebrae` или `vertebra_spacing` проверяйте boundaries
+- При `spine_curvature > 0.3` возможен сильный изгиб и выход за границы
 
 ---
 
